@@ -1,3 +1,2 @@
 tools:
-  external_code_coverage:
-    timeout: 800
+  external_code_coverage: false
