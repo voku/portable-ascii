@@ -34,6 +34,9 @@ The project based on ...
     * [is_ascii](#is_asciistring-str--bool) 
     * [normalize_msword](#normalize_mswordstring-str--string)
     * [normalize_whitespace](#normalize_whitespacestring-str-bool-keepnonbreakingspace--false-bool-keepbidiunicodecontrols--false--string)
+    * [to_ascii](#to_asciistring-str-string-language--en-bool-removeunsupported--true-string)
+    * [to_filename](#to_filenamestring-str-bool-use_transliterate--false-string-fallback_char----string)
+    * [to_transliterate](#to_transliteratestring-str-string-unknown---bool-strict--string)
 * [Unit Test](#unit-test)
 * [License and Copyright](#license-and-copyright)
 
@@ -52,7 +55,6 @@ $stringy = S::create('déjà σσς iıii');
 $stringy->toTransliterate();              // 'deja sss iiii'
 ```
 
-
 ## Install "Portable ASCII" via "composer require"
 ```shell
 composer require voku/portable-ascii
@@ -60,7 +62,7 @@ composer require voku/portable-ascii
 
 ##  Why Portable ASCII?[]()
 I need ASCII char handling in different classes and before I added this functions into "Portable UTF-8",
-but this is repo is more modular and portable.
+but this repo is more modular and portable, because it has no dependencies.
 
 ## Requirements and Recommendations
 
