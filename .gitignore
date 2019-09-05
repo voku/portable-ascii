@@ -8,3 +8,5 @@ build/
 # phpcs fixer
 .php_cs.cache
 
+# PhpStorm
+.idea/
