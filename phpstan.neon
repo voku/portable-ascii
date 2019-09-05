@@ -1,0 +1,8 @@
+parameters:
+    excludes_analyse:
+        - %currentWorkingDirectory%/vendor/*
+        - %currentWorkingDirectory%/tests/*
+    autoload_files:
+        - %currentWorkingDirectory%/vendor/autoload.php
+    ignoreErrors:
+        - "#.*should return array\\('orig'.*#"
