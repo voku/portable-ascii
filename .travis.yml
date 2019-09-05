@@ -92,6 +92,6 @@ script:
   - php vendor/bin/phpstan analyse --level=7 --configuration=phpstan.neon src
 
 after_script:
-  - php vendor/bin/coveralls -v
+  - php vendor/bin/php-coveralls -v
   - php ocular.phar code-coverage:upload --format=php-clover build/logs/clover.xml
   - bash <(curl -s https://codecov.io/bash)
