@@ -55,8 +55,8 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
 
             // ---
 
-            $testString = file_get_contents(__DIR__ . '/fixtures/sample-unicode-chart.txt');
-            $resultString = file_get_contents(__DIR__ . '/fixtures/sample-ascii-chart.txt');
+            $testString = \file_get_contents(__DIR__ . '/fixtures/sample-unicode-chart.txt');
+            $resultString = \file_get_contents(__DIR__ . '/fixtures/sample-ascii-chart.txt');
 
             static::assertSame($resultString, ASCII::to_transliterate($testString, '?', true));
 

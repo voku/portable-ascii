@@ -91,6 +91,41 @@ The API from the "ASCII"-Class is written as small static methods that will matc
 
 ## Class methods
 
+##### charsArrayWithMultiLanguageValues(bool $withExtras = false): array
+
+Returns an replacement array for ASCII method with a mix of multiple languages.
+
+```php
+$array = ASCII::charsArrayWithMultiLanguageValues();
+
+var_dump($array['b']); // ['β', 'б', 'ဗ', 'ბ', 'ب']
+```
+
+##### charsArrayWithOneLanguage(string $language = 'en', bool $withExtras = false): array {
+          
+Returns an replacement array for ASCII method with one language.
+
+For example, German will map 'ä' to 'ae', while other languages
+will simply return e.g. 'a'.
+
+```php
+$array = ASCII::charsArrayWithOneLanguage('ru');
+
+$tmpKey = \array_search('yo', $array['replace']);
+echo $array['orig'][$tmpKey]; // 'ё'
+```
+
+##### charsArrayWithSingleLanguageValues(bool $withExtras = false): array
+          
+Returns an replacement array for ASCII method with multiple languages.
+
+```php
+$array = ASCII::charsArrayWithSingleLanguageValues();
+
+$tmpKey = \array_search('hnaik', $array['replace']);
+echo $array['orig'][$tmpKey]; // '၌'
+```
+
 ##### is_ascii(string $str) : bool
 
 Checks if a string is 7 bit ASCII.

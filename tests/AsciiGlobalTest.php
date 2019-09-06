@@ -11,7 +11,7 @@ use voku\helper\ASCII;
  */
 final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 {
-    public function slugifyProvider()
+    public function slugifyProvider(): array
     {
         return [
             ['foo-bar', ' foo  bar '],
@@ -38,6 +38,14 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         $array = ASCII::charsArrayWithMultiLanguageValues();
 
         static::assertSame(['β', 'б', 'ဗ', 'ბ', 'ب'], $array['b']);
+
+        // ---
+
+        $array = ASCII::charsArrayWithMultiLanguageValues(true);
+
+        static::assertSame(['β', 'б', 'ဗ', 'ბ', 'ب'], $array['b']);
+        static::assertSame(['&'], $array['&']);
+        static::assertSame(['€'], $array[' Euro ']);
     }
 
     public function testCharsArrayWithOneLanguage()
@@ -53,6 +61,33 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         static::assertNotContains('Ae', $array['replace']);
         static::assertContains('yo', $array['replace']);
+
+        $tmpKey = \array_search('yo', $array['replace'], true);
+        static::assertSame('ё', $array['orig'][$tmpKey]);
+
+        // ---
+
+        $array = ASCII::charsArrayWithOneLanguage('de', true);
+
+        static::assertContains('Ae', $array['replace']);
+        static::assertNotContains('yo', $array['replace']);
+        static::assertContains(' und ', $array['replace']);
+        static::assertNotContains(' и ', $array['replace']);
+
+        $tmpKey = \array_search(' und ', $array['replace'], true);
+        static::assertSame('&', $array['orig'][$tmpKey]);
+
+        // ---
+
+        $array = ASCII::charsArrayWithOneLanguage('ru', true);
+
+        static::assertContains('yo', $array['replace']);
+        static::assertNotContains('Ae', $array['replace']);
+        static::assertContains(' и ', $array['replace']);
+        static::assertNotContains(' und ', $array['replace']);
+
+        $tmpKey = \array_search(' и ', $array['replace'], true);
+        static::assertSame('&', $array['orig'][$tmpKey]);
     }
 
     public function testCharsArrayWithSingleLanguageValues()
@@ -61,6 +96,20 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         static::assertContains('hnaik', $array['replace']);
         static::assertContains('yo', $array['replace']);
+
+        $tmpKey = \array_search('hnaik', $array['replace'], true);
+        static::assertSame('၌', $array['orig'][$tmpKey]);
+
+        // ---
+
+        $array = ASCII::charsArrayWithSingleLanguageValues(true);
+
+        static::assertContains('hnaik', $array['replace']);
+        static::assertContains('yo', $array['replace']);
+        static::assertContains(' pound ', $array['replace']);
+
+        $tmpKey = \array_search(' pound ', $array['replace'], true);
+        static::assertSame('£', $array['orig'][$tmpKey]);
     }
 
     public function testFilterFile()
@@ -133,7 +182,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         static::assertSame($expected, $result);
     }
 
-    public function toAsciiProvider()
+    public function toAsciiProvider(): array
     {
         return [
             ['foo bar', 'fòô bàř'],

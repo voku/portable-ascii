@@ -101,7 +101,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         // ---
 
         $str = "a\nb\nc";
-        static::assertSame("a b c", ASCII::to_ascii($str, 'en', true));
+        static::assertSame('a b c', ASCII::to_ascii($str, 'en', true));
     }
 
     public function testTabToAscii()
@@ -111,13 +111,12 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         // ---
 
-
         $str = "a\tb\tc";
         static::assertSame("a\tb\tc", ASCII::to_ascii($str, 'en', false));
 
         // ---
 
         $str = "a\tb\tc";
-        static::assertSame("a b c", ASCII::to_ascii($str, 'en', true));
+        static::assertSame('a b c', ASCII::to_ascii($str, 'en', true));
     }
 }
