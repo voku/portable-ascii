@@ -16,10 +16,10 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         return [
             ['foo-bar', ' foo  bar '],
             ['foo-bar', 'foo -.-"-...bar'],
-            ['another-foo-bar', 'another..& foo -.-"-...bar'],
+            ['another-and-foo-bar', 'another..& foo -.-"-...bar'],
             ['foo-dbar', " Foo d'Bar "],
             ['a-string-with-dashes', 'A string-with-dashes'],
-            ['user-host', 'user@host'],
+            ['user-at-host', 'user@host'],
             ['using-strings-like-foo-bar', 'Using strings like fòô bàř'],
             ['numbers-1234', 'numbers 1234'],
             ['perevirka-ryadka', 'перевірка рядка'],
@@ -28,6 +28,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['foo:bar:baz', 'Foo bar baz', ':'],
             ['a_string_with_underscores', 'A_string with_underscores', '_'],
             ['a_string_with_dashes', 'A string-with-dashes', '_'],
+            ['one_euro_or_a_dollar', 'one € or a $', '_'],
             ['a\string\with\dashes', 'A string-with-dashes', '\\'],
             ['an_odd_string', '--   An odd__   string-_', '_'],
         ];

@@ -528,12 +528,12 @@ final class ASCII
             $str = \str_replace($from, $to, $str);
         }
 
-        $langSpecific = self::charsArrayWithOneLanguage($language);
+        $langSpecific = self::charsArrayWithOneLanguage($language, true);
         if (\count($langSpecific['orig']) > 0) {
             $str = \str_replace($langSpecific['orig'], $langSpecific['replace'], $str);
         }
 
-        $charsArray = self::charsArrayWithSingleLanguageValues();
+        $charsArray = self::charsArrayWithSingleLanguageValues(true);
         $str = \str_replace($charsArray['orig'], $charsArray['replace'], $str);
 
         /** @noinspection CascadeStringReplacementInspection - FP */
