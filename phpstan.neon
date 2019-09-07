@@ -7,4 +7,5 @@ parameters:
     ignoreErrors:
         - '#array\|null supplied for foreach#'
         - '#function array_merge expects array, array\|null given#'
+        - '#should return array but returns array\|null#'
         - "#.*should return array\\('orig'.*#"
