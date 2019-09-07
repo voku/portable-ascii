@@ -91,9 +91,19 @@ The API from the "ASCII"-Class is written as small static methods that will matc
 
 ## Class methods
 
+##### charsArray(bool $withExtras = false): array
+
+Returns an replacement array for ASCII methods.
+
+```php
+$array = ASCII::charsArray();
+
+var_dump($array['ru']['б']); // 'b'
+```
+
 ##### charsArrayWithMultiLanguageValues(bool $withExtras = false): array
 
-Returns an replacement array for ASCII method with a mix of multiple languages.
+Returns an replacement array for ASCII methods with a mix of multiple languages.
 
 ```php
 $array = ASCII::charsArrayWithMultiLanguageValues();
@@ -103,7 +113,7 @@ var_dump($array['b']); // ['β', 'б', 'ဗ', 'ბ', 'ب']
 
 ##### charsArrayWithOneLanguage(string $language = 'en', bool $withExtras = false): array {
           
-Returns an replacement array for ASCII method with one language.
+Returns an replacement array for ASCII methods with one language.
 
 For example, German will map 'ä' to 'ae', while other languages
 will simply return e.g. 'a'.
@@ -117,7 +127,7 @@ echo $array['orig'][$tmpKey]; // 'ё'
 
 ##### charsArrayWithSingleLanguageValues(bool $withExtras = false): array
           
-Returns an replacement array for ASCII method with multiple languages.
+Returns an replacement array for ASCII methods with multiple languages.
 
 ```php
 $array = ASCII::charsArrayWithSingleLanguageValues();

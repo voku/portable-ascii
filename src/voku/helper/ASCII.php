@@ -50,7 +50,26 @@ final class ASCII
     ];
 
     /**
-     * Returns an replacement array for ASCII method with a mix of multiple languages.
+     * Returns an replacement array for ASCII methods.
+     *
+     * @param bool $withExtras
+     *
+     * @return array
+     */
+    public static function charsArray(bool $withExtras = false): array {
+        if ($withExtras) {
+            self::prepareAsciiExtrasMaps();
+
+            return self::$ASCII_MAPS_EXTRAS;
+        }
+
+        self::prepareAsciiMaps();
+
+        return self::$ASCII_MAPS;
+    }
+
+    /**
+     * Returns an replacement array for ASCII methods with a mix of multiple languages.
      *
      * @param bool $withExtras [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      *
@@ -85,7 +104,7 @@ final class ASCII
     }
 
     /**
-     * Returns an replacement array for ASCII method with one language.
+     * Returns an replacement array for ASCII methods with one language.
      *
      * For example, German will map 'ä' to 'ae', while other languages
      * will simply return e.g. 'a'.
@@ -156,7 +175,7 @@ final class ASCII
     }
 
     /**
-     * Returns an replacement array for ASCII method with multiple languages.
+     * Returns an replacement array for ASCII methods with multiple languages.
      *
      * @param bool $withExtras [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      *

@@ -113,6 +113,13 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         static::assertSame('£', $array['orig'][$tmpKey]);
     }
 
+    public function testCharsArray()
+    {
+        $array = ASCII::charsArray();
+
+        static::assertSame('b', $array['ru']['б']);
+    }
+
     public function testFilterFile()
     {
         $testArray = [
