@@ -90,7 +90,7 @@ Example: ASCII::to_ascii()
 
 # Portable ASCII | API
 
-The API from the "ASCII"-Class is written as small static methods that will match the default PHP-API.
+The API from the "ASCII"-Class is written as small static methods.
 
 
 ## Class methods
