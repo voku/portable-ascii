@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.2.3 (2019-09-10)
+
+- fix language depending ASCII chars (the order matters)
+
 ### 1.2.2 (2019-09-10)
 
 - fix bulgarian ASCII chars | thanks @bgphp
