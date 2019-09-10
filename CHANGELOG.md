@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.2.2 (2019-09-10)
+
+- fix bulgarian ASCII chars | thanks @bgphp
+
 ### 1.2.1 (2019-09-07)
 
 - "charsArray()" -> add access to "ASCII::$ASCII_MAPS*""
