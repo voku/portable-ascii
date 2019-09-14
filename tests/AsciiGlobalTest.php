@@ -196,10 +196,12 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['foo bar', 'fòô bàř'],
             [' TEST ', ' ŤÉŚŢ '],
             ['f = z = 3', 'φ = ź = 3'],
-            ['perevirka', 'перевірка'], // ru
-            ['lysaja gora', 'лысая гора'], // ru
-            ['shhuka', 'щука'], // ru
-            ['Ellhniko alfabhto', 'Ελληνικό αλφάβητο'], // el
+            ['perevirka', 'перевірка'],
+            ['lysaja gora', 'лысая гора'],
+            ['shhuka', 'щука'],
+            ['shhuka', 'щука', 'ru'],
+            ['Ellhniko alfabhto', 'Ελληνικό αλφάβητο', 'el'],
+            ['uThaHaRaNae', 'उदाहरण', 'hi'],
             ['user@host', 'user@host'],
             ['', '漢字'],
             ['xin chao the gioi', 'xin chào thế giới'],
