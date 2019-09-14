@@ -408,7 +408,7 @@ return [
         'ဠ' => 'la',
         '၇' => '7',
     ],
-    // Croatian
+    // Croatian (Hrvatska)
     'hr' => [
         'Č' => 'C',
         'Ć' => 'C',
