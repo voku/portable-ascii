@@ -210,6 +210,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['sveucilist', 'sveučilišt', 'hr'],
             ['paivakoti', 'päiväkoti', 'fr'],
             ['bavshvebi', 'ბავშვები', 'ka'],
+            ['diti', 'діти', 'uk'],
             ['user@host', 'user@host'],
             ['', '漢字'],
             ['xin chao the gioi', 'xin chào thế giới'],
