@@ -1,7 +1,7 @@
 <?php
 
 return [
-    // Greek
+    // Greek (Elláda)
     'el' => [
         'ΑΥ' => 'AU',
         'Αυ' => 'Au',
