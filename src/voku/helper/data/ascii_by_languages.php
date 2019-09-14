@@ -291,7 +291,7 @@ return [
         'ü' => 'u',
         'ű' => 'u',
     ],
-    // Burmese
+    // Myanmar (Burmese)
     'by' => [
         'န်ုပ်' => 'nub',
         'ောင်' => 'aung',
