@@ -204,6 +204,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['uThaHaRaNae', 'उदाहरण', 'hi'],
             ['IGaR', 'IGÅR', 'sv'],
             ['gorusmek', 'görüşmek', 'tr'],
+            ['primer', 'пример', 'bg'],
             ['user@host', 'user@host'],
             ['', '漢字'],
             ['xin chao the gioi', 'xin chào thế giới'],
