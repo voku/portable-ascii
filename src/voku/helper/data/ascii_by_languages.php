@@ -428,7 +428,7 @@ return [
         'ä' => 'a',
         'ö' => 'o',
     ],
-    // Georgian
+    // Georgian (Kartvelian)
     'ka' => [
         'ა' => 'a',
         'ბ' => 'b',
