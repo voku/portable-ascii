@@ -202,6 +202,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['shhuka', 'щука', 'ru'],
             ['Ellhniko alfabhto', 'Ελληνικό αλφάβητο', 'el'],
             ['uThaHaRaNae', 'उदाहरण', 'hi'],
+            ['IGaR', 'IGÅR', 'sv'],
             ['user@host', 'user@host'],
             ['', '漢字'],
             ['xin chao the gioi', 'xin chào thế giới'],
