@@ -218,6 +218,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['gradinita', 'grădiniță', 'ro'],
             ['infangxardeno', 'infanĝardeno', 'eo'],
             ['Ulikool', 'Ülikool', 'et'],
+            ['bernudarzs', 'bērnudārzs', 'lv'],
             ['user@host', 'user@host'],
             ['', '漢字'],
             ['xin chao the gioi', 'xin chào thế giới'],
