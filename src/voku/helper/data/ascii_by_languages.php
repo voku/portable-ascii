@@ -903,7 +903,7 @@ return [
         '٨' => '8',
         '٩' => '9',
     ],
-    // Persian
+    // Persian (Farsi)
     'fa' => [
         'گ' => 'g',
         'ژ' => 'j',
