@@ -224,6 +224,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['truong hoc', 'trường học', 'vi'],
             ['gamaa', 'جامعة', 'ar'],
             ['danshgah', 'دانشگاه', 'fa'],
+            ['univerzitet', 'универзитет', 'sr'],
             ['user@host', 'user@host'],
             ['', '漢字'],
             ['xin chao the gioi', 'xin chào thế giới'],
