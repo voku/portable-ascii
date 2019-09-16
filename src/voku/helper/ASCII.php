@@ -616,6 +616,7 @@ final class ASCII
             $SUPPORT['intl'] === true
         ) {
             if (!isset($TRANSLITERATOR)) {
+                // INFO: see "*-Latin" rules via "transliterator_list_ids()"
                 /** @noinspection PhpComposerExtensionStubsInspection */
                 $TRANSLITERATOR = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII;');
             }
@@ -754,7 +755,7 @@ final class ASCII
      *
      * @return string
      */
-    private static function get_language(string $language)
+    private static function get_language(string $language): string
     {
         $regex = '/(?<first>[a-z]+)[\-_]\g{first}/i';
 
