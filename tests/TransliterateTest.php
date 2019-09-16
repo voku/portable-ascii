@@ -18,6 +18,13 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('testing', u::to_transliterate($str));
     }
 
+    public function testGerman()
+    {
+        $str = 'testiñg-öäü';
+        static::assertSame('testing-oau', u::to_transliterate($str));
+        static::assertSame('testing-oeaeue', u::to_transliterate($str, '?', true, 'de'));
+    }
+
     public function testAscii()
     {
         $str = 'testing';
@@ -48,7 +55,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('abc', u::to_transliterate($str));
     }
 
-    public function testToASCII()
+    public function testToTransliterate()
     {
         $testsStrict = [];
         if (\extension_loaded('intl') === true) {
@@ -63,10 +70,8 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
             // ---
 
             $testsStrict = [
-                // 1                                          => '1',
-                // -1                                         => '-1',
-                ' ' => ' ',
-                // ''                                         => '',
+                ' '                                        => ' ',
+                ''                                         => '',
                 'أبز'                                      => 'abz',
                 "\xe2\x80\x99"                             => '\'',
                 'Ɓtest'                                    => 'Btest',
@@ -89,31 +94,29 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
                 'मोनिच'                                    => 'monica',
                 'क्षȸ'                                     => 'kasadb',
                 'أحبك 😀'                                   => 'ahbk ?',
-                'ذرزسشصضطظعغػؼؽؾؿ 5.99€'                   => 'dhrzsshsdtz\'gh[?][?][?][?][?] 5.99EUR',
-                'ذرزسشصضطظعغػؼؽؾؿ £5.99'                   => 'dhrzsshsdtz\'gh[?][?][?][?][?] PS5.99',
-                '׆אבגדהוזחטיךכלםמן $5.99'                  => '[?]\'bgdhwzhtykklmmn $5.99',
+                'ذرزسشصضطظعغػؼؽؾؿ 5.99€'                   => 'dhrzsshsdtz\'gh????? 5.99EUR',
+                'ذرزسشصضطظعغػؼؽؾؿ £5.99'                   => 'dhrzsshsdtz\'gh????? PS5.99',
+                '׆אבגדהוזחטיךכלםמן $5.99'                  => '?\'bgdhwzhtykklmmn $5.99',
                 '日一国会人年大十二本中長出三同 ¥5990'                    => 'ri yi guo hui ren nian da shi er ben zhong zhang chu san tong Y=5990',
                 '5.99€ 日一国会人年大十 $5.99'                     => '5.99EUR ri yi guo hui ren nian da shi $5.99',
-                'בגדה@ضطظعغػ.com'                          => 'bgdh@dtz\'gh[?].com',
-                '年大十@ضطظعغػ'                               => 'nian da shi@dtz\'gh[?]',
+                'בגדה@ضطظعغػ.com'                          => 'bgdh@dtz\'gh?.com',
+                '年大十@ضطظعغػ'                               => 'nian da shi@dtz\'gh?',
                 'בגדה & 年大十'                               => 'bgdh & nian da shi',
-                '国&ם at ضطظعغػ.הוז'                        => 'guo&m at dtz\'gh[?].hwz',
+                '国&ם at ضطظعغػ.הוז'                        => 'guo&m at dtz\'gh?.hwz',
                 'my username is @בגדה'                     => 'my username is @bgdh',
-                'The review gave 5* to ظعغػ'               => 'The review gave 5* to z\'gh[?]',
-                'use 年大十@ضطظعغػ.הוז to get a 10% discount' => 'use nian da shi@dtz\'gh[?].hwz to get a 10% discount',
+                'The review gave 5* to ظعغػ'               => 'The review gave 5* to z\'gh?',
+                'use 年大十@ضطظعغػ.הוז to get a 10% discount' => 'use nian da shi@dtz\'gh?.hwz to get a 10% discount',
                 '日 = הط^2'                                 => 'ri = ht^2',
-                'ךכלם 国会 غػؼؽ 9.81 m/s2'                   => 'kklm guo hui gh[?][?][?] 9.81 m/s2',
+                'ךכלם 国会 غػؼؽ 9.81 m/s2'                   => 'kklm guo hui gh??? 9.81 m/s2',
                 'The #会 comment at @בגדה = 10% of *&*'     => 'The #hui comment at @bgdh = 10% of *&*',
-                '∀ i ∈ ℕ'                                  => '[?] i [?] N',
+                '∀ i ∈ ℕ'                                  => '? i ? N',
                 '👍 💩 😄 ❤ 👍 💩 😄 ❤أحبك'                      => '? ? ?  ? ? ? ahbk',
             ];
         }
 
         $tests = [
-            // 1                               => '1',
-            // -1                              => '-1',
-            ' ' => ' ',
-            // ''                              => '',
+            ' '                             => ' ',
+            ''                              => '',
             'أبز'                           => 'abz',
             "\xe2\x80\x99"                  => '\'',
             'Ɓtest'                         => 'Btest',
@@ -137,7 +140,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
             'मोनिच'                         => 'monic',
             'क्षȸ'                          => 'kssdb',
             'أحبك 😀'                        => 'aHbk ?',
-            '∀ i ∈ ℕ'                       => '[?] i [?] N',
+            '∀ i ∈ ℕ'                       => '? i ? N',
             '👍 💩 😄 ❤ 👍 💩 😄 ❤أحبك'           => '? ? ?  ? ? ? aHbk',
         ];
 
@@ -147,8 +150,10 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
             }
         }
 
-        foreach ($testsStrict as $before => $after) {
-            static::assertSame($after, ASCII::to_transliterate($before, '?', true), 'tested: ' . $before);
+        for ($i = 0; $i <= 2; ++$i) { // keep this loop for simple performance tests
+            foreach ($testsStrict as $before => $after) {
+                static::assertSame($after, ASCII::to_transliterate($before, '?', true, 'en'), 'tested: ' . $before);
+            }
         }
     }
 }

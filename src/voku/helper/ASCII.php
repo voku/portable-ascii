@@ -56,7 +56,8 @@ final class ASCII
      *
      * @return array
      */
-    public static function charsArray(bool $withExtras = false): array {
+    public static function charsArray(bool $withExtras = false): array
+    {
         if ($withExtras) {
             self::prepareAsciiExtrasMaps();
 
@@ -78,7 +79,7 @@ final class ASCII
      */
     public static function charsArrayWithMultiLanguageValues(bool $withExtras = false): array
     {
-        static $CHARS_ARRAY;
+        static $CHARS_ARRAY = [];
         $cacheKey = '' . $withExtras;
 
         /** @noinspection NullCoalescingOperatorCanBeUsedInspection */
@@ -109,7 +110,7 @@ final class ASCII
      * For example, German will map 'ä' to 'ae', while other languages
      * will simply return e.g. 'a'.
      *
-     * @param string $language   [optional] <p>Language of the source string e.g.: en, de_at, or de-ch</p>
+     * @param string $language   [optional] <p>Language of the source string e.g.: en, de_at, or de-ch. (default is 'en')</p>
      * @param bool   $withExtras [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      *
      * @return array{orig: string[], replace: string[]}
@@ -119,14 +120,7 @@ final class ASCII
         string $language = 'en',
         bool $withExtras = false
     ): array {
-        $regex = '/(?<first>[a-z]+)[\-_]\g{first}/i';
-        $language = \str_replace(
-            '-',
-            '_',
-            \strtolower(
-                (string) \preg_replace($regex, '$1', $language)
-            )
-        );
+        $language = self::get_language($language);
 
         // init
         static $CHARS_ARRAY = [];
@@ -445,9 +439,10 @@ final class ASCII
      * to "aeoeue" rather than "aou" as in other languages.
      *
      * @param string $str               <p>The input string.</p>
-     * @param string $language          [optional] <p>Language of the source string.</p>
+     * @param string $language          [optional] <p>Language of the source string. (default is 'en')</p>
      * @param bool   $removeUnsupported [optional] <p>Whether or not to remove the
      *                                  unsupported characters.</p>
+     * @param bool   $withExtras        [optional]  <p>Add some more replacements e.g. "£" with " pound ".</p>
      *
      * @return string
      *                <p>A string that contains only ASCII characters.</p>
@@ -455,25 +450,26 @@ final class ASCII
     public static function to_ascii(
         string $str,
         string $language = 'en',
-        bool $removeUnsupported = true
+        bool $removeUnsupported = true,
+        bool $withExtras = false
     ): string {
         if ($str === '') {
             return '';
         }
 
-        $langSpecific = self::charsArrayWithOneLanguage($language);
+        $langSpecific = self::charsArrayWithOneLanguage($language, $withExtras);
         if (!empty($langSpecific)) {
             $str = \str_replace($langSpecific['orig'], $langSpecific['replace'], $str);
         }
 
-        foreach (self::charsArrayWithMultiLanguageValues() as $replace => $orig) {
+        foreach (self::charsArrayWithMultiLanguageValues($withExtras) as $replace => $orig) {
             $str = \str_replace($orig, $replace, $str);
         }
 
         if ($removeUnsupported) {
             $str = (string) \str_replace(["\n\r", "\n", "\r", "\t"], ' ', $str);
             /** @noinspection NotOptimalRegularExpressionsInspection */
-            $str = (string) \preg_replace('/[^\\x20-\\x7E]/u', '', $str);
+            $str = (string) \preg_replace('/[^\x09\x10\x13\x0A\x0D\x20-\x7E]/', '', $str);
         }
 
         return $str;
@@ -483,15 +479,15 @@ final class ASCII
      * Convert given string to safe filename (and keep string case).
      *
      * @param string $str
-     * @param bool   $use_transliterate No transliteration, conversion etc. is done by default - unsafe characters are
-     *                                  simply replaced with hyphen.
+     * @param bool   $use_transliterate <p>ASCII::to_transliterate() is used by default - unsafe characters are
+     *                                  simply replaced with hyphen otherwise.</p>
      * @param string $fallback_char
      *
      * @return string
      */
     public static function to_filename(
         string $str,
-        bool $use_transliterate = false,
+        bool $use_transliterate = true,
         string $fallback_char = '-'
     ): string {
         if ($use_transliterate === true) {
@@ -527,7 +523,7 @@ final class ASCII
      *
      * @param string   $str
      * @param string   $separator    [optional] <p>The string used to replace whitespace.</p>
-     * @param string   $language     [optional] <p>Language of the source string.</p>
+     * @param string   $language     [optional] <p>Language of the source string. (default is 'en')</p>
      * @param string[] $replacements [optional] <p>A map of replaceable strings.</p>
      *
      * @return string
@@ -547,13 +543,7 @@ final class ASCII
             $str = \str_replace($from, $to, $str);
         }
 
-        $langSpecific = self::charsArrayWithOneLanguage($language, true);
-        if (\count($langSpecific['orig']) > 0) {
-            $str = \str_replace($langSpecific['orig'], $langSpecific['replace'], $str);
-        }
-
-        $charsArray = self::charsArrayWithSingleLanguageValues(true);
-        $str = \str_replace($charsArray['orig'], $charsArray['replace'], $str);
+        $str = self::to_ascii($str, $language, false, true);
 
         /** @noinspection CascadeStringReplacementInspection - FP */
         $str = \str_replace('@', $separator, $str);
@@ -584,10 +574,10 @@ final class ASCII
      * replaced with their closest ASCII counterparts, and the rest are removed
      * unless instructed otherwise.
      *
-     * @param string $str     <p>The input string.</p>
-     * @param string $unknown [optional] <p>Character use if character unknown. (default is ?)</p>
-     * @param bool   $strict  [optional] <p>Use "transliterator_transliterate()" from PHP-Intl | WARNING: bad
-     *                        performance</p>
+     * @param string $str             <p>The input string.</p>
+     * @param string $unknown         [optional] <p>Character use if character unknown. (default is ?)</p>
+     * @param bool   $strict          [optional] <p>Use "transliterator_transliterate()" from PHP-Intl
+     * @param string $strict_language [optional] <p>Language used in "transliterator_create()".</p></p>
      *
      * @return string
      *                <p>A String that contains only ASCII characters.</p>
@@ -595,9 +585,11 @@ final class ASCII
     public static function to_transliterate(
         string $str,
         string $unknown = '?',
-        bool $strict = false
+        bool $strict = false,
+        string $strict_language = ''
     ): string {
-        static $UTF8_TO_ASCII;
+        static $UTF8_TO_TRANSLIT;
+        static $TRANSLITERATOR = [];
         static $SUPPORT = [];
 
         if ($str === '') {
@@ -625,14 +617,35 @@ final class ASCII
             &&
             $SUPPORT['intl'] === true
         ) {
+            // fallback
+            if (!$strict_language) {
+                $languageTmp = 'latin';
+            } else {
+                $languageTmp = $strict_language;
+            }
+
+            if (!isset($TRANSLITERATOR[$languageTmp])) {
+                if ($languageTmp && $languageTmp !== 'latin') {
+                    /** @noinspection PhpComposerExtensionStubsInspection */
+                    $TRANSLITERATOR[$languageTmp] = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; ' . $languageTmp . '-ASCII; Latin-ASCII;');
+                } else {
+                    /** @noinspection PhpComposerExtensionStubsInspection */
+                    $TRANSLITERATOR[$languageTmp] = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII;');
+                }
+            }
+
             // INFO: https://unicode.org/cldr/utility/character.jsp?a=%E2%84%8C
             /** @noinspection PhpComposerExtensionStubsInspection */
-            /** @noinspection UnnecessaryCastingInspection */
-            $str = (string) \transliterator_transliterate('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII;', $str);
+            $strTmp = \transliterator_transliterate($TRANSLITERATOR[$languageTmp], $str);
 
-            // check again, if we only have ASCII, now ...
-            if (self::is_ascii($str) === true) {
-                return $str;
+            if ($strTmp !== false) {
+                /** @noinspection CallableParameterUseCaseInTypeContextInspection */
+                $str = $strTmp;
+
+                // check again, if we only have ASCII, now ...
+                if (self::is_ascii($str) === true) {
+                    return $str;
+                }
             }
         }
 
@@ -703,17 +716,17 @@ final class ASCII
             }
 
             $bank = $ord >> 8;
-            if (!isset($UTF8_TO_ASCII[$bank])) {
-                $UTF8_TO_ASCII[$bank] = self::getDataIfExists(\sprintf('x%02x', $bank));
-                if ($UTF8_TO_ASCII[$bank] === false) {
-                    $UTF8_TO_ASCII[$bank] = [];
+            if (!isset($UTF8_TO_TRANSLIT[$bank])) {
+                $UTF8_TO_TRANSLIT[$bank] = self::getDataIfExists(\sprintf('x%02x', $bank));
+                if ($UTF8_TO_TRANSLIT[$bank] === false) {
+                    $UTF8_TO_TRANSLIT[$bank] = [];
                 }
             }
 
             $newchar = $ord & 255;
 
             /** @noinspection NullCoalescingOperatorCanBeUsedInspection */
-            if (isset($UTF8_TO_ASCII[$bank][$newchar])) {
+            if (isset($UTF8_TO_TRANSLIT[$bank][$newchar])) {
 
                 // keep for debugging
                 /*
@@ -721,11 +734,16 @@ final class ASCII
                 echo "char: " . $c . "\n";
                 echo "ord: " . $ord . "\n";
                 echo "newchar: " . $newchar . "\n";
-                echo "ascii: " . $UTF8_TO_ASCII[$bank][$newchar] . "\n";
+                echo "newchar: " . mb_chr($newchar) . "\n";
+                echo "ascii: " . $UTF8_TO_TRANSLIT[$bank][$newchar] . "\n";
                 echo "bank:" . $bank . "\n\n";
                  */
 
-                $c = $UTF8_TO_ASCII[$bank][$newchar];
+                if ($UTF8_TO_TRANSLIT[$bank][$newchar] === '[?]') {
+                    $c = $unknown;
+                } else {
+                    $c = $UTF8_TO_TRANSLIT[$bank][$newchar];
+                }
             } else {
 
                 // keep for debugging missing chars
@@ -734,6 +752,7 @@ final class ASCII
                 echo "char: " . $c . "\n";
                 echo "ord: " . $ord . "\n";
                 echo "newchar: " . $newchar . "\n";
+                echo "newchar: " . mb_chr($newchar) . "\n";
                 echo "bank:" . $bank . "\n\n";
                  */
 
@@ -742,6 +761,24 @@ final class ASCII
         }
 
         return \implode('', $chars);
+    }
+
+    /**
+     * @param string $language
+     *
+     * @return string
+     */
+    private static function get_language(string $language)
+    {
+        $regex = '/(?<first>[a-z]+)[\-_]\g{first}/i';
+
+        return \str_replace(
+            '-',
+            '_',
+            \strtolower(
+                (string) \preg_replace($regex, '$1', $language)
+            )
+        );
     }
 
     /**
