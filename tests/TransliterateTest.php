@@ -18,13 +18,6 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('testing', u::to_transliterate($str));
     }
 
-    public function testGerman()
-    {
-        $str = 'testiñg-öäü';
-        static::assertSame('testing-oau', u::to_transliterate($str));
-        static::assertSame('testing-oeaeue', u::to_transliterate($str, '?', true, 'de'));
-    }
-
     public function testAscii()
     {
         $str = 'testing';

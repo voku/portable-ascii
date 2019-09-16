@@ -574,10 +574,9 @@ final class ASCII
      * replaced with their closest ASCII counterparts, and the rest are removed
      * unless instructed otherwise.
      *
-     * @param string $str             <p>The input string.</p>
-     * @param string $unknown         [optional] <p>Character use if character unknown. (default is ?)</p>
-     * @param bool   $strict          [optional] <p>Use "transliterator_transliterate()" from PHP-Intl
-     * @param string $strict_language [optional] <p>Language used in "transliterator_create()".</p></p>
+     * @param string $str     <p>The input string.</p>
+     * @param string $unknown [optional] <p>Character use if character unknown. (default is ?)</p>
+     * @param bool   $strict  [optional] <p>Use "transliterator_transliterate()" from PHP-Intl
      *
      * @return string
      *                <p>A String that contains only ASCII characters.</p>
@@ -585,11 +584,10 @@ final class ASCII
     public static function to_transliterate(
         string $str,
         string $unknown = '?',
-        bool $strict = false,
-        string $strict_language = ''
+        bool $strict = false
     ): string {
-        static $UTF8_TO_TRANSLIT;
-        static $TRANSLITERATOR = [];
+        static $UTF8_TO_TRANSLIT = null;
+        static $TRANSLITERATOR = null;
         static $SUPPORT = [];
 
         if ($str === '') {
@@ -617,26 +615,14 @@ final class ASCII
             &&
             $SUPPORT['intl'] === true
         ) {
-            // fallback
-            if (!$strict_language) {
-                $languageTmp = 'latin';
-            } else {
-                $languageTmp = $strict_language;
-            }
-
-            if (!isset($TRANSLITERATOR[$languageTmp])) {
-                if ($languageTmp && $languageTmp !== 'latin') {
-                    /** @noinspection PhpComposerExtensionStubsInspection */
-                    $TRANSLITERATOR[$languageTmp] = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; ' . $languageTmp . '-ASCII; Latin-ASCII;');
-                } else {
-                    /** @noinspection PhpComposerExtensionStubsInspection */
-                    $TRANSLITERATOR[$languageTmp] = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII;');
-                }
+            if (!isset($TRANSLITERATOR)) {
+                /** @noinspection PhpComposerExtensionStubsInspection */
+                $TRANSLITERATOR = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII;');
             }
 
             // INFO: https://unicode.org/cldr/utility/character.jsp?a=%E2%84%8C
             /** @noinspection PhpComposerExtensionStubsInspection */
-            $strTmp = \transliterator_transliterate($TRANSLITERATOR[$languageTmp], $str);
+            $strTmp = \transliterator_transliterate($TRANSLITERATOR, $str);
 
             if ($strTmp !== false) {
                 /** @noinspection CallableParameterUseCaseInTypeContextInspection */
