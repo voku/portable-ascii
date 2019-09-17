@@ -52,6 +52,8 @@ final class ASCII
     /**
      * Returns an replacement array for ASCII methods.
      *
+     * @psalm-suppress InvalidNullableReturnType - we use the prepare* methods here, so we don't get NULL here
+     *
      * @param bool $withExtras
      *
      * @return array
@@ -61,11 +63,13 @@ final class ASCII
         if ($withExtras) {
             self::prepareAsciiExtrasMaps();
 
+            /** @psalm-suppress NullableReturnStatement */
             return self::$ASCII_MAPS_EXTRAS;
         }
 
         self::prepareAsciiMaps();
 
+        /** @psalm-suppress NullableReturnStatement */
         return self::$ASCII_MAPS;
     }
 
@@ -110,6 +114,8 @@ final class ASCII
      * For example, German will map 'ä' to 'ae', while other languages
      * will simply return e.g. 'a'.
      *
+     * @psalm-suppress InvalidNullableReturnType - we use the prepare* methods here, so we don't get NULL here
+     *
      * @param string $language   [optional] <p>Language of the source string e.g.: en, de_at, or de-ch. (default is 'en')</p>
      * @param bool   $withExtras [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      *
@@ -134,7 +140,9 @@ final class ASCII
         if ($withExtras) {
             self::prepareAsciiExtrasMaps();
 
+            /** @psalm-suppress PossiblyNullOperand - we use the prepare* methods here, so we don't get NULL here */
             if (isset(self::$ASCII_MAPS[$language])) {
+                /** @psalm-suppress PossiblyNullArrayAccess - we use the prepare* methods here, so we don't get NULL here */
                 $tmpArray = \array_merge(self::$ASCII_MAPS[$language] + self::$ASCII_MAPS_EXTRAS[$language]);
 
                 $CHARS_ARRAY[$cacheKey][$language] = [
@@ -143,8 +151,8 @@ final class ASCII
                 ];
             } else {
                 $CHARS_ARRAY[$cacheKey][$language] = [
-                    'orig'    => '',
-                    'replace' => '',
+                    'orig'    => [],
+                    'replace' => [],
                 ];
             }
         } else {
@@ -159,8 +167,8 @@ final class ASCII
                 ];
             } else {
                 $CHARS_ARRAY[$cacheKey][$language] = [
-                    'orig'    => '',
-                    'replace' => '',
+                    'orig'    => [],
+                    'replace' => [],
                 ];
             }
         }
@@ -191,11 +199,13 @@ final class ASCII
             self::prepareAsciiExtrasMaps();
 
             /** @noinspection AlterInForeachInspection */
+            /** @psalm-suppress PossiblyNullIterator - we use the prepare* methods here, so we don't get NULL here */
             foreach (self::$ASCII_MAPS as &$map) {
                 $CHARS_ARRAY[$cacheKey][] = $map;
             }
 
             /** @noinspection AlterInForeachInspection */
+            /** @psalm-suppress PossiblyNullIterator - we use the prepare* methods here, so we don't get NULL here */
             foreach (self::$ASCII_MAPS_EXTRAS as &$map) {
                 $CHARS_ARRAY[$cacheKey][] = $map;
             }
@@ -203,6 +213,7 @@ final class ASCII
             self::prepareAsciiMaps();
 
             /** @noinspection AlterInForeachInspection */
+            /** @psalm-suppress PossiblyNullIterator - we use the prepare* methods here, so we don't get NULL here */
             foreach (self::$ASCII_MAPS as &$map) {
                 $CHARS_ARRAY[$cacheKey][] = $map;
             }
@@ -233,7 +244,8 @@ final class ASCII
      * @param bool   $remove_invisible_characters [optional] <p>Set to false, if you not want to remove invisible
      *                                            characters e.g.: "\0"</p>
      *
-     * @return string clean UTF-8 encoded string
+     * @return string
+     *                <p>A clean UTF-8 string.</p>
      */
     public static function clean(
         string $str,
@@ -280,8 +292,10 @@ final class ASCII
      * @param string $str <p>The string to check.</p>
      *
      * @return bool
+     *              <p>
      *              <strong>true</strong> if it is ASCII<br>
      *              <strong>false</strong> otherwise
+     *              </p>
      */
     public static function is_ascii(string $str): bool
     {
@@ -300,6 +314,7 @@ final class ASCII
      * @param string $str <p>The string to be normalized.</p>
      *
      * @return string
+     *                <p>A string with normalized characters for commonly used chars in Word documents.</p>
      */
     public static function normalize_msword(string $str): string
     {
@@ -313,6 +328,7 @@ final class ASCII
         if (!isset($MSWORD_CACHE['orig'])) {
             self::prepareAsciiMaps();
 
+            /** @psalm-suppress PossiblyNullArrayAccess - we use the prepare* methods here, so we don't get NULL here */
             $map = self::$ASCII_MAPS['msword'];
 
             $MSWORD_CACHE = [
@@ -333,6 +349,7 @@ final class ASCII
      *                                        bidirectional text chars.</p>
      *
      * @return string
+     *                <p>A string with normalized whitespace.</p>
      */
     public static function normalize_whitespace(
         string $str,
@@ -349,6 +366,7 @@ final class ASCII
         if (!isset($WHITESPACE_CACHE[$cacheKey])) {
             self::prepareAsciiMaps();
 
+            /** @psalm-suppress PossiblyNullArrayAccess - we use the prepare* methods here, so we don't get NULL here */
             $WHITESPACE_CACHE[$cacheKey] = self::$ASCII_MAPS[' '];
 
             if ($keepNonBreakingSpace === true) {
@@ -462,6 +480,7 @@ final class ASCII
      * @param string $fallback_char
      *
      * @return string
+     *                <p>A string that contains only safe characters for a filename.</p>
      */
     public static function to_filename(
         string $str,
@@ -729,11 +748,18 @@ final class ASCII
     }
 
     /**
+     * Get the language from a string.
+     *
+     * e.g.: de_at -> de_at
+     *       de_DE -> de
+     *       DE_DE -> de
+     *       de-de -> de
+     *
      * @param string $language
      *
      * @return string
      */
-    private static function get_language(string $language): string
+    private static function get_language(string $language)
     {
         $regex = '/(?<first>[a-z]+)[\-_]\g{first}/i';
 
@@ -747,13 +773,13 @@ final class ASCII
     }
 
     /**
-     * get data from "/data/*.php"
+     * Get data from "/data/*.php".
      *
      * @param string $file
      *
      * @return array
      */
-    private static function getData(string $file): array
+    private static function getData(string $file)
     {
         /** @noinspection PhpIncludeInspection */
         /** @noinspection UsingInclusionReturnValueInspection */
@@ -762,11 +788,12 @@ final class ASCII
     }
 
     /**
-     * get data from "/data/*.php"
+     * Get data from "/data/*.php".
      *
      * @param string $file
      *
-     * @return false|mixed will return false on error
+     * @return false|array
+     *                     <p>Will return <strong>false</strong> on error.</p>
      */
     private static function getDataIfExists(string $file)
     {
@@ -780,11 +807,15 @@ final class ASCII
         return false;
     }
 
+    /**
+     * @return void
+     */
     private static function prepareAsciiExtrasMaps()
     {
         if (self::$ASCII_MAPS_EXTRAS === null) {
             self::prepareAsciiMaps();
 
+            /** @psalm-suppress PossiblyNullArgument - we use the prepare* methods here, so we don't get NULL here */
             self::$ASCII_MAPS_EXTRAS = \array_merge(
                 self::$ASCII_MAPS,
                 self::getData('ascii_extras_by_languages')
@@ -792,6 +823,9 @@ final class ASCII
         }
     }
 
+    /**
+     * @return void
+     */
     private static function prepareAsciiMaps()
     {
         if (self::$ASCII_MAPS === null) {

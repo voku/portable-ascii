@@ -51,7 +51,53 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
     public function testCharsArrayWithOneLanguage()
     {
+        $array = ASCII::charsArrayWithOneLanguage('abcde');
+
+        static::assertSame([], $array['replace']);
+        static::assertSame([], $array['orig']);
+
+        // ---
+
+        $array = ASCII::charsArrayWithOneLanguage('####');
+
+        static::assertSame([], $array['replace']);
+        static::assertSame([], $array['orig']);
+
+        // ---
+
+        $array = ASCII::charsArrayWithOneLanguage('de_at');
+
+        static::assertContains('Ae', $array['replace']);
+        static::assertContains('sz', $array['replace']);
+        static::assertNotContains('ss', $array['replace']);
+        static::assertContains('ß', $array['orig']);
+
+        // ---
+
+        $array = ASCII::charsArrayWithOneLanguage('de-CH');
+
+        static::assertContains('Ae', $array['replace']);
+        static::assertContains('ss', $array['replace']);
+        static::assertNotContains('sz', $array['replace']);
+        static::assertContains('ß', $array['orig']);
+
+        // ---
+
         $array = ASCII::charsArrayWithOneLanguage('de');
+
+        static::assertContains('Ae', $array['replace']);
+        static::assertNotContains('yo', $array['replace']);
+
+        // ---
+
+        $array = ASCII::charsArrayWithOneLanguage('de_DE');
+
+        static::assertContains('Ae', $array['replace']);
+        static::assertNotContains('yo', $array['replace']);
+
+        // ---
+
+        $array = ASCII::charsArrayWithOneLanguage('de-DE');
 
         static::assertContains('Ae', $array['replace']);
         static::assertNotContains('yo', $array['replace']);
