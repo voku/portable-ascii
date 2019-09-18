@@ -324,7 +324,7 @@ final class ASCII
 
         // init
         static $MSWORD_CACHE = [];
-        
+
         if (!isset($MSWORD_CACHE['orig'])) {
             self::prepareAsciiMaps();
 
@@ -792,7 +792,7 @@ final class ASCII
      *
      * @param string $file
      *
-     * @return false|array
+     * @return array|false
      *                     <p>Will return <strong>false</strong> on error.</p>
      */
     private static function getDataIfExists(string $file)
@@ -807,9 +807,6 @@ final class ASCII
         return false;
     }
 
-    /**
-     * @return void
-     */
     private static function prepareAsciiExtrasMaps()
     {
         if (self::$ASCII_MAPS_EXTRAS === null) {
@@ -823,9 +820,6 @@ final class ASCII
         }
     }
 
-    /**
-     * @return void
-     */
     private static function prepareAsciiMaps()
     {
         if (self::$ASCII_MAPS === null) {
