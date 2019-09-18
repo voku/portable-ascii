@@ -22,9 +22,9 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['user-at-host', 'user@host'],
             ['using-strings-like-foo-bar', 'Using strings like fòô bàř'],
             ['numbers-1234', 'numbers 1234'],
-            ['perevirka-rjadka', 'перевірка рядка'],
-            ['bukvar-s-bukvoj-y', 'букварь с буквой ы'],
-            ['podehal-k-podezdu-moego-doma', 'подъехал к подъезду моего дома'],
+            ['perevirka-ryadka', 'перевірка рядка'],
+            ['bukvar-s-bukvoi-y', 'букварь с буквой ы'],
+            ['podexal-k-podezdu-moego-doma', 'подъехал к подъезду моего дома'],
             ['foo:bar:baz', 'Foo bar baz', ':'],
             ['a_string_with_underscores', 'A_string with_underscores', '_'],
             ['a_string_with_dashes', 'A string-with-dashes', '_'],
@@ -212,9 +212,9 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
      */
     public function testSlugify($expected, $str, $replacement = '-')
     {
-        $str = ASCII::to_slugify($str, $replacement);
+        $result = ASCII::to_slugify($str, $replacement);
 
-        static::assertSame($expected, $str);
+        static::assertSame($expected, $result, 'tested: ' . $str);
     }
 
     /**
@@ -233,7 +233,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
     ) {
         $result = ASCII::to_ascii($str, $language, $removeUnsupported);
 
-        static::assertSame($expected, $result);
+        static::assertSame($expected, $result, 'tested: ' . $str);
     }
 
     public function toAsciiProvider(): array
@@ -243,37 +243,40 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             [' TEST ', ' ŤÉŚŢ '],
             ['f = z = 3', 'φ = ź = 3'],
             ['perevirka', 'перевірка'],
-            ['lysaja gora', 'лысая гора'],
+            ['ly\'saya gora', 'лысая гора'],
             ['shhuka', 'щука'],
-            ['shhuka', 'щука', 'ru'],
-            ['Ellhniko alfabhto', 'Ελληνικό αλφάβητο', 'el'],
-            ['uThaHaRaNae', 'उदाहरण', 'hi'],
-            ['IGaR', 'IGÅR', 'sv'],
-            ['gorusmek', 'görüşmek', 'tr'],
-            ['primer', 'пример', 'bg'],
-            ['vasarlo', 'vásárló', 'hu'],
-            ['ttyanongyath', 'တတျနိုငျသ', 'by'],
-            ['sveucilist', 'sveučilišt', 'hr'],
-            ['paivakoti', 'päiväkoti', 'fr'],
-            ['bavshvebi', 'ბავშვები', 'ka'],
-            ['diti', 'діти', 'uk'],
-            ['universitet', 'университет', 'kk'],
-            ['univerzitni', 'univerzitní', 'cs'],
-            ['besoegende', 'besøgende', 'da'],
-            ['Odwiedzajacy', 'Odwiedzający', 'pl'],
-            ['gradinita', 'grădiniță', 'ro'],
-            ['infangxardeno', 'infanĝardeno', 'eo'],
-            ['Ulikool', 'Ülikool', 'et'],
-            ['bernudarzs', 'bērnudārzs', 'lv'],
-            ['vaiku darzelis', 'vaikų darželis', 'lt'],
-            ['kundestoette', 'kundestøtte', 'no'],
-            ['truong hoc', 'trường học', 'vi'],
-            ['gamaa', 'جامعة', 'ar'],
-            ['danshgah', 'دانشگاه', 'fa'],
-            ['univerzitet', 'универзитет', 'sr'],
-            ['musteri', 'müştəri', 'az'],
-            ['zakaznik', 'zákazník', 'sk'],
-            ['francais', 'français', 'fr'],
+            ['shhuka', 'щука', ASCII::EXTRA_LATIN_CHARS_LANGUAGE_CODE],
+            ['Ellhniko alfabhto', 'Ελληνικό αλφάβητο', ASCII::GREEK_LANGUAGE_CODE],
+            ['uThaHaRaNae', 'उदाहरण', ASCII::HINDI_LANGUAGE_CODE],
+            ['IGaR', 'IGÅR', ASCII::SWEDISH_LANGUAGE_CODE],
+            ['gorusmek', 'görüşmek', ASCII::TURKISH_LANGUAGE_CODE],
+            ['primer', 'пример', ASCII::BULGARIAN_LANGUAGE_CODE],
+            ['vasarlo', 'vásárló', ASCII::HUNGARIAN_LANGUAGE_CODE],
+            ['ttyanongyath', 'တတျနိုငျသ', ASCII::MYANMAR_LANGUAGE_CODE],
+            ['sveucilist', 'sveučilišt', ASCII::CROATIAN_LANGUAGE_CODE],
+            ['paivakoti', 'päiväkoti', ASCII::FINNISH_LANGUAGE_CODE],
+            ['bavshvebi', 'ბავშვები', ASCII::GEORGIAN_LANGUAGE_CODE],
+            ['shhuka', 'щука', ASCII::RUSSIAN_LANGUAGE_CODE],
+            ['shchuka', 'щука', ASCII::RUSSIAN_PASSPORT_2013_LANGUAGE_CODE],
+            ['shhuka', 'щука', ASCII::RUSSIAN_GOST_2000_B_LANGUAGE_CODE],
+            ['diti', 'діти', ASCII::UKRAINIAN_LANGUAGE_CODE],
+            ['universitet', 'университет', ASCII::KAZAKH_LANGUAGE_CODE],
+            ['univerzitni', 'univerzitní', ASCII::CZECH_LANGUAGE_CODE],
+            ['besoegende', 'besøgende', ASCII::DANISH_LANGUAGE_CODE],
+            ['Odwiedzajacy', 'Odwiedzający', ASCII::POLISH_LANGUAGE_CODE],
+            ['gradinita', 'grădiniță', ASCII::ROMANIAN_LANGUAGE_CODE],
+            ['infangxardeno', 'infanĝardeno', ASCII::ESPERANTO_LANGUAGE_CODE],
+            ['Ulikool', 'Ülikool', ASCII::ESTONIAN_LANGUAGE_CODE],
+            ['bernudarzs', 'bērnudārzs', ASCII::LATVIAN_LANGUAGE_CODE],
+            ['vaiku darzelis', 'vaikų darželis', ASCII::LITHUANIAN_LANGUAGE_CODE],
+            ['kundestoette', 'kundestøtte', ASCII::NORWEGIAN_LANGUAGE_CODE],
+            ['truong hoc', 'trường học', ASCII::VIETNAMESE_LANGUAGE_CODE],
+            ['gamaa', 'جامعة', ASCII::ARABIC_LANGUAGE_CODE],
+            ['danshgah', 'دانشگاه', ASCII::PERSIAN_LANGUAGE_CODE],
+            ['univerzitet', 'универзитет', ASCII::SERBIAN_LANGUAGE_CODE],
+            ['musteri', 'müştəri', ASCII::AZERBAIJANI_LANGUAGE_CODE],
+            ['zakaznik', 'zákazník', ASCII::SLOVAK_LANGUAGE_CODE],
+            ['francais', 'français', ASCII::FRENCH_LANGUAGE_CODE],
             ['user@host', 'user@host'],
             ['', '漢字'],
             ['xin chao the gioi', 'xin chào thế giới'],
@@ -285,10 +288,15 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             [' ', ' '], // medium mathematical space (U+205F)
             [' ', '　'], // ideographic space (U+3000)
             ['', '𐍉'], // some uncommon, unsupported character (U+10349)
-            ['𐍉', '𐍉', 'en', false],
-            ['aouAOU', 'äöüÄÖÜ'],
-            ['aeoeueAeOeUe', 'äöüÄÖÜ', 'de'],
-            ['aeoeueAeOeUe', 'äöüÄÖÜ', 'de_DE'],
+            ['𐍉', '𐍉', ASCII::ENGLISH_LANGUAGE_CODE, false],
+            ['aouAOUss', 'äöüÄÖÜß'],
+            ['aeoeueAeOeUess', 'äöüÄÖÜß', 'de_DE'],
+            ['aeoeueAeOeUess', 'äöüÄÖÜß', ASCII::GERMAN_LANGUAGE_CODE],
+            ['aeoeueAeOeUesz', 'äöüÄÖÜß', ASCII::GERMAN_AUSTRIAN_LANGUAGE_CODE],
+            ['aeoeueAeOeUess', 'äöüÄÖÜß', ASCII::GERMAN_SWITZERLAND_LANGUAGE_CODE],
+            ['aouAOUss', 'äöüÄÖÜß', ASCII::FRENCH_LANGUAGE_CODE],
+            ['aouAOUsz', 'äöüÄÖÜß', ASCII::FRENCH_AUSTRIAN_LANGUAGE_CODE],
+            ['aouAOUss', 'äöüÄÖÜß', ASCII::FRENCH_SWITZERLAND_LANGUAGE_CODE],
             ['h H sht Sht a A ia yo', 'х Х щ Щ ъ Ъ иа йо', 'bg'],
         ];
     }

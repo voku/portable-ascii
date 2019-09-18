@@ -6,6 +6,90 @@ namespace voku\helper;
 
 final class ASCII
 {
+    //
+    // INFO: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
+    //
+
+    const GREEK_LANGUAGE_CODE = 'el';
+
+    const HINDI_LANGUAGE_CODE = 'hi';
+
+    const SWEDISH_LANGUAGE_CODE = 'sv';
+
+    const TURKISH_LANGUAGE_CODE = 'tr';
+
+    const BULGARIAN_LANGUAGE_CODE = 'bg';
+
+    const HUNGARIAN_LANGUAGE_CODE = 'hu';
+
+    const MYANMAR_LANGUAGE_CODE = 'my';
+
+    const CROATIAN_LANGUAGE_CODE = 'hr';
+
+    const FINNISH_LANGUAGE_CODE = 'fi';
+
+    const GEORGIAN_LANGUAGE_CODE = 'ka';
+
+    const RUSSIAN_LANGUAGE_CODE = 'ru';
+
+    const RUSSIAN_PASSPORT_2013_LANGUAGE_CODE = 'ru__passport_2013';
+
+    const RUSSIAN_GOST_2000_B_LANGUAGE_CODE = 'ru__gost_2000_b';
+
+    const UKRAINIAN_LANGUAGE_CODE = 'uk';
+
+    const KAZAKH_LANGUAGE_CODE = 'kk';
+
+    const CZECH_LANGUAGE_CODE = 'cs';
+
+    const DANISH_LANGUAGE_CODE = 'da';
+
+    const POLISH_LANGUAGE_CODE = 'pl';
+
+    const ROMANIAN_LANGUAGE_CODE = 'ro';
+
+    const ESPERANTO_LANGUAGE_CODE = 'eo';
+
+    const ESTONIAN_LANGUAGE_CODE = 'et';
+
+    const LATVIAN_LANGUAGE_CODE = 'lv';
+
+    const LITHUANIAN_LANGUAGE_CODE = 'lt';
+
+    const NORWEGIAN_LANGUAGE_CODE = 'no';
+
+    const VIETNAMESE_LANGUAGE_CODE = 'vi';
+
+    const ARABIC_LANGUAGE_CODE = 'ar';
+
+    const PERSIAN_LANGUAGE_CODE = 'fa';
+
+    const SERBIAN_LANGUAGE_CODE = 'sr';
+
+    const AZERBAIJANI_LANGUAGE_CODE = 'az';
+
+    const SLOVAK_LANGUAGE_CODE = 'sk';
+
+    const FRENCH_LANGUAGE_CODE = 'fr';
+
+    const FRENCH_AUSTRIAN_LANGUAGE_CODE = 'fr_at';
+
+    const FRENCH_SWITZERLAND_LANGUAGE_CODE = 'fr_ch';
+
+    const GERMAN_LANGUAGE_CODE = 'de';
+
+    const GERMAN_AUSTRIAN_LANGUAGE_CODE = 'de_at';
+
+    const GERMAN_SWITZERLAND_LANGUAGE_CODE = 'de_ch';
+
+    const ENGLISH_LANGUAGE_CODE = 'en';
+
+    const EXTRA_LATIN_CHARS_LANGUAGE_CODE = 'latin';
+
+    const EXTRA_WHITESPACE_CHARS_LANGUAGE_CODE = ' ';
+
+    const EXTRA_MSWORD_CHARS_LANGUAGE_CODE = 'msword';
+
     /**
      * @var array|null
      */
@@ -329,7 +413,7 @@ final class ASCII
             self::prepareAsciiMaps();
 
             /** @psalm-suppress PossiblyNullArrayAccess - we use the prepare* methods here, so we don't get NULL here */
-            $map = self::$ASCII_MAPS['msword'];
+            $map = self::$ASCII_MAPS[self::EXTRA_MSWORD_CHARS_LANGUAGE_CODE];
 
             $MSWORD_CACHE = [
                 'orig'    => \array_keys($map),
@@ -367,7 +451,7 @@ final class ASCII
             self::prepareAsciiMaps();
 
             /** @psalm-suppress PossiblyNullArrayAccess - we use the prepare* methods here, so we don't get NULL here */
-            $WHITESPACE_CACHE[$cacheKey] = self::$ASCII_MAPS[' '];
+            $WHITESPACE_CACHE[$cacheKey] = self::$ASCII_MAPS[self::EXTRA_WHITESPACE_CHARS_LANGUAGE_CODE];
 
             if ($keepNonBreakingSpace === true) {
                 unset($WHITESPACE_CACHE[$cacheKey]["\xc2\xa0"]);
@@ -618,7 +702,7 @@ final class ASCII
                 $TRANSLITERATOR = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII;');
             }
 
-            // INFO: https://unicode.org/cldr/utility/character.jsp?a=%E2%84%8C
+            // INFO: https://unicode.org/cldr/utility/character.jsp
             /** @noinspection PhpComposerExtensionStubsInspection */
             $strTmp = \transliterator_transliterate($TRANSLITERATOR, $str);
 
