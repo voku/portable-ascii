@@ -78,7 +78,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
             'Internationalizaetion'                    => 'Internationalizaetion',
             "中 - &#20013; - %&? - \xc2\x80"            => ' - &#20013; - %&? - ',
             'Un été brûlant sur la côte'               => 'Un ete brulant sur la cote',
-            'Αυτή είναι μια δοκιμή'                    => 'Auth inai mia dokimh',
+            'Αυτή είναι μια δοκιμή'                    => 'Auti inai mia dokimi',
             'أحبك'                                     => 'ahbk',
             'キャンパス'                                    => '',
             'биологическом'                            => 'biologiceskom',

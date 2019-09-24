@@ -38,7 +38,15 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
     {
         $array = ASCII::charsArrayWithMultiLanguageValues();
 
-        static::assertSame(['β', 'б', 'ဗ', 'ბ', 'ب'], $array['b']);
+        static::assertSame(
+            [
+                0 => 'б',
+                1 => 'ဗ',
+                2 => 'ბ',
+                3 => 'ب',
+            ],
+            $array['b']
+        );
 
         // ---
 
@@ -230,7 +238,8 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         $str,
         $language = 'en',
         $removeUnsupported = true
-    ) {
+    )
+    {
         $result = ASCII::to_ascii($str, $language, $removeUnsupported);
 
         static::assertSame($expected, $result, 'tested: ' . $str);
@@ -250,7 +259,30 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['ly\'saya gora', 'лысая гора', ASCII::RUSSIAN_GOST_2000_B_LANGUAGE_CODE],
             ['shhuka', 'щука'],
             ['shhuka', 'щука', ASCII::EXTRA_LATIN_CHARS_LANGUAGE_CODE],
-            ['Ellhniko alfabhto', 'Ελληνικό αλφάβητο', ASCII::GREEK_LANGUAGE_CODE],
+            ['Elliniko alfavito', 'Ελληνικό αλφάβητο', ASCII::GREEK_LANGUAGE_CODE],
+            ['Athina', 'Αθήνα', ASCII::GREEK_LANGUAGE_CODE],
+            [
+                'As prostheso ki eghw oti ta teleftaia dyo khronia pu ekana Xristoughenna stin Thessaloniki ta mona paidia',
+                'Ας προσθέσω κι εγώ ότι τα τελευταία δύο χρόνια που έκανα Χριστούγεννα στην Θεσσαλονίκη τα μόνα παιδιά',
+                ASCII::GREEK_LANGUAGE_CODE,
+            ],
+            [
+                'pu irthan na mas pun ta kallanta itan prosfighopula, koritsia sinithos, apo tin Georghia.',
+                'που ήρθαν να μας πουν τα κάλλαντα ήταν προσφυγόπουλα, κορίτσια συνήθως, από την Γεωργία.',
+                ASCII::GREEK_LANGUAGE_CODE,
+            ],
+            ['A8hna', 'Αθήνα', ASCII::GREEKLISH_LANGUAGE_CODE],
+            [
+                'As nros8esw ki egw oti ta teleutaia dyo xronia nou ekana Xristougenna sthn 8essalonikh ta mona naidia',
+                'Ας προσθέσω κι εγώ ότι τα τελευταία δύο χρόνια που έκανα Χριστούγεννα στην Θεσσαλονίκη τα μόνα παιδιά',
+                ASCII::GREEKLISH_LANGUAGE_CODE,
+            ],
+            [
+                'nou hr8an na mas noun ta kallanta htan nrosfygonoula, koritsia synh8ws, ano thn Gewrgia.',
+                'που ήρθαν να μας πουν τα κάλλαντα ήταν προσφυγόπουλα, κορίτσια συνήθως, από την Γεωργία.',
+                ASCII::GREEKLISH_LANGUAGE_CODE,
+            ],
+            ['Elliniko alfavito', 'Ελληνικό αλφάβητο', ASCII::GREEK_LANGUAGE_CODE],
             ['uThaHaRaNae', 'उदाहरण', ASCII::HINDI_LANGUAGE_CODE],
             ['IGAR', 'IGÅR', ASCII::SWEDISH_LANGUAGE_CODE],
             ['Gronland', 'Grø̈nland', ASCII::SWEDISH_LANGUAGE_CODE],
