@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace voku\tests;
 
 use voku\helper\ASCII;
-use voku\helper\ASCII as u;
 
 /**
  * @internal
@@ -15,37 +14,37 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
     public function testUtf8()
     {
         $str = 'testiñg';
-        static::assertSame('testing', u::to_transliterate($str));
+        static::assertSame('testing', ASCII::to_transliterate($str));
     }
 
     public function testAscii()
     {
         $str = 'testing';
-        static::assertSame('testing', u::to_transliterate($str));
+        static::assertSame('testing', ASCII::to_transliterate($str));
     }
 
     public function testInvalidChar()
     {
         $str = "tes\xE9ting";
-        static::assertSame('testing', u::to_transliterate($str));
+        static::assertSame('testing', ASCII::to_transliterate($str));
     }
 
     public function testEmptyStr()
     {
         $str = '';
-        static::assertEmpty(u::to_transliterate($str));
+        static::assertEmpty(ASCII::to_transliterate($str));
     }
 
     public function testNulAndNon7Bit()
     {
         $str = "a\x00ñ\x00c";
-        static::assertSame('anc', u::to_transliterate($str));
+        static::assertSame('anc', ASCII::to_transliterate($str));
     }
 
     public function testNul()
     {
         $str = "a\x00b\x00c";
-        static::assertSame('abc', u::to_transliterate($str));
+        static::assertSame('abc', ASCII::to_transliterate($str));
     }
 
     public function testToTransliterate()
@@ -145,7 +144,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
 
         for ($i = 0; $i <= 2; ++$i) { // keep this loop for simple performance tests
             foreach ($testsStrict as $before => $after) {
-                static::assertSame($after, ASCII::to_transliterate($before, '?', true, 'en'), 'tested: ' . $before);
+                static::assertSame($after, ASCII::to_transliterate($before, '?', true), 'tested: ' . $before);
             }
         }
     }

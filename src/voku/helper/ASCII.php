@@ -579,9 +579,9 @@ final class ASCII
 
         $str = (string) \preg_replace(
             [
-                '/[^' . $fallback_char_escaped . '\\.\\-a-zA-Z0-9\\s]/', // 1) remove un-needed chars
-                '/[\\s]+/u',                                             // 2) convert spaces to $fallback_char
-                '/[' . $fallback_char_escaped . ']+/u',                  // 3) remove double $fallback_char's
+                '/[^' . $fallback_char_escaped . '.\\-a-zA-Z0-9\\s]/', // 1) remove un-needed chars
+                '/[\\s]+/u',                                           // 2) convert spaces to $fallback_char
+                '/[' . $fallback_char_escaped . ']+/u',                // 3) remove double $fallback_char's
             ],
             [
                 '',
@@ -839,6 +839,8 @@ final class ASCII
      *       DE_DE -> de
      *       de-de -> de
      *
+     * @noinspection ReturnTypeCanBeDeclaredInspection
+     *
      * @param string $language
      *
      * @return string
@@ -858,6 +860,8 @@ final class ASCII
 
     /**
      * Get data from "/data/*.php".
+     *
+     * @noinspection ReturnTypeCanBeDeclaredInspection
      *
      * @param string $file
      *

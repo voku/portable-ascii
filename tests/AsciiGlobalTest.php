@@ -239,6 +239,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
     public function toAsciiProvider(): array
     {
         return [
+            ['      ! " # $ % & \' ( ) * + , @ `', " \v \t \n" . ' ! " # $ % & \' ( ) * + , @ `'], // ascii symbols
             ['foo bar', 'fòô bàř'],
             [' TEST ', ' ŤÉŚŢ '],
             ['f = z = 3', 'φ = ź = 3'],
@@ -305,6 +306,9 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
+    /**
+     * @noinspection DuplicatedCode
+     */
     public function testCleanParameter()
     {
         $dirtyTestString = "\xEF\xBB\xBF„Abcdef\xc2\xa0\x20…” — 😃";
