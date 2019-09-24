@@ -69,6 +69,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
             'Ɓtest'                                    => 'Btest',
             '  -ABC-中文空白-  '                           => '  -ABC--  ',
             "      - abc- \xc2\x87"                    => '      - abc- ',
+            'STRAẞE'                                   => 'STRASSE',
             'abc'                                      => 'abc',
             'deja vu'                                  => 'deja vu',
             'déjà vu'                                  => 'deja vu',

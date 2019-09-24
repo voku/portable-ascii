@@ -1391,7 +1391,7 @@ return [
         'ö' => 'oe',
         'ü' => 'ue',
         'ß' => 'sz',
-        'ẞ' => 'Sz',
+        'ẞ' => 'SZ',
     ],
     // Switzerland (German)
     'de_ch' => [
@@ -1402,7 +1402,7 @@ return [
         'ö' => 'oe',
         'ü' => 'ue',
         'ß' => 'ss',
-        'ẞ' => 'Ss',
+        'ẞ' => 'SS',
     ],
     // English
     'en' => [
