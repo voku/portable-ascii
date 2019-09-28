@@ -14,6 +14,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
     public function slugifyProvider(): array
     {
         return [
+            ['bar', 'foooooo'], // "foooooo" will be replaced in the method call
             ['foo-bar', ' foo  bar '],
             ['foo-bar', 'foo -.-"-...bar'],
             ['another-and-foo-bar', 'another..& foo -.-"-...bar'],
@@ -220,7 +221,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
      */
     public function testSlugify($expected, $str, $replacement = '-')
     {
-        $result = ASCII::to_slugify($str, $replacement);
+        $result = ASCII::to_slugify($str, $replacement, 'en', ['foooooo' => 'bar']);
 
         static::assertSame($expected, $result, 'tested: ' . $str);
     }
@@ -238,8 +239,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         $str,
         $language = 'en',
         $removeUnsupported = true
-    )
-    {
+    ) {
         $result = ASCII::to_ascii($str, $language, $removeUnsupported);
 
         static::assertSame($expected, $result, 'tested: ' . $str);

@@ -5,7 +5,6 @@ parameters:
     autoload_files:
         - %currentWorkingDirectory%/vendor/autoload.php
     ignoreErrors:
-        - '#array\|null supplied for foreach#'
-        - '#function array_merge expects array, array\|null given#'
-        - '#should return array but returns array\|null#'
         - "#.*should return array\\('orig'.*#"
+        - '#array<string, array<string, string>>#'
+        - '#array<string, string>#'

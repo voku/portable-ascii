@@ -93,17 +93,17 @@ final class ASCII
     const EXTRA_MSWORD_CHARS_LANGUAGE_CODE = 'msword';
 
     /**
-     * @var array|null
+     * @var array<string, array<string, string>>|null
      */
     private static $ASCII_MAPS;
 
     /**
-     * @var array|null
+     * @var array<string, array<string, string>>|null
      */
     private static $ASCII_MAPS_EXTRAS;
 
     /**
-     * @var array|null
+     * @var array<string, int>|null
      */
     private static $ORD;
 
@@ -112,7 +112,7 @@ final class ASCII
      *
      * url: https://www.w3.org/International/questions/qa-bidi-unicode-controls
      *
-     * @var array
+     * @var array<int, string>
      */
     private static $BIDI_UNI_CODE_CONTROLS_TABLE = [
         // LEFT-TO-RIGHT EMBEDDING (use -> dir = "ltr")
@@ -142,7 +142,7 @@ final class ASCII
      *
      * @param bool $withExtras
      *
-     * @return array
+     * @return array<string, array<string , string>>
      */
     public static function charsArray(bool $withExtras = false): array
     {
@@ -164,8 +164,8 @@ final class ASCII
      *
      * @param bool $withExtras [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      *
-     * @return array
-     *               <p>An array of replacements.</p>
+     * @return array<string, array<int, string>>
+     *                       <p>An array of replacements.</p>
      */
     public static function charsArrayWithMultiLanguageValues(bool $withExtras = false): array
     {
@@ -202,7 +202,8 @@ final class ASCII
      *
      * @psalm-suppress InvalidNullableReturnType - we use the prepare* methods here, so we don't get NULL here
      *
-     * @param string $language   [optional] <p>Language of the source string e.g.: en, de_at, or de-ch. (default is 'en')</p>
+     * @param string $language   [optional] <p>Language of the source string e.g.: en, de_at, or de-ch. (default is
+     *                           'en')</p>
      * @param bool   $withExtras [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      *
      * @return array{orig: string[], replace: string[]}
@@ -414,7 +415,11 @@ final class ASCII
         if (!isset($MSWORD_CACHE['orig'])) {
             self::prepareAsciiMaps();
 
-            /** @psalm-suppress PossiblyNullArrayAccess - we use the prepare* methods here, so we don't get NULL here */
+            /**
+             * @psalm-suppress PossiblyNullArrayAccess - we use the prepare* methods here, so we don't get NULL here
+             *
+             * @var array
+             */
             $map = self::$ASCII_MAPS[self::EXTRA_MSWORD_CHARS_LANGUAGE_CODE];
 
             $MSWORD_CACHE = [
@@ -604,10 +609,10 @@ final class ASCII
      * is also converted to lowercase. The language of the source string can
      * also be supplied for language-specific transliteration.
      *
-     * @param string   $str
-     * @param string   $separator    [optional] <p>The string used to replace whitespace.</p>
-     * @param string   $language     [optional] <p>Language of the source string. (default is 'en')</p>
-     * @param string[] $replacements [optional] <p>A map of replaceable strings.</p>
+     * @param string                $str
+     * @param string                $separator    [optional] <p>The string used to replace whitespace.</p>
+     * @param string                $language     [optional] <p>Language of the source string. (default is 'en')</p>
+     * @param array<string, string> $replacements [optional] <p>A map of replaceable strings.</p>
      *
      * @return string
      *                <p>A string that has been converted to an URL slug.</p>
@@ -700,7 +705,11 @@ final class ASCII
         ) {
             if (!isset($TRANSLITERATOR)) {
                 // INFO: see "*-Latin" rules via "transliterator_list_ids()"
-                /** @noinspection PhpComposerExtensionStubsInspection */
+                /**
+                 * @noinspection PhpComposerExtensionStubsInspection
+                 *
+                 * @var \Transliterator
+                 */
                 $TRANSLITERATOR = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII;');
             }
 
