@@ -207,8 +207,8 @@ final class ASCII
      *
      * @psalm-suppress InvalidNullableReturnType - we use the prepare* methods here, so we don't get NULL here
      *
-     * @param string $language   [optional] <p>Language of the source string e.g.: en, de_at, or de-ch. (default is
-     *                           'en')</p>
+     * @param string $language   [optional] <p>Language of the source string e.g.: en, de_at, or de-ch.
+     *                           (default is 'en') | ASCII::*_LANGUAGE_CODE</p>
      * @param bool   $withExtras [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      *
      * @return array{orig: string[], replace: string[]}
@@ -531,7 +531,8 @@ final class ASCII
      * to "aeoeue" rather than "aou" as in other languages.
      *
      * @param string $str               <p>The input string.</p>
-     * @param string $language          [optional] <p>Language of the source string. (default is 'en')</p>
+     * @param string $language          [optional] <p>Language of the source string.
+     *                                  (default is 'en') | ASCII::*_LANGUAGE_CODE</p>
      * @param bool   $removeUnsupported [optional] <p>Whether or not to remove the
      *                                  unsupported characters.</p>
      * @param bool   $withExtras        [optional]  <p>Add some more replacements e.g. "£" with " pound ".</p>
@@ -615,7 +616,8 @@ final class ASCII
      *
      * @param string                $str
      * @param string                $separator    [optional] <p>The string used to replace whitespace.</p>
-     * @param string                $language     [optional] <p>Language of the source string. (default is 'en')</p>
+     * @param string                $language     [optional] <p>Language of the source string.
+     *                                            (default is 'en') | ASCII::*_LANGUAGE_CODE</p>
      * @param array<string, string> $replacements [optional] <p>A map of replaceable strings.</p>
      *
      * @return string
