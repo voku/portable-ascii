@@ -85,7 +85,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
             '정, 병호'                                    => ', ',
             'ますだ, よしひこ'                                => ', ',
             'मोनिच'                                    => 'MaNaCa',
-            'क्षȸ'                                     => 'KaShha',
+            'क्षȸ'                                     => 'KaShhadb',
             'أحبك 😀'                                   => 'ahbk ',
             'ذرزسشصضطظعغػؼؽؾؿ 5.99€'                   => 'thrzsshsdtthaagh 5.99',
             'ذرزسشصضطظعغػؼؽؾؿ £5.99'                   => 'thrzsshsdtthaagh 5.99',
