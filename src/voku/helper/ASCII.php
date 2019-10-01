@@ -108,6 +108,11 @@ final class ASCII
     private static $ORD;
 
     /**
+     * @var string
+     */
+    private static $REGEX_ASCII = "/[^\x09\x10\x13\x0A\x0D\x20-\x7E]/";
+
+    /**
      * bidirectional text chars
      *
      * url: https://www.w3.org/International/questions/qa-bidi-unicode-controls
@@ -390,7 +395,7 @@ final class ASCII
             return true;
         }
 
-        return !\preg_match('/[^\x09\x10\x13\x0A\x0D\x20-\x7E]/', $str);
+        return !\preg_match(self::$REGEX_ASCII, $str);
     }
 
     /**
@@ -544,19 +549,18 @@ final class ASCII
             return '';
         }
 
-        $langSpecific = self::charsArrayWithOneLanguage($language, $withExtras);
-        if (!empty($langSpecific)) {
-            $str = \str_replace($langSpecific['orig'], $langSpecific['replace'], $str);
+        $language_specific = self::charsArrayWithOneLanguage($language, $withExtras);
+        if (!empty($language_specific)) {
+            $str = \str_replace($language_specific['orig'], $language_specific['replace'], $str);
         }
 
-        foreach (self::charsArrayWithMultiLanguageValues($withExtras) as $replace => $orig) {
-            $str = \str_replace($orig, $replace, $str);
-        }
+        $language_all = self::charsArrayWithSingleLanguageValues($withExtras);
+        $str = \str_replace($language_all['orig'], $language_all['replace'], $str);
 
-        if ($removeUnsupported) {
+        if ($removeUnsupported === true) {
             $str = (string) \str_replace(["\n\r", "\n", "\r", "\t"], ' ', $str);
             /** @noinspection NotOptimalRegularExpressionsInspection */
-            $str = (string) \preg_replace('/[^\x09\x10\x13\x0A\x0D\x20-\x7E]/', '', $str);
+            $str = (string) \preg_replace(self::$REGEX_ASCII, '', $str);
         }
 
         return $str;
@@ -687,6 +691,7 @@ final class ASCII
         }
 
         // check if we only have ASCII, first (better performance)
+        $str_tmp = $str;
         if (self::is_ascii($str) === true) {
             return $str;
         }
@@ -694,7 +699,11 @@ final class ASCII
         $str = self::clean($str);
 
         // check again, if we only have ASCII, now ...
-        if (self::is_ascii($str) === true) {
+        if (
+            $str_tmp !== $str
+            &&
+            self::is_ascii($str) === true
+        ) {
             return $str;
         }
 
@@ -715,16 +724,21 @@ final class ASCII
 
             // INFO: https://unicode.org/cldr/utility/character.jsp
             /** @noinspection PhpComposerExtensionStubsInspection */
-            $strTmp = \transliterator_transliterate($TRANSLITERATOR, $str);
+            $str_tmp = \transliterator_transliterate($TRANSLITERATOR, $str);
 
-            if ($strTmp !== false) {
-                /** @noinspection CallableParameterUseCaseInTypeContextInspection */
-                $str = $strTmp;
+            if ($str_tmp !== false) {
 
                 // check again, if we only have ASCII, now ...
-                if (self::is_ascii($str) === true) {
-                    return $str;
+                if (
+                    $str_tmp !== $str
+                    &&
+                    self::is_ascii($str_tmp) === true
+                ) {
+                    return $str_tmp;
                 }
+
+                /** @noinspection CallableParameterUseCaseInTypeContextInspection */
+                $str = $str_tmp;
             }
         }
 

@@ -241,7 +241,9 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         $language = 'en',
         $removeUnsupported = true
     ) {
-        $result = ASCII::to_ascii($str, $language, $removeUnsupported);
+        for ($i = 0; $i <= 2; ++$i) { // keep this loop for simple performance tests
+            $result = ASCII::to_ascii($str, $language, $removeUnsupported);
+        }
 
         static::assertSame($expected, $result, 'tested: ' . $str);
     }
