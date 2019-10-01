@@ -45,7 +45,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 1 => 'ဗ',
                 2 => 'ბ',
                 3 => 'ب',
-                4 => 'پ'
+                4 => 'پ',
             ],
             $array['b']
         );
