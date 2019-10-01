@@ -45,6 +45,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 1 => 'ဗ',
                 2 => 'ბ',
                 3 => 'ب',
+                4 => 'پ'
             ],
             $array['b']
         );
@@ -53,7 +54,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         $array = ASCII::charsArrayWithMultiLanguageValues(true);
 
-        static::assertSame(['β', 'б', 'ဗ', 'ბ', 'ب'], $array['b']);
+        static::assertSame(['β', 'б', 'ဗ', 'ბ', 'ب', 'پ'], $array['b']);
         static::assertSame(['&'], $array['&']);
         static::assertSame(['€'], $array[' Euro ']);
     }
