@@ -235,7 +235,7 @@ final class ASCII
             /** @psalm-suppress PossiblyNullOperand - we use the prepare* methods here, so we don't get NULL here */
             if (isset(self::$ASCII_MAPS[$language])) {
                 /** @psalm-suppress PossiblyNullArrayAccess - we use the prepare* methods here, so we don't get NULL here */
-                $tmpArray = \array_merge(self::$ASCII_MAPS[$language] + self::$ASCII_MAPS_EXTRAS[$language]);
+                $tmpArray = \array_merge(self::$ASCII_MAPS[$language], self::$ASCII_MAPS_EXTRAS[$language]);
 
                 $CHARS_ARRAY[$cacheKey][$language] = [
                     'orig'    => \array_keys($tmpArray),
