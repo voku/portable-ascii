@@ -7,4 +7,3 @@ parameters:
     ignoreErrors:
         - "#.*should return array\\('orig'.*#"
         - '#array<string, array<string, string>>#'
-        - '#array<string, string>#'

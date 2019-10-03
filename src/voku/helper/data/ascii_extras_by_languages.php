@@ -1,6 +1,61 @@
 <?php
 
-return  [
+return [
+    // Dutch (Flemish)
+    'nl' => [
+        '=' => ' gelijk ',
+        '%' => ' procent ',
+        '∑' => ' som ',
+        '∆' => ' delta ',
+        '∞' => ' oneindig ',
+        '♥' => ' love ',
+        '&' => ' en ',
+        '+' => ' plus ',
+    ],
+    // Italian
+    'it' => [
+        '=' => ' uguale ',
+        '%' => ' percent ',
+        '∑' => ' somma ',
+        '∆' => ' delta ',
+        '∞' => ' infinito ',
+        '♥' => ' amore ',
+        '&' => ' e ',
+        '+' => ' più ',
+    ],
+    // Macedonian
+    'mk' => [
+        '=' => ' еднаква ',
+        '%' => ' проценти ',
+        '∑' => ' збир ',
+        '∆' => ' делта ',
+        '∞' => ' бесконечност ',
+        '♥' => ' loveубов ',
+        '&' => ' и ',
+        '+' => ' плус ',
+    ],
+    // Portuguese (Brazil)
+    'pt' => [
+        '=' => ' igual ',
+        '%' => ' por cento ',
+        '∑' => ' soma ',
+        '∆' => ' delta ',
+        '∞' => ' infinito ',
+        '♥' => ' amor ',
+        '&' => ' e ',
+        '+' => ' mais ',
+    ],
+    // Greek(lish) (Elláda)
+    'el__greeklish' => [
+        '=' => ' ίσος ',
+        '%' => ' τοις εκατό ',
+        '∑' => ' άθροισμα ',
+        '∆' => ' δέλτα ',
+        '∞' => ' άπειρο ',
+        '♥' => ' αγάπη ',
+        '&' => ' και ',
+        '+' => ' συν ',
+    ],
     // Greek (Elláda)
     'el' => [
         '=' => ' ίσος ',
@@ -408,12 +463,14 @@ return  [
         '&' => ' and ',
         '+' => ' plus ',
     ],
-    // currency
+    // Currency
+    //
+    // url: https://en.wikipedia.org/wiki/Currency_symbol
     'currency' => [
         '€' => ' Euro ',
         '$' => ' Dollar ',
-        '₢' => ' rruzeiro ',
-        '₣' => ' french franc ',
+        '₢' => ' cruzeiro ',
+        '₣' => ' French franc ',
         '£' => ' pound ',
         '₤' => ' lira ',
         '₥' => ' mill ',
@@ -431,15 +488,31 @@ return  [
         '₲' => ' guarani ',
         '₳' => ' austral ',
         '₴' => ' hryvnia ',
+        '₹' => ' rupee ',
+        '₽' => ' ruble ',
         '₵' => ' cedi ',
         '¢' => ' cent ',
         '¥' => ' yen ',
+        '৳' => ' taka ',
         '元' => ' yuan ',
         '円' => ' yen ',
         '﷼' => ' rial ',
+        '៛' => ' riel ',
         '₠' => ' ecu ',
         '¤' => ' currency ',
         '฿' => ' baht ',
+    ],
+    // Temperature
+    //
+    // url: https://en.wikipedia.org/wiki/Conversion_of_units_of_temperature
+    'temperature' => [
+        '°De' => ' Delisle ',
+        '°Re' => ' Reaumur ', // Réaumur
+        '°Ro' => ' Romer ', // Rømer
+        '°R'  => ' Rankine ',
+        '°C'  => ' Celsius ',
+        '°F'  => ' Fahrenheit ',
+        '°N'  => ' Newton ',
     ],
     'latin_symbols' => [
         '©' => ' (c) ',

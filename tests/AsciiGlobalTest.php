@@ -32,6 +32,14 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['one_euro_or_a_dollar', 'one € or a $', '_'],
             ['a\string\with\dashes', 'A string-with-dashes', '\\'],
             ['an_odd_string', '--   An odd__   string-_', '_'],
+            ['Stoynostta-tryabva-da-bade-lazha', 'Стойността трябва да бъде лъжа', '-', 'bg', false],
+            ['Dieser-Wert-sollte-groesser-oder-gleich', 'Dieser Wert sollte größer oder gleich', '-', 'de', false],
+            ['Dieser-Wert-sollte-groeszer-oder-gleich', 'Dieser Wert sollte größer oder gleich', '-', 'de_AT', false],
+            ['Auti-i-timi-prepi-na-inai-psefdis', 'Αυτή η τιμή πρέπει να είναι ψευδής', '-', 'el', false],
+            ['Gai-Bian-Liang-De-Zhi-Ying-Wei', '该变量的值应为', '-', ASCII::CHINESE_LANGUAGE_CODE, false, false, true],
+            ['Gai-Bian-Shu-De-Zhi-Ying-Wei', '該變數的值應為', '-', 'zh_TW', false, false, true],
+            ['Gai-Bian-Liang-De-Zhi-Ying-Wei', '该变量的值应为', '-', ASCII::CHINESE_LANGUAGE_CODE, false, true, true],
+            ['Gai-Bian-Shu-De-Zhi-Ying-Wei', '該變數的值應為', '-', 'zh_TW', false, true, true],
         ];
     }
 
@@ -54,7 +62,16 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         $array = ASCII::charsArrayWithMultiLanguageValues(true);
 
-        static::assertSame(['β', 'б', 'ဗ', 'ბ', 'ب', 'پ'], $array['b']);
+        static::assertSame(
+            [
+                0 => 'б',
+                1 => 'ဗ',
+                2 => 'ბ',
+                3 => 'ب',
+                4 => 'پ',
+            ],
+            $array['b']
+        );
         static::assertSame(['&'], $array['&']);
         static::assertSame(['€'], $array[' Euro ']);
     }
@@ -216,13 +233,32 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
     /**
      * @dataProvider slugifyProvider()
      *
-     * @param mixed $expected
-     * @param mixed $str
-     * @param mixed $replacement
+     * @param string $expected
+     * @param string $str
+     * @param string $replacement
+     * @param string $lang
+     * @param bool   $use_str_to_lower
+     * @param bool   $replace_extra_symbols
+     * @param bool   $use_transliterate
      */
-    public function testSlugify($expected, $str, $replacement = '-')
-    {
-        $result = ASCII::to_slugify($str, $replacement, 'en', ['foooooo' => 'bar']);
+    public function testSlugify(
+        $expected,
+        $str,
+        $replacement = '-',
+        $lang = 'en',
+        $use_str_to_lower = true,
+        $replace_extra_symbols = true,
+        $use_transliterate = false
+    ) {
+        $result = ASCII::to_slugify(
+            $str,
+            $replacement,
+            $lang,
+            ['foooooo' => 'bar'],
+            $replace_extra_symbols,
+            $use_str_to_lower,
+            $use_transliterate
+        );
 
         static::assertSame($expected, $result, 'tested: ' . $str);
     }
@@ -230,19 +266,29 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
     /**
      * @dataProvider toAsciiProvider()
      *
-     * @param mixed $expected
-     * @param mixed $str
-     * @param mixed $language
-     * @param mixed $removeUnsupported
+     * @param string $expected
+     * @param string $str
+     * @param string $language
+     * @param bool   $remove_unsupported_chars
+     * @param bool   $replace_extra_symbols
+     * @param bool   $use_transliterate
      */
     public function testToAscii(
         $expected,
         $str,
         $language = 'en',
-        $removeUnsupported = true
+        $remove_unsupported_chars = true,
+        $replace_extra_symbols = false,
+        $use_transliterate = false
     ) {
         for ($i = 0; $i <= 2; ++$i) { // keep this loop for simple performance tests
-            $result = ASCII::to_ascii($str, $language, $removeUnsupported);
+            $result = ASCII::to_ascii(
+                $str,
+                $language,
+                $remove_unsupported_chars,
+                $replace_extra_symbols,
+                $use_transliterate
+            );
         }
 
         static::assertSame($expected, $result, 'tested: ' . $str);
@@ -253,10 +299,61 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         return [
             ['      ! " # $ % & \' ( ) * + , @ `', " \v \t \n" . ' ! " # $ % & \' ( ) * + , @ `'], // ascii symbols
             ['foo bar', 'fòô bàř'],
-            [' TEST ', ' ŤÉŚŢ '],
+            [' TEST 3C', ' ŤÉŚŢ 3°C'],
+            [' TEST 3 Celsius ', ' ŤÉŚŢ 3°C', ASCII::ENGLISH_LANGUAGE_CODE, true, true],
             ['f = z = 3', 'φ = ź = 3'],
             ['perevirka', 'перевірка'],
             ['ly\'saya gora', 'лысая гора'],
+            ['I  ', 'I ♥ 字'],
+            ['I  ', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE],
+            ['I ♥ 字', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, false],
+            ['I  love  字', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, false, true],
+            ['I ♥ 字', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, false, false],
+            ['I  love  字', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, false, true, false],
+            ['I  love  Zi ', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, false, true, true],
+            ['I ♥ 字', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, false, false, false],
+            ['I ♥ Zi ', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, false, false, true],
+            ['I  ', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, true],
+            ['I  love  ', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, true, true],
+            ['I  ', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, true, false],
+            ['I  love  ', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, true, true, false],
+            ['I  love  Zi ', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, true, true, true],
+            ['I  ', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, true, false, false],
+            ['I  Zi ', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, true, false, true],
+            ['I  Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE],
+            ['I ♥ Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, false],
+            ['I ♥ Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, false, true],
+            ['I ♥ Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, false, false],
+            ['I ♥ Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, false, true, false],
+            ['I ♥ Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, false, true, true],
+            ['I ♥ Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, false, false, false],
+            ['I ♥ Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, false, false, true],
+            ['I  Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, true],
+            ['I  Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, true, true],
+            ['I  Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, true, false],
+            ['I  Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, true, true, false],
+            ['I  Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, true, true, true],
+            ['I  Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, true, false, false],
+            ['I  Zi ', 'I ♥ 字', ASCII::CHINESE_LANGUAGE_CODE, true, false, true],
+            ['I  ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE],
+            ['I ♥ 字', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, false],
+            ['I  liebe  字', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, false, true],
+            ['I ♥ 字', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, false, false],
+            ['I  liebe  字', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, false, true, false],
+            ['I  liebe  Zi ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, false, true, true],
+            ['I ♥ 字', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, false, false, false],
+            ['I ♥ Zi ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, false, false, true],
+            ['I  ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, true],
+            ['I  liebe  ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, true, true],
+            ['I  ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, true, false],
+            ['I  liebe  ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, true, true, false],
+            ['I  liebe  Zi ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, true, true, true],
+            ['I  ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, true, false, false],
+            ['I  Zi ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, true, false, true],
+            ['een oplossing - aou', 'één oplossing - äöü', ASCII::DUTCH_LANGUAGE_CODE],
+            ['Universita', 'Università', ASCII::ITALIAN_LANGUAGE_CODE],
+            ['Makedonska azbuka', 'Македонска азбука', ASCII::MACEDONIAN_LANGUAGE_CODE],
+            ['Eu nao falo portugues.', 'Eu não falo português.', ASCII::PORTUGUESE_LANGUAGE_CODE],
             ['lysaja gora', 'лысая гора', ASCII::RUSSIAN_LANGUAGE_CODE],
             ['lysaia gora', 'лысая гора', ASCII::RUSSIAN_PASSPORT_2013_LANGUAGE_CODE],
             ['ly\'saya gora', 'лысая гора', ASCII::RUSSIAN_GOST_2000_B_LANGUAGE_CODE],
@@ -364,5 +461,27 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         static::assertSame('﻿„Abcdef  …” — 😃', ASCII::clean($dirtyTestString, true, true, false, true));
         static::assertSame('﻿"Abcdef  ..." - 😃', ASCII::clean($dirtyTestString, true, true, true, false));
         static::assertSame('﻿"Abcdef  ..." - 😃', ASCII::clean($dirtyTestString, true, true, true, true));
+    }
+
+    public function testLanguageFiles()
+    {
+        $ascii_by_languages = include __DIR__ . '/../src/voku/helper/data/ascii_by_languages.php';
+        $ascii_extras_by_languages = include __DIR__ . '/../src/voku/helper/data/ascii_extras_by_languages.php';
+
+        $notFound = [];
+        foreach ($ascii_by_languages as $lang => $tmp) {
+            if (\array_key_exists($lang, $ascii_extras_by_languages) === false) {
+                $notFound[$lang] = ' Extra Language was not found! ';
+            }
+        }
+
+        // remove false-positive results
+        unset(
+            $notFound['latin'],
+            $notFound[' '],
+            $notFound['msword']
+        );
+
+        static::assertCount(0, $notFound, \print_r($notFound, true));
     }
 }

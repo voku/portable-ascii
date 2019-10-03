@@ -148,4 +148,10 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
             }
         }
     }
+
+    public function testKeepInvalidChars()
+    {
+        static::assertSame('ahbk 😀 ♥ ', \strtolower(ASCII::to_transliterate('أحبك 😀 ♥ ', null, false)));
+        static::assertSame('ahbk 😀 ♥ ', \strtolower(ASCII::to_transliterate('أحبك 😀 ♥ ', null, true)));
+    }
 }
