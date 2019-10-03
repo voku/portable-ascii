@@ -10,6 +10,8 @@ final class ASCII
     // INFO: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
     //
 
+    const JAPANESE_LANGUAGE_CODE = 'ja';
+
     const CHINESE_LANGUAGE_CODE = 'zh';
 
     const DUTCH_LANGUAGE_CODE = 'nl';

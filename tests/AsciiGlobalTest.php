@@ -350,6 +350,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['I  liebe  Zi ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, true, true, true],
             ['I  ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, true, false, false],
             ['I  Zi ', 'I ♥ 字', ASCII::GERMAN_LANGUAGE_CODE, true, false, true],
+            ['Ri Ben Yu  (nihongo)', '日本語 (にほんご)', ASCII::JAPANESE_LANGUAGE_CODE],
             ['een oplossing - aou', 'één oplossing - äöü', ASCII::DUTCH_LANGUAGE_CODE],
             ['Universita', 'Università', ASCII::ITALIAN_LANGUAGE_CODE],
             ['Makedonska azbuka', 'Македонска азбука', ASCII::MACEDONIAN_LANGUAGE_CODE],
