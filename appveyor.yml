@@ -1,7 +1,7 @@
 build: false
 shallow_clone: false
 platform: 'x86'
-clone_folder: C:\projects\utf8
+clone_folder: C:\projects\ascii
 branches:
   except:
     - gh-pages
@@ -24,7 +24,7 @@ install:
   - echo extension=php_fileinfo.dll >> php.ini
   - echo zend_extension_ts=php_xdebug-2.4.1-7.0-vc14-nts-x86_64.dll >> php.ini
   - SET PATH=C:\tools\php70;%PATH%
-  - cd C:\projects\utf8
+  - cd C:\projects\ascii
   - mkdir build\logs
   - php -r "readfile('http://getcomposer.org/installer');" | php
   - curl -O https://scrutinizer-ci.com/ocular.phar
@@ -35,7 +35,7 @@ install:
   - php composer.phar dump-autoload -o
 
 test_script:
-  - cd C:\projects\utf8
+  - cd C:\projects\ascii
   - php.exe --version
   - dir
   - php.exe vendor\phpunit\phpunit\phpunit -c phpunit.xml
