@@ -11,7 +11,7 @@ install:
   - cinst -y curl
   - cinst -y OpenSSL.Light
   - SET PATH=C:\Program Files\OpenSSL;%PATH%
-  - cinst -y php --version "7.0.16"
+  - cinst -y php --version "7.0.33"
   - cd C:\tools\php70\ext
   - curl -O https://xdebug.org/files/php_xdebug-2.4.1-7.0-vc14-nts-x86_64.dll
   - cd C:\tools\php70
