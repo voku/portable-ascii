@@ -10,6 +10,30 @@ final class ASCII
     // INFO: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
     //
 
+    const UZBEK_LANGUAGE_CODE = 'uz';
+
+    const TURKMEN_LANGUAGE_CODE = 'tk';
+
+    const THAI_LANGUAGE_CODE = 'th';
+
+    const PASHTO_LANGUAGE_CODE = 'ps';
+
+    const ORIYA_LANGUAGE_CODE = 'or';
+
+    const MONGOLIAN_LANGUAGE_CODE = 'mn';
+
+    const KOREAN_LANGUAGE_CODE = 'ko';
+
+    const KIRGHIZ_LANGUAGE_CODE = 'ky';
+
+    const ARMENIAN_LANGUAGE_CODE = 'hy';
+
+    const BENGALI_LANGUAGE_CODE = '	bn';
+
+    const BELARUSIAN_LANGUAGE_CODE = 'be';
+
+    const AMHARIC_LANGUAGE_CODE = 'am';
+
     const JAPANESE_LANGUAGE_CODE = 'ja';
 
     const CHINESE_LANGUAGE_CODE = 'zh';
@@ -79,6 +103,10 @@ final class ASCII
     const PERSIAN_LANGUAGE_CODE = 'fa';
 
     const SERBIAN_LANGUAGE_CODE = 'sr';
+
+    const SERBIAN_CYRILLIC_LANGUAGE_CODE = 'sr__cyr';
+
+    const SERBIAN_LATIN_LANGUAGE_CODE = 'sr__lat';
 
     const AZERBAIJANI_LANGUAGE_CODE = 'az';
 
