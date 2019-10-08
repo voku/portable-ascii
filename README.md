@@ -28,7 +28,6 @@ The project based on ...
 * [Install](#install-portable-ascii-via-composer-require)
 * [Why Portable ASCII?](#why-portable-ascii)
 * [Requirements and Recommendations](#requirements-and-recommendations)
-* [Warning](#warning)
 * [Usage](#usage)
 * [Class methods](#class-methods)
     * [charsArray](#charsarraybool-withextras--false-array)
