@@ -844,6 +844,8 @@ final class ASCII
                         $ord = ($ordC0 - 240) * 262144 + ($ordC1 - 128) * 4096 + ($ordC2 - 128) * 64 + ($ordC3 - 128);
                     }
 
+                    // We only process valid UTF-8 chars (<= 4 byte), so we don't need this code here ...
+                    /*
                     if ($ordC0 >= 248) {
                         $ordC4 = self::$ORD[$c[4]];
 
@@ -859,6 +861,7 @@ final class ASCII
                             }
                         }
                     }
+                     */
                 }
             }
 

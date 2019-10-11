@@ -103,22 +103,58 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
                 'The #会 comment at @בגדה = 10% of *&*'     => 'The #hui comment at @bgdh = 10% of *&*',
                 '∀ i ∈ ℕ'                                  => '? i ? N',
                 '👍 💩 😄 ❤ 👍 💩 😄 ❤أحبك'                      => '? ? ?  ? ? ? ahbk',
+                // Valid ASCII + Invalid Chars
+                "a\xa0\xa1-öäü" => 'a-oau',
+                // Valid 2 Octet Sequence
+                "\xc3\xb1" => 'n', // ñ
+                // Invalid 2 Octet Sequence
+                "\xc3\x28" => '(',
+                // Invalid
+                "\x00"   => '',
+                "a\xDFb" => 'ab',
+                // Invalid Sequence Identifier
+                "\xa0\xa1" => '',
+                // Valid 3 Octet Sequence
+                "\xe2\x82\xa1" => 'CL',
+                // Invalid 3 Octet Sequence (in 2nd Octet)
+                "\xe2\x28\xa1" => '(',
+                // Invalid 3 Octet Sequence (in 3rd Octet)
+                "\xe2\x82\x28" => '(',
+                // Valid 4 Octet Sequence
+                "\xf0\x90\x8c\xbc" => '?',
+                // Invalid 4 Octet Sequence (in 2nd Invalid 4 Octet Sequence (in 2ndOctet)
+                "\xf0\x28\x8c\xbc" => '(',
+                // Invalid 4 Octet Sequence (in 3rd Octet)
+                "\xf0\x90\x28\xbc" => '(',
+                // Invalid 4 Octet Sequence (in 4th Octet)
+                "\xf0\x28\x8c\x28" => '((',
+                // Valid 5 Octet Sequence (but not Unicode!)
+                "\xf8\xa1\xa1\xa1\xa1" => '',
+                // Valid 6 Octet Sequence (but not Unicode!)
+                "\xfc\xa1\xa1\xa1\xa1\xa1" => '',
+                // Valid 6 Octet Sequence (but not Unicode!) + UTF-8 EN SPACE
+                "\xfc\xa1\xa1\xa1\xa1\xa1\xe2\x80\x82" => ' ',
             ];
         }
 
         $tests = [
-            ' '                             => ' ',
-            ''                              => '',
+            // Valid defaults
+            ''                      => '',
+            ' '                     => ' ',
+            null                    => '',
+            '1a'                    => '1a',
+            '2a'                    => '2a',
+            '+1'                    => '+1',
+            "      - abc- \xc2\x87" => '      - abc- ++',
+            'abc'                   => 'abc',
+            // Valid UTF-8
             'أبز'                           => 'abz',
             "\xe2\x80\x99"                  => '\'',
             'Ɓtest'                         => 'Btest',
             '  -ABC-中文空白-  '                => '  -ABC-Zhong Wen Kong Bai -  ',
-            "      - abc- \xc2\x87"         => '      - abc- ++',
-            'abc'                           => 'abc',
             'deja vu'                       => 'deja vu',
             'déjà vu '                      => 'deja vu ',
             'déjà σσς iıii'                 => 'deja sss iiii',
-            'κόσμε'                         => 'kosme',
             "test\x80-\xBFöäü"              => 'test-oau',
             'Internationalizaetion'         => 'Internationalizaetion',
             "中 - &#20013; - %&? - \xc2\x80" => 'Zhong  - &#20013; - %&? - EUR',
@@ -134,11 +170,62 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
             'أحبك 😀'                        => 'aHbk ?',
             '∀ i ∈ ℕ'                       => '? i ? N',
             '👍 💩 😄 ❤ 👍 💩 😄 ❤أحبك'           => '? ? ?  ? ? ? aHbk',
+            '纳达尔绝境下大反击拒绝冷门逆转晋级中网四强'         => 'Na Da Er Jue Jing Xia Da Fan Ji Ju Jue Leng Men Ni Zhuan Jin Ji Zhong Wang Si Qiang ',
+            'κόσμε'                         => 'kosme',
+            '中'                             => 'Zhong ',
+            '«foobar»'                      => '<<foobar>>',
+            // Valid UTF-8 + UTF-8 NO-BREAK SPACE
+            "κόσμε\xc2\xa0" => 'kosme ',
+            // Valid UTF-8 + Invalid Chars
+            "κόσμε\xa0\xa1-öäü" => 'kosme-oau',
+            // Valid UTF-8 + ISO-Errors
+            'DÃ¼sseldorf' => 'DA1/4sseldorf',
+            // Valid invisible char
+            '<x%0Conxxx=1' => '<x%0Conxxx=1',
+            // Valid ASCII
+            'a' => 'a',
+            // Valid emoji (non-UTF-8)
+            '😃'                                                          => '?',
+            '🐵 🙈 🙉 🙊 | ❤️ 💔 💌 💕 💞 💓 💗 💖 💘 💝 💟 💜 💛 💚 💙 | 🚾 🆒 🆓 🆕 🆖 🆗 🆙 🏧' => ['🐵 🙈 🙉 🙊 | ❤️ 💔 💌 💕 💞 💓 💗 💖 💘 💝 💟 💜 💛 💚 💙 | 🚾 🆒 🆓 🆕 🆖 🆗 🆙 🏧' => '? ? ? ? | ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? | ? ? ? ? ? ? ? ?'],
+            // Valid ASCII + Invalid Chars
+            "a\xa0\xa1-öäü" => 'a-oau',
+            // Valid 2 Octet Sequence
+            "\xc3\xb1" => 'n', // ñ
+            // Invalid 2 Octet Sequence
+            "\xc3\x28" => '(',
+            // Invalid
+            "\x00"   => '',
+            "a\xDFb" => 'ab',
+            // Invalid Sequence Identifier
+            "\xa0\xa1" => '',
+            // Valid 3 Octet Sequence
+            "\xe2\x82\xa1" => 'CL',
+            // Invalid 3 Octet Sequence (in 2nd Octet)
+            "\xe2\x28\xa1" => '(',
+            // Invalid 3 Octet Sequence (in 3rd Octet)
+            "\xe2\x82\x28" => '(',
+            // Valid 4 Octet Sequence
+            "\xf0\x90\x8c\xbc" => '?',
+            // Invalid 4 Octet Sequence (in 2nd Invalid 4 Octet Sequence (in 2ndOctet)
+            "\xf0\x28\x8c\xbc" => '(',
+            // Invalid 4 Octet Sequence (in 3rd Octet)
+            "\xf0\x90\x28\xbc" => '(',
+            // Invalid 4 Octet Sequence (in 4th Octet)
+            "\xf0\x28\x8c\x28" => '((',
+            // Valid 5 Octet Sequence (but not Unicode!)
+            "\xf8\xa1\xa1\xa1\xa1" => '',
+            // Valid 6 Octet Sequence (but not Unicode!)
+            "\xfc\xa1\xa1\xa1\xa1\xa1" => '',
+            // Valid 6 Octet Sequence (but not Unicode!) + UTF-8 EN SPACE
+            "\xfc\xa1\xa1\xa1\xa1\xa1\xe2\x80\x82" => ' ',
         ];
 
         for ($i = 0; $i <= 2; ++$i) { // keep this loop for simple performance tests
             foreach ($tests as $before => $after) {
-                static::assertSame($after, ASCII::to_transliterate($before), 'tested: ' . $before);
+                if (\is_array($after)) {
+                    $after = \array_values($after)[0];
+                }
+                static::assertSame($after, ASCII::to_transliterate($before, '?', false), 'tested: ' . $before);
             }
         }
 
@@ -149,21 +236,71 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         }
     }
 
+    public function testCurrency()
+    {
+        $tests = [
+            '€' => 'EUR',
+            '$' => '$',
+            '₢' => 'Cr',
+            '₣' => 'Fr.',
+            '£' => 'PS',
+            '₤' => 'L.',
+            '₶' => '?',
+            'ℳ' => 'M',
+            '₥' => 'mil',
+            '₦' => 'N',
+            '₧' => 'Pts',
+            '₨' => 'Rs',
+            '௹' => '?',
+            '₩' => 'W',
+            '₪' => 'NS',
+            '₸' => '?',
+            '₫' => 'D',
+            '֏' => '?',
+            '₭' => 'K',
+            '₼' => '?',
+            '₮' => 'T',
+            '₯' => 'Dr',
+            '₰' => '?',
+            '₷' => '?',
+            '₱' => '?',
+            'ރ' => 'r',
+            '₲' => '?',
+            '₾' => '?',
+            '₳' => '?',
+            '₴' => '?',
+            '₽' => '?',
+            '₵' => '?',
+            '₡' => 'CL',
+            '¢' => 'C/',
+            '¥' => 'Y=',
+            '៛' => 'KR',
+            '¤' => '$?',
+            '฿' => 'Bh.',
+            '؋' => '?',
+        ];
+
+        foreach ($tests as $before => $after) {
+            static::assertSame($after, ASCII::to_transliterate($before, '?', true), 'tested: ' . $before);
+            static::assertSame($after, ASCII::to_transliterate($before, '?', false), 'tested: ' . $before);
+        }
+    }
+
     public function testKeepInvalidCharsStrict()
     {
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+        if (\strtoupper(\substr(\PHP_OS, 0, 3)) === 'WIN') {
             static::markTestSkipped('TODO? -> not working on Windows???');
         }
 
-        static::assertSame('ahbk 😀 ♥ ', \strtolower(ASCII::to_transliterate('أحبك 😀 ♥ ', null, true)));
+        static::assertSame('ahbk 😀 ♥ 𐎁 𠾴 ᎈ y', \strtolower(ASCII::to_transliterate('أحبك 😀 ♥ 𐎁 𠾴 ᎈ ý', null, true)));
     }
 
     public function testKeepInvalidChars()
     {
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+        if (\strtoupper(\substr(\PHP_OS, 0, 3)) === 'WIN') {
             static::markTestSkipped('TODO? -> not working on Windows???');
         }
 
-        static::assertSame('ahbk 😀 ♥ ', \strtolower(ASCII::to_transliterate('أحبك 😀 ♥ ', null, false)));
+        static::assertSame('ahbk 😀 ♥ 𐎁 𠾴 ᎈ y', \strtolower(ASCII::to_transliterate('أحبك 😀 ♥ 𐎁 𠾴 ᎈ ý', null, false)));
     }
 }

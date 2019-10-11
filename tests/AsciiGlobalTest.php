@@ -14,6 +14,8 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
     public function slugifyProvider(): array
     {
         return [
+            ['', ''],
+            ['', ' '],
             ['bar', 'foooooo'], // "foooooo" will be replaced in the method call
             ['foo-bar', ' foo  bar '],
             ['foo-bar', 'foo -.-"-...bar'],
@@ -58,7 +60,39 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             $array['b']
         );
 
+        // -- check the static cache
+
+        $array = ASCII::charsArrayWithMultiLanguageValues();
+
+        static::assertSame(
+            [
+                0 => 'б',
+                1 => 'ဗ',
+                2 => 'ბ',
+                3 => 'ب',
+                4 => 'پ',
+            ],
+            $array['b']
+        );
+
         // ---
+
+        $array = ASCII::charsArrayWithMultiLanguageValues(true);
+
+        static::assertSame(
+            [
+                0 => 'б',
+                1 => 'ဗ',
+                2 => 'ბ',
+                3 => 'ب',
+                4 => 'پ',
+            ],
+            $array['b']
+        );
+        static::assertSame(['&'], $array['&']);
+        static::assertSame(['€'], $array[' Euro ']);
+
+        // -- check the static cache
 
         $array = ASCII::charsArrayWithMultiLanguageValues(true);
 
@@ -191,6 +225,18 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         $array = ASCII::charsArray();
 
         static::assertSame('b', $array['ru']['б']);
+
+        // ---
+
+        $arrayMore = ASCII::charsArray(true);
+
+        static::assertSame('b', $arrayMore['ru']['б']);
+
+        static::assertSame(' и ', $arrayMore['ru']['&']);
+
+        // ---
+
+        static::assertTrue(\count($arrayMore) > \count($array));
     }
 
     public function testFilterFile()
@@ -281,6 +327,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         $replace_extra_symbols = false,
         $use_transliterate = false
     ) {
+        $result = '';
         for ($i = 0; $i <= 2; ++$i) { // keep this loop for simple performance tests
             $result = ASCII::to_ascii(
                 $str,
@@ -450,6 +497,37 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['aouAOUsz', 'äöüÄÖÜß', ASCII::FRENCH_AUSTRIAN_LANGUAGE_CODE],
             ['aouAOUss', 'äöüÄÖÜß', ASCII::FRENCH_SWITZERLAND_LANGUAGE_CODE],
             ['h H sht Sht a A ia yo', 'х Х щ Щ ъ Ъ иа йо', 'bg'],
+            // Valid ASCII + Invalid Chars
+            ['a-oau', "a\xa0\xa1-öäü"],
+            // Valid 2 Octet Sequence
+            ['n', "\xc3\xb1"], // ñ
+            // Invalid 2 Octet Sequence
+            ['(', "\xc3\x28"],
+            // Invalid
+            ['', "\x00"],
+            ['ab', "a\xDFb"],
+            // Invalid Sequence Identifier
+            ['', "\xa0\xa1"],
+            // Valid 3 Octet Sequence
+            ['CL', "\xe2\x82\xa1"],
+            // Invalid 3 Octet Sequence (in 2nd Octet)
+            ['(', "\xe2\x28\xa1"],
+            // Invalid 3 Octet Sequence (in 3rd Octet)
+            ['(', "\xe2\x82\x28"],
+            // Valid 4 Octet Sequence
+            ['', "\xf0\x90\x8c\xbc"],
+            // Invalid 4 Octet Sequence (in 2nd Invalid 4 Octet Sequence (in 2ndOctet)
+            ['(', "\xf0\x28\x8c\xbc"],
+            // Invalid 4 Octet Sequence (in 3rd Octet)
+            ['(', "\xf0\x90\x28\xbc"],
+            // Invalid 4 Octet Sequence (in 4th Octet)
+            ['((', "\xf0\x28\x8c\x28"],
+            // Valid 5 Octet Sequence (but not Unicode!)
+            ['', "\xf8\xa1\xa1\xa1\xa1"],
+            // Valid 6 Octet Sequence (but not Unicode!)
+            ['', "\xfc\xa1\xa1\xa1\xa1\xa1"],
+            // Valid 6 Octet Sequence (but not Unicode!) + UTF-8 EN SPACE
+            [' ', "\xfc\xa1\xa1\xa1\xa1\xa1\xe2\x80\x82"],
         ];
     }
 
@@ -498,5 +576,52 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         );
 
         static::assertCount(0, $notFound, \print_r($notFound, true));
+    }
+
+    public function testNormalizeMsword()
+    {
+        $tests = [
+            ''                                                                         => '',
+            ' '                                                                        => ' ',
+            '«foobar»'                                                                 => '<<foobar>>',
+            '中文空白 ‟'                                                                   => '中文空白 "',
+            "<ㅡㅡ></ㅡㅡ><div>…</div><input type='email' name='user[email]' /><a>wtf</a>" => "<ㅡㅡ></ㅡㅡ><div>...</div><input type='email' name='user[email]' /><a>wtf</a>",
+            '– DÃ¼sseldorf —'                                                          => '- DÃ¼sseldorf -',
+            '„Abcdef…”'                                                                => '"Abcdef..."',
+        ];
+
+        foreach ($tests as $before => $after) {
+            static::assertSame($after, ASCII::normalize_msword($before));
+        }
+    }
+
+    public function testNormalizeWhitespace()
+    {
+        $tests = [
+            ''                                                                                    => '',
+            ' '                                                                                   => ' ',
+            ' foo ' . "\xe2\x80\xa8" . ' öäü' . "\xe2\x80\xa9"                                    => ' foo   öäü ',
+            "«\xe2\x80\x80foobar\xe2\x80\x80»"                                                    => '« foobar »',
+            '中文空白 ‟'                                                                              => '中文空白 ‟',
+            "<ㅡㅡ></ㅡㅡ><div>\xe2\x80\x85</div><input type='email' name='user[email]' /><a>wtf</a>" => "<ㅡㅡ></ㅡㅡ><div> </div><input type='email' name='user[email]' /><a>wtf</a>",
+            "–\xe2\x80\x8bDÃ¼sseldorf\xe2\x80\x8b—"                                               => '– DÃ¼sseldorf —',
+            "„Abcdef\xe2\x81\x9f”"                                                                => '„Abcdef ”',
+            " foo\t foo "                                                                         => ' foo	 foo ',
+        ];
+
+        for ($i = 0; $i < 2; ++$i) { // keep this loop for simple performance tests
+            foreach ($tests as $before => $after) {
+                static::assertSame($after, ASCII::normalize_whitespace($before));
+            }
+        }
+
+        // replace "non breaking space"
+        static::assertSame('abc- -öäü- -', ASCII::normalize_whitespace("abc-\xc2\xa0-öäü-\xe2\x80\xaf-\xE2\x80\xAC"));
+
+        // keep "non breaking space"
+        static::assertSame("abc-\xc2\xa0-öäü- -", ASCII::normalize_whitespace("abc-\xc2\xa0-öäü-\xe2\x80\xaf-\xE2\x80\xAC", true));
+
+        // ... and keep "bidirectional text chars"
+        static::assertSame("abc-\xc2\xa0-öäü- -\xE2\x80\xAC", ASCII::normalize_whitespace("abc-\xc2\xa0-öäü-\xe2\x80\xaf-\xE2\x80\xAC", true, true));
     }
 }
