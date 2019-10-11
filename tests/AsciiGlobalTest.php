@@ -572,7 +572,8 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         unset(
             $notFound['latin'],
             $notFound[' '],
-            $notFound['msword']
+            $notFound['msword'],
+            $notFound['currency_short']
         );
 
         static::assertCount(0, $notFound, \print_r($notFound, true));
