@@ -51,11 +51,30 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame(
             [
-                0 => 'б',
-                1 => 'ဗ',
-                2 => 'ბ',
-                3 => 'ب',
-                4 => 'پ',
+                0  => 'б',
+                1  => 'ဗ',
+                2  => 'ბ',
+                3  => 'ب',
+                4  => 'پ',
+                5  => 'ƀ',
+                6  => 'ƃ',
+                7  => 'ɓ',
+                8  => 'ᵬ',
+                9  => 'ᶀ',
+                10 => 'ｂ',
+                11 => '𝐛',
+                12 => '𝑏',
+                13 => '𝒃',
+                14 => '𝒷',
+                15 => '𝓫',
+                16 => '𝔟',
+                17 => '𝕓',
+                18 => '𝖇',
+                19 => '𝖻',
+                20 => '𝗯',
+                21 => '𝘣',
+                22 => '𝙗',
+                23 => '𝚋',
             ],
             $array['b']
         );
@@ -66,11 +85,30 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame(
             [
-                0 => 'б',
-                1 => 'ဗ',
-                2 => 'ბ',
-                3 => 'ب',
-                4 => 'پ',
+                0  => 'б',
+                1  => 'ဗ',
+                2  => 'ბ',
+                3  => 'ب',
+                4  => 'پ',
+                5  => 'ƀ',
+                6  => 'ƃ',
+                7  => 'ɓ',
+                8  => 'ᵬ',
+                9  => 'ᶀ',
+                10 => 'ｂ',
+                11 => '𝐛',
+                12 => '𝑏',
+                13 => '𝒃',
+                14 => '𝒷',
+                15 => '𝓫',
+                16 => '𝔟',
+                17 => '𝕓',
+                18 => '𝖇',
+                19 => '𝖻',
+                20 => '𝗯',
+                21 => '𝘣',
+                22 => '𝙗',
+                23 => '𝚋',
             ],
             $array['b']
         );
@@ -81,15 +119,41 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame(
             [
-                0 => 'б',
-                1 => 'ဗ',
-                2 => 'ბ',
-                3 => 'ب',
-                4 => 'پ',
+                0  => 'б',
+                1  => 'ဗ',
+                2  => 'ბ',
+                3  => 'ب',
+                4  => 'پ',
+                5  => 'ƀ',
+                6  => 'ƃ',
+                7  => 'ɓ',
+                8  => 'ᵬ',
+                9  => 'ᶀ',
+                10 => 'ｂ',
+                11 => '𝐛',
+                12 => '𝑏',
+                13 => '𝒃',
+                14 => '𝒷',
+                15 => '𝓫',
+                16 => '𝔟',
+                17 => '𝕓',
+                18 => '𝖇',
+                19 => '𝖻',
+                20 => '𝗯',
+                21 => '𝘣',
+                22 => '𝙗',
+                23 => '𝚋',
             ],
             $array['b']
         );
-        static::assertSame(['&'], $array['&']);
+        static::assertSame(
+            [
+                0 => '&',
+                1 => '﹠',
+                2 => '＆',
+            ],
+            $array['&']
+        );
         static::assertSame(['€'], $array[' Euro ']);
 
         // -- check the static cache
@@ -98,15 +162,41 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame(
             [
-                0 => 'б',
-                1 => 'ဗ',
-                2 => 'ბ',
-                3 => 'ب',
-                4 => 'پ',
+                0  => 'б',
+                1  => 'ဗ',
+                2  => 'ბ',
+                3  => 'ب',
+                4  => 'پ',
+                5  => 'ƀ',
+                6  => 'ƃ',
+                7  => 'ɓ',
+                8  => 'ᵬ',
+                9  => 'ᶀ',
+                10 => 'ｂ',
+                11 => '𝐛',
+                12 => '𝑏',
+                13 => '𝒃',
+                14 => '𝒷',
+                15 => '𝓫',
+                16 => '𝔟',
+                17 => '𝕓',
+                18 => '𝖇',
+                19 => '𝖻',
+                20 => '𝗯',
+                21 => '𝘣',
+                22 => '𝙗',
+                23 => '𝚋',
             ],
             $array['b']
         );
-        static::assertSame(['&'], $array['&']);
+        static::assertSame(
+            [
+                0 => '&',
+                1 => '﹠',
+                2 => '＆',
+            ],
+            $array['&']
+        );
         static::assertSame(['€'], $array[' Euro ']);
     }
 
@@ -341,11 +431,20 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         static::assertSame($expected, $result, 'tested: ' . $str);
     }
 
+    public function testIsAsciiTest()
+    {
+        $a = ASCII::charsArrayWithMultiLanguageValues();
+
+        foreach ($a as $k => $v) {
+            static::assertTrue(ASCII::is_ascii((string) $k), 'tested: ' . $k . ' - ' . \print_r($v, true));
+        }
+    }
+
     public function toAsciiProvider(): array
     {
         return [
             ['      ! " # $ % & \' ( ) * + , @ `', " \v \t \n" . ' ! " # $ % & \' ( ) * + , @ `'], // ascii symbols
-            ['foo bar', 'fòô bàř'],
+            ['foo bar | Z | ~', 'fòô bàř | 🅉 | ~'],
             [' TEST 3C', ' ŤÉŚŢ 3°C'],
             [' TEST 3 Celsius ', ' ŤÉŚŢ 3°C', ASCII::ENGLISH_LANGUAGE_CODE, true, true],
             ['f = z = 3', 'φ = ź = 3'],

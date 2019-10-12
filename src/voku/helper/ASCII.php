@@ -902,7 +902,11 @@ final class ASCII
 
                 if ($unknown === null && $UTF8_TO_TRANSLIT[$bank][$new_char] === '') {
                     $c = $unknown ?? $c;
-                } elseif ($UTF8_TO_TRANSLIT[$bank][$new_char] === '[?]') {
+                } elseif (
+                    $UTF8_TO_TRANSLIT[$bank][$new_char] === '[?]'
+                    ||
+                    $UTF8_TO_TRANSLIT[$bank][$new_char] === '[?] '
+                ) {
                     $c = $unknown ?? $c;
                 } else {
                     $c = $UTF8_TO_TRANSLIT[$bank][$new_char];
@@ -1014,7 +1018,10 @@ final class ASCII
     private static function prepareAsciiMaps()
     {
         if (self::$ASCII_MAPS === null) {
-            self::$ASCII_MAPS = self::getData('ascii_by_languages');
+            self::$ASCII_MAPS = \array_merge_recursive(
+                (array) self::getData('ascii_by_languages'),
+                (array) self::getData('ascii')
+            );
         }
     }
 }
