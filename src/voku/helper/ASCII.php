@@ -709,8 +709,8 @@ final class ASCII
         }
 
         $str = (string) \preg_replace('/^[\'\\s]+|[\'\\s]+$/', '', $str);
-        $str = (string) \preg_replace('/\\B([A-Z])/', '/-\\1/', $str);
-        $str = (string) \preg_replace('/[\\-_\\s]+/', $separator, $str);
+        $str = (string) \preg_replace('/\\B([A-Z])/', '-\1', $str);
+        $str = (string) \preg_replace('/[\\-_\\s]+/u', $separator, $str);
 
         $l = \strlen($separator);
         if (\strpos($str, $separator) === 0) {
