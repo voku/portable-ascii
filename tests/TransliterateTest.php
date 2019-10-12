@@ -186,7 +186,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
             'a' => 'a',
             // Valid emoji (non-UTF-8)
             '😃'                                                          => '?',
-            '🐵 🙈 🙉 🙊 | ❤️ 💔 💌 💕 💞 💓 💗 💖 💘 💝 💟 💜 💛 💚 💙 | 🚾 🆒 🆓 🆕 🆖 🆗 🆙 🏧' => ['🐵 🙈 🙉 🙊 | ❤️ 💔 💌 💕 💞 💓 💗 💖 💘 💝 💟 💜 💛 💚 💙 | 🚾 🆒 🆓 🆕 🆖 🆗 🆙 🏧' => '? ? ? ? | ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? | ? ? ? ? ? ? ? ?'],
+            '🐵 🙈 🙉 🙊 | ❤️ 💔 💌 💕 💞 💓 💗 💖 💘 💝 💟 💜 💛 💚 💙 | 🚾 🆒 🆓 🆕 🆖 🆗 🆙 🏧' => '? ? ? ? | ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? | ? ? ? ? ? ? ? ?',
             // Valid ASCII + Invalid Chars
             "a\xa0\xa1-öäü" => 'a-oau',
             // Valid 2 Octet Sequence
@@ -222,9 +222,6 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
 
         for ($i = 0; $i <= 2; ++$i) { // keep this loop for simple performance tests
             foreach ($tests as $before => $after) {
-                if (\is_array($after)) {
-                    $after = \array_values($after)[0];
-                }
                 static::assertSame($after, ASCII::to_transliterate($before, '?', false), 'tested: ' . $before);
             }
         }
