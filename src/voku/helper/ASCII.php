@@ -258,7 +258,7 @@ final class ASCII
      *                     <p>An array of replacements.</p>
      */
     public static function charsArrayWithOneLanguage(
-        string $language = 'en',
+        string $language = self::ENGLISH_LANGUAGE_CODE,
         bool $replace_extra_symbols = false
     ): array {
         $language = self::get_language($language);
@@ -576,7 +576,7 @@ final class ASCII
      */
     public static function to_ascii(
         string $str,
-        string $language = 'en',
+        string $language = self::ENGLISH_LANGUAGE_CODE,
         bool $remove_unsupported_chars = true,
         bool $replace_extra_symbols = false,
         bool $use_transliterate = false
@@ -674,7 +674,7 @@ final class ASCII
     public static function to_slugify(
         string $str,
         string $separator = '-',
-        string $language = 'en',
+        string $language = self::ENGLISH_LANGUAGE_CODE,
         array $replacements = [],
         bool $replace_extra_symbols = false,
         bool $use_str_to_lower = true,
