@@ -699,7 +699,7 @@ final class ASCII
         $str = \str_replace('@', $separator, $str);
 
         $str = (string) \preg_replace(
-            '/[^a-zA-Z\\d\\s\\-_' . \preg_quote($separator, '/') . ']/u',
+            '/[^a-zA-Z\\d\\s\\-_' . \preg_quote($separator, '/') . ']/',
             '',
             $str
         );
@@ -710,7 +710,7 @@ final class ASCII
 
         $str = (string) \preg_replace('/^[\'\\s]+|[\'\\s]+$/', '', $str);
         $str = (string) \preg_replace('/\\B([A-Z])/', '-\1', $str);
-        $str = (string) \preg_replace('/[\\-_\\s]+/u', $separator, $str);
+        $str = (string) \preg_replace('/[\\-_\\s]+/', $separator, $str);
 
         $l = \strlen($separator);
         if (\strpos($str, $separator) === 0) {
