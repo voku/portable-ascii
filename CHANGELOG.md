@@ -1,5 +1,11 @@
 # Changelog
 
+### 1.3.1 (2019-10-13)
+
+- fix "ASCII::to_slugify" -> remove unicode chars
+- add more test for ascii chars in the mapping
+- fix non ascii chars in the mapping
+
 ### 1.3.0 (2019-10-12)
 
 - add transliteration "fr" (was supported before, but with chars from other languages)
