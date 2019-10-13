@@ -1018,10 +1018,7 @@ final class ASCII
     private static function prepareAsciiMaps()
     {
         if (self::$ASCII_MAPS === null) {
-            self::$ASCII_MAPS = \array_merge_recursive(
-                (array) self::getData('ascii_by_languages'),
-                (array) self::getData('ascii')
-            );
+            self::$ASCII_MAPS = (array) self::getData('ascii_by_languages');
         }
     }
 }
