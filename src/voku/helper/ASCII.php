@@ -228,9 +228,9 @@ final class ASCII
         $language_all_chars = self::charsArrayWithSingleLanguageValues($replace_extra_symbols);
 
         /** @noinspection AlterInForeachInspection */
-        foreach ((array) $language_all_chars['replace'] as $replaceKey => &$replaceValue) {
+        foreach ($language_all_chars['replace'] as $replaceKey => &$replaceValue) {
             /** @noinspection AlterInForeachInspection */
-            foreach ((array) $language_all_chars['orig'] as $origKey => &$origValue) {
+            foreach ($language_all_chars['orig'] as $origKey => &$origValue) {
                 if ($replaceKey === $origKey) {
                     $return[$replaceValue][] = $origValue;
                 }
@@ -1006,8 +1006,8 @@ final class ASCII
 
             /** @psalm-suppress PossiblyNullArgument - we use the prepare* methods here, so we don't get NULL here */
             self::$ASCII_MAPS_AND_EXTRAS = \array_merge_recursive(
-                (array) self::$ASCII_MAPS,
-                (array) self::getData('ascii_extras_by_languages')
+                self::$ASCII_MAPS,
+                self::getData('ascii_extras_by_languages')
             );
         }
     }
@@ -1018,7 +1018,7 @@ final class ASCII
     private static function prepareAsciiMaps()
     {
         if (self::$ASCII_MAPS === null) {
-            self::$ASCII_MAPS = (array) self::getData('ascii_by_languages');
+            self::$ASCII_MAPS = self::getData('ascii_by_languages');
         }
     }
 }
