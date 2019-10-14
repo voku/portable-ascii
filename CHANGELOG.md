@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.3.4 (2019-10-14)
+
+- fix static cache for "ASCII::charsArrayWithOneLanguage"
+
 ### 1.3.3 (2019-10-14)
 
 - fix "Turkish" mapping -> 'ä' -> 'a'
