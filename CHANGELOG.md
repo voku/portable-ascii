@@ -10,7 +10,7 @@
 
 ### 1.3.2 (2019-10-14)
 
-- fix language parameter usag with e.g. "de_DE"
+- fix language parameter usage with e.g. "de_DE"
 - re-add missing "extra"-mapping chars
 
 ### 1.3.1 (2019-10-13)
