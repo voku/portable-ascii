@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.3.3 (2019-10-14)
+
+- fix "Turkish" mapping -> 'ä' -> 'a'
+
 ### 1.3.2 (2019-10-14)
 
 - fix language parameter usag with e.g. "de_DE"
