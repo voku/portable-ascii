@@ -265,7 +265,7 @@ final class ASCII
 
         // init
         static $CHARS_ARRAY = [];
-        $cacheKey = '' . $replace_extra_symbols;
+        $cacheKey = '' . $replace_extra_symbols . '_' . $language;
 
         // check static cache
         if (isset($CHARS_ARRAY[$cacheKey][$language])) {
