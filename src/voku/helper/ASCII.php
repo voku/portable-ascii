@@ -585,6 +585,8 @@ final class ASCII
             return '';
         }
 
+        $language = self::get_language($language);
+
         $language_specific_chars = self::charsArrayWithOneLanguage($language, $replace_extra_symbols);
         if (!empty($language_specific_chars['orig'])) {
             $str = \str_replace($language_specific_chars['orig'], $language_specific_chars['replace'], $str);
@@ -948,6 +950,18 @@ final class ASCII
      */
     private static function get_language(string $language)
     {
+        if ($language === '') {
+            return '';
+        }
+
+        if (
+            \strpos($language, '_') === false
+            &&
+            \strpos($language, '-') === false
+        ) {
+            return \strtolower($language);
+        }
+
         $regex = '/(?<first>[a-z]+)[\-_]\g{first}/i';
 
         return \str_replace(
