@@ -882,9 +882,6 @@ final class ASCII
             $bank = $ord >> 8;
             if (!isset($UTF8_TO_TRANSLIT[$bank])) {
                 $UTF8_TO_TRANSLIT[$bank] = self::getDataIfExists(\sprintf('x%02x', $bank));
-                if ($UTF8_TO_TRANSLIT[$bank] === false) {
-                    $UTF8_TO_TRANSLIT[$bank] = [];
-                }
             }
 
             $new_char = $ord & 255;
@@ -902,16 +899,18 @@ final class ASCII
                 echo "bank:" . $bank . "\n\n";
                  */
 
-                if ($unknown === null && $UTF8_TO_TRANSLIT[$bank][$new_char] === '') {
+                $new_char = $UTF8_TO_TRANSLIT[$bank][$new_char];
+
+                if ($unknown === null && $new_char === '') {
                     $c = $unknown ?? $c;
                 } elseif (
-                    $UTF8_TO_TRANSLIT[$bank][$new_char] === '[?]'
+                    $new_char === '[?]'
                     ||
-                    $UTF8_TO_TRANSLIT[$bank][$new_char] === '[?] '
+                    $new_char === '[?] '
                 ) {
                     $c = $unknown ?? $c;
                 } else {
-                    $c = $UTF8_TO_TRANSLIT[$bank][$new_char];
+                    $c = $new_char;
                 }
             } else {
 
@@ -995,8 +994,7 @@ final class ASCII
      *
      * @param string $file
      *
-     * @return array|false
-     *                     <p>Will return <strong>false</strong> on error.</p>
+     * @return array
      */
     private static function getDataIfExists(string $file)
     {
@@ -1007,7 +1005,7 @@ final class ASCII
             return include $file;
         }
 
-        return false;
+        return [];
     }
 
     /**
