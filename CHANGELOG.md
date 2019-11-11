@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.3.5 (2019-11-11)
+
+- fix "ASCII::remove_invisible_characters()" -> do not remove invisible encoded url strings by default
+
 ### 1.3.4 (2019-10-14)
 
 - fix static cache for "ASCII::charsArrayWithOneLanguage"
