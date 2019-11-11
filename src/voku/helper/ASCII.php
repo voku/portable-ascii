@@ -533,7 +533,7 @@ final class ASCII
      */
     public static function remove_invisible_characters(
         string $str,
-        bool $url_encoded = true,
+        bool $url_encoded = false,
         string $replacement = ''
     ): string {
         // init
