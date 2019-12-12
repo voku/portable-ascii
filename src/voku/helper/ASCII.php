@@ -456,7 +456,7 @@ final class ASCII
             /**
              * @psalm-suppress PossiblyNullArrayAccess - we use the prepare* methods here, so we don't get NULL here
              *
-             * @var array
+             * @var array<string, string>
              */
             $map = self::$ASCII_MAPS[self::EXTRA_MSWORD_CHARS_LANGUAGE_CODE];
 
@@ -979,7 +979,7 @@ final class ASCII
      *
      * @param string $file
      *
-     * @return array
+     * @return array<mixed>
      */
     private static function getData(string $file)
     {
@@ -994,7 +994,7 @@ final class ASCII
      *
      * @param string $file
      *
-     * @return array
+     * @return array<mixed>
      */
     private static function getDataIfExists(string $file)
     {
@@ -1009,7 +1009,7 @@ final class ASCII
     }
 
     /**
-     * @psalm-suppress MissingReturnType
+     * @return void
      */
     private static function prepareAsciiAndExtrasMaps()
     {
@@ -1025,7 +1025,7 @@ final class ASCII
     }
 
     /**
-     * @psalm-suppress MissingReturnType
+     * @return void
      */
     private static function prepareAsciiMaps()
     {

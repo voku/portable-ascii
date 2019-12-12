@@ -205,10 +205,10 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         static::assertContains('yo', $array['replace']);
         static::assertNotContains('Ae', $array['replace']);
-        static::assertContains(' и ', $array['replace']);
+        static::assertContains(' i ', $array['replace']);
         static::assertNotContains(' und ', $array['replace']);
 
-        $tmpKey = \array_search(' и ', $array['replace'], true);
+        $tmpKey = \array_search(' i ', $array['replace'], true);
         static::assertSame('&', $array['orig'][$tmpKey]);
     }
 
@@ -246,7 +246,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame('b', $arrayMore['ru']['б']);
 
-        static::assertSame(' и ', $arrayMore['ru']['&']);
+        static::assertSame(' i ', $arrayMore['ru']['&']);
 
         // ---
 
