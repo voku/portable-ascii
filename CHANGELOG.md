@@ -1,5 +1,10 @@
 # Changelog
 
+### 1.3.6 (2019-12-13)
+
+- "ascii_extras" -> convert the static content into ascii 
+   -> e.g.: instead of replacing "+" with "più" we use "piu" (Italian), because we want to use ascii anyway
+
 ### 1.3.5 (2019-11-11)
 
 - fix "ASCII::remove_invisible_characters()" -> do not remove invisible encoded url strings by default
