@@ -152,7 +152,7 @@ final class ASCII
      *
      * @var string
      */
-    private static $REGEX_ASCII = "/[^\x09\x10\x13\x0A\x0D\x20-\x7E]/";
+    private static $REGEX_ASCII = "[^\x09\x10\x13\x0A\x0D\x20-\x7E]";
 
     /**
      * bidirectional text chars
@@ -318,6 +318,7 @@ final class ASCII
                     $CHARS_ARRAY[$cacheKey][$language] = $tmpArray;
                 }
             } else {
+                /** @noinspection NestedPositiveIfStatementsInspection */
                 if ($asOrigReplaceArray) {
                     $CHARS_ARRAY[$cacheKey][$language] = [
                         'orig'    => [],
@@ -456,7 +457,7 @@ final class ASCII
             return true;
         }
 
-        return !\preg_match(self::$REGEX_ASCII, $str);
+        return !\preg_match('/' . self::$REGEX_ASCII . '/', $str);
     }
 
     /**
@@ -641,28 +642,44 @@ final class ASCII
             $language_all_chars = self::charsArrayWithSingleLanguageValues($replace_extra_symbols);
             $str = \str_replace($language_all_chars['orig'], $language_all_chars['replace'], $str);
         } else {
-            $langAll = self::charsArrayWithSingleLanguageValues(
-                $replace_extra_symbols,
-                false
-            );
+            static $REPLACE_HELPER_CACHE = [];
+            $cacheKey = $language . '-' . $replace_single_chars_only . '-' . $replace_extra_symbols;
 
-            $langSpecific = self::charsArrayWithOneLanguage(
-                $language,
-                $replace_extra_symbols,
-                false
-            );
+            if (!isset($REPLACE_HELPER_CACHE[$cacheKey])) {
+                $helperTmp['orig'] = [];
+                $helperTmp['replace'] = [];
+
+                $langAll = self::charsArrayWithSingleLanguageValues($replace_extra_symbols);
+                if (!empty($langAll)) {
+                    $helperTmp['orig'][] = $langAll['orig'];
+                    $helperTmp['replace'][] = $langAll['replace'];
+                }
+
+                $langSpecific = self::charsArrayWithOneLanguage($language, $replace_extra_symbols);
+                if (!empty($langSpecific)) {
+                    $helperTmp['orig'][] = $langSpecific['orig'];
+                    $helperTmp['replace'][] = $langSpecific['replace'];
+                }
+
+                $helperTmp['orig'] = \array_merge(...$helperTmp['orig']);
+                $helperTmp['replace'] = \array_merge(...$helperTmp['replace']);
+
+                $REPLACE_HELPER_CACHE[$cacheKey] = \array_combine(
+                    $helperTmp['orig'],
+                    $helperTmp['replace']
+                );
+            }
 
             $charDone = [];
-            if (\preg_match_all('/[^\x09\x10\x13\x0A\x0D\x20-\x7E]' . ($replace_extra_symbols ? '|[+&@\p{Sc}]' : '') . '/u', $str, $matches)) {
+            if (\preg_match_all('/' . self::$REGEX_ASCII . ($replace_extra_symbols ? '|[=+&%$@\p{Sc}]' : '') . '/u', $str, $matches)) {
                 foreach ($matches[0] as $char) {
-                    if (!isset($charDone[$char])) {
-                        if (isset($langSpecific[$char])) {
-                            $str = \str_replace($char, $langSpecific[$char], $str);
-                        } elseif (isset($langAll[$char])) {
-                            $str = \str_replace($char, $langAll[$char], $str);
-                        }
-
-                        $charDone[$char] = $char;
+                    if (
+                        !isset($charDone[$char])
+                        &&
+                        isset($REPLACE_HELPER_CACHE[$cacheKey][$char])
+                    ) {
+                        $charDone[$char] = true;
+                        $str = \str_replace($char, $REPLACE_HELPER_CACHE[$cacheKey][$char], $str);
                     }
                 }
             }
@@ -679,7 +696,7 @@ final class ASCII
 
         if ($remove_unsupported_chars === true) {
             $str = (string) \str_replace(["\n\r", "\n", "\r", "\t"], ' ', $str);
-            $str = (string) \preg_replace(self::$REGEX_ASCII, '', $str);
+            $str = (string) \preg_replace('/' . self::$REGEX_ASCII . '/', '', $str);
         }
 
         return $str;
