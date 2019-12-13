@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.4.1 (2019-12-13)
+
+- fix regex for non-ascii
+
 ### 1.4.0 (2019-12-13)
 
 - optimize the performance, via single char replacements

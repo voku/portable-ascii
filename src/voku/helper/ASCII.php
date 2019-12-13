@@ -653,7 +653,7 @@ final class ASCII
             );
 
             $charDone = [];
-            if (\preg_match_all('/[^\x09\x10\x13\x0A\x0D\x20-\x7E]' . ($replace_extra_symbols ? '|[&@\p{Sc}]' : '') . '/u', $str, $matches)) {
+            if (\preg_match_all('/[^\x09\x10\x13\x0A\x0D\x20-\x7E]' . ($replace_extra_symbols ? '|[+&@\p{Sc}]' : '') . '/u', $str, $matches)) {
                 foreach ($matches[0] as $char) {
                     if (!isset($charDone[$char])) {
                         if (isset($langSpecific[$char])) {
