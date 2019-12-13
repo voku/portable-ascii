@@ -253,19 +253,21 @@ final class ASCII
      * @param string $language              [optional] <p>Language of the source string e.g.: en, de_at, or de-ch.
      *                                      (default is 'en') | ASCII::*_LANGUAGE_CODE</p>
      * @param bool   $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
+     * @param bool   $asOrigReplaceArray    [optional] <p>TRUE === return thr {orig: string[], replace: string[]} array</p>
      *
-     * @return array{orig: string[], replace: string[]}
+     * @return array{orig: string[], replace: string[]}|array<string, string>
      *                     <p>An array of replacements.</p>
      */
     public static function charsArrayWithOneLanguage(
         string $language = self::ENGLISH_LANGUAGE_CODE,
-        bool $replace_extra_symbols = false
+        bool $replace_extra_symbols = false,
+        bool $asOrigReplaceArray = true
     ): array {
         $language = self::get_language($language);
 
         // init
         static $CHARS_ARRAY = [];
-        $cacheKey = '' . $replace_extra_symbols;
+        $cacheKey = '' . $replace_extra_symbols . '-' . $asOrigReplaceArray;
 
         // check static cache
         if (isset($CHARS_ARRAY[$cacheKey][$language])) {
@@ -278,15 +280,24 @@ final class ASCII
             if (isset(self::$ASCII_MAPS_AND_EXTRAS[$language])) {
                 $tmpArray = self::$ASCII_MAPS_AND_EXTRAS[$language];
 
-                $CHARS_ARRAY[$cacheKey][$language] = [
-                    'orig'    => \array_keys($tmpArray),
-                    'replace' => \array_values($tmpArray),
-                ];
+                if ($asOrigReplaceArray) {
+                    $CHARS_ARRAY[$cacheKey][$language] = [
+                        'orig'    => \array_keys($tmpArray),
+                        'replace' => \array_values($tmpArray),
+                    ];
+                } else {
+                    $CHARS_ARRAY[$cacheKey][$language] = $tmpArray;
+                }
             } else {
-                $CHARS_ARRAY[$cacheKey][$language] = [
-                    'orig'    => [],
-                    'replace' => [],
-                ];
+                /** @noinspection NestedPositiveIfStatementsInspection */
+                if ($asOrigReplaceArray) {
+                    $CHARS_ARRAY[$cacheKey][$language] = [
+                        'orig'    => [],
+                        'replace' => [],
+                    ];
+                } else {
+                    $CHARS_ARRAY[$cacheKey][$language] = [];
+                }
             }
         } else {
             self::prepareAsciiMaps();
@@ -294,15 +305,23 @@ final class ASCII
             if (isset(self::$ASCII_MAPS[$language])) {
                 $tmpArray = self::$ASCII_MAPS[$language];
 
-                $CHARS_ARRAY[$cacheKey][$language] = [
-                    'orig'    => \array_keys($tmpArray),
-                    'replace' => \array_values($tmpArray),
-                ];
+                if ($asOrigReplaceArray) {
+                    $CHARS_ARRAY[$cacheKey][$language] = [
+                        'orig'    => \array_keys($tmpArray),
+                        'replace' => \array_values($tmpArray),
+                    ];
+                } else {
+                    $CHARS_ARRAY[$cacheKey][$language] = $tmpArray;
+                }
             } else {
-                $CHARS_ARRAY[$cacheKey][$language] = [
-                    'orig'    => [],
-                    'replace' => [],
-                ];
+                if ($asOrigReplaceArray) {
+                    $CHARS_ARRAY[$cacheKey][$language] = [
+                        'orig'    => [],
+                        'replace' => [],
+                    ];
+                } else {
+                    $CHARS_ARRAY[$cacheKey][$language] = [];
+                }
             }
         }
 
@@ -313,15 +332,18 @@ final class ASCII
      * Returns an replacement array for ASCII methods with multiple languages.
      *
      * @param bool $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
+     * @param bool $asOrigReplaceArray    [optional] <p>TRUE === return thr {orig: string[], replace: string[]} array</p>
      *
-     * @return array{orig: string[], replace: string[]}
+     * @return array{orig: string[], replace: string[]}|array<string, string>
      *                     <p>An array of replacements.</p>
      */
-    public static function charsArrayWithSingleLanguageValues(bool $replace_extra_symbols = false): array
-    {
+    public static function charsArrayWithSingleLanguageValues(
+        bool $replace_extra_symbols = false,
+        bool $asOrigReplaceArray = true
+    ): array {
         // init
         static $CHARS_ARRAY = [];
-        $cacheKey = '' . $replace_extra_symbols;
+        $cacheKey = '' . $replace_extra_symbols . '-' . $asOrigReplaceArray;
 
         if (isset($CHARS_ARRAY[$cacheKey])) {
             return $CHARS_ARRAY[$cacheKey];
@@ -347,10 +369,12 @@ final class ASCII
 
         $CHARS_ARRAY[$cacheKey] = \array_merge([], ...$CHARS_ARRAY[$cacheKey]);
 
-        $CHARS_ARRAY[$cacheKey] = [
-            'orig'    => \array_keys($CHARS_ARRAY[$cacheKey]),
-            'replace' => \array_values($CHARS_ARRAY[$cacheKey]),
-        ];
+        if ($asOrigReplaceArray) {
+            $CHARS_ARRAY[$cacheKey] = [
+                'orig'    => \array_keys($CHARS_ARRAY[$cacheKey]),
+                'replace' => \array_values($CHARS_ARRAY[$cacheKey]),
+            ];
+        }
 
         return $CHARS_ARRAY[$cacheKey];
     }
@@ -563,13 +587,16 @@ final class ASCII
      * en, en_GB, or en-GB. For example, passing "de" results in "äöü" mapping
      * to "aeoeue" rather than "aou" as in other languages.
      *
-     * @param string $str                      <p>The input string.</p>
-     * @param string $language                 [optional] <p>Language of the source string.
-     *                                         (default is 'en') | ASCII::*_LANGUAGE_CODE</p>
-     * @param bool   $remove_unsupported_chars [optional] <p>Whether or not to remove the
-     *                                         unsupported characters.</p>
-     * @param bool   $replace_extra_symbols    [optional]  <p>Add some more replacements e.g. "£" with " pound ".</p>
-     * @param bool   $use_transliterate        [optional]  <p>Use ASCII::to_transliterate() for unknown chars.</p>
+     * @param string    $str                       <p>The input string.</p>
+     * @param string    $language                  [optional] <p>Language of the source string.
+     *                                             (default is 'en') | ASCII::*_LANGUAGE_CODE</p>
+     * @param bool      $remove_unsupported_chars  [optional] <p>Whether or not to remove the
+     *                                             unsupported characters.</p>
+     * @param bool      $replace_extra_symbols     [optional]  <p>Add some more replacements e.g. "£" with " pound ".</p>
+     * @param bool      $use_transliterate         [optional]  <p>Use ASCII::to_transliterate() for unknown chars.</p>
+     * @param bool|null $replace_single_chars_only [optional]  <p>Single char replacement is better for the
+     *                                             performance, but some languages need to replace more then one char
+     *                                             at the same time. | NULL === auto-setting, depended on the language</p>
      *
      * @return string
      *                <p>A string that contains only ASCII characters.</p>
@@ -579,21 +606,64 @@ final class ASCII
         string $language = self::ENGLISH_LANGUAGE_CODE,
         bool $remove_unsupported_chars = true,
         bool $replace_extra_symbols = false,
-        bool $use_transliterate = false
+        bool $use_transliterate = false,
+        bool $replace_single_chars_only = null
     ): string {
         if ($str === '') {
             return '';
         }
 
-        $language = self::get_language($language);
+        if ($replace_single_chars_only === null) {
+            $multi_length_char_lenguages = [
+                self::GREEKLISH_LANGUAGE_CODE,
+                self::GREEK_LANGUAGE_CODE,
+                self::MYANMAR_LANGUAGE_CODE,
+            ];
 
-        $language_specific_chars = self::charsArrayWithOneLanguage($language, $replace_extra_symbols);
-        if (!empty($language_specific_chars['orig'])) {
-            $str = \str_replace($language_specific_chars['orig'], $language_specific_chars['replace'], $str);
+            if (\in_array($language, $multi_length_char_lenguages, true)) {
+                $replace_single_chars_only = false;
+            } else {
+                $replace_single_chars_only = true;
+            }
         }
 
-        $language_all_chars = self::charsArrayWithSingleLanguageValues($replace_extra_symbols);
-        $str = \str_replace($language_all_chars['orig'], $language_all_chars['replace'], $str);
+        $language = self::get_language($language);
+
+        if (!$replace_single_chars_only) {
+            $language_specific_chars = self::charsArrayWithOneLanguage($language, $replace_extra_symbols);
+            if (!empty($language_specific_chars['orig'])) {
+                $str = \str_replace($language_specific_chars['orig'], $language_specific_chars['replace'], $str);
+            }
+
+            $language_all_chars = self::charsArrayWithSingleLanguageValues($replace_extra_symbols);
+            $str = \str_replace($language_all_chars['orig'], $language_all_chars['replace'], $str);
+        } else {
+            $langAll = self::charsArrayWithSingleLanguageValues(
+                $replace_extra_symbols,
+                false
+            );
+
+            $langSpecific = self::charsArrayWithOneLanguage(
+                $language,
+                $replace_extra_symbols,
+                false
+            );
+
+            $charDone = [];
+            if (\preg_match_all('/[^\x09\x10\x13\x0A\x0D\x20-\x7E]' . ($replace_extra_symbols ? '|[&@\p{Sc}]' : '') . '/u', $str, $matches)) {
+                foreach ($matches[0] as $char) {
+                    if (!isset($charDone[$char])) {
+                        if (isset($langSpecific[$char])) {
+                            $str = \str_replace($char, $langSpecific[$char], $str);
+                        } elseif (isset($langAll[$char])) {
+                            $str = \str_replace($char, $langAll[$char], $str);
+                        }
+
+                        $charDone[$char] = $char;
+                    }
+                }
+            }
+        }
 
         /** @psalm-suppress PossiblyNullOperand - we use the prepare* methods here, so we don't get NULL here */
         if (!isset(self::$ASCII_MAPS[$language])) {

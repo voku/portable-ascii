@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.4.0 (2019-12-13)
+
+- optimize the performance, via single char replacements
+
 ### 1.3.6 (2019-12-13)
 
 - "ascii_extras" -> convert the static content into ascii 
