@@ -196,14 +196,12 @@ final class ASCII
         if ($replace_extra_symbols) {
             self::prepareAsciiAndExtrasMaps();
 
-            /** @psalm-suppress NullableReturnStatement */
-            return self::$ASCII_MAPS_AND_EXTRAS;
+            return self::$ASCII_MAPS_AND_EXTRAS ?? [];
         }
 
         self::prepareAsciiMaps();
 
-        /** @psalm-suppress NullableReturnStatement */
-        return self::$ASCII_MAPS;
+        return self::$ASCII_MAPS ?? [];
     }
 
     /**
@@ -225,19 +223,25 @@ final class ASCII
 
         // init
         $return = [];
-        $language_all_chars = self::charsArrayWithSingleLanguageValues($replace_extra_symbols);
+        $language_all_chars = self::charsArrayWithSingleLanguageValues(
+            $replace_extra_symbols,
+            false
+        );
+
+        /** @noinspection PhpSillyAssignmentInspection - hack for phpstan */
+        /** @var array<string, string> $language_all_chars */
+        $language_all_chars = $language_all_chars;
 
         /** @noinspection AlterInForeachInspection */
-        foreach ($language_all_chars['replace'] as $replaceKey => &$replaceValue) {
-            /** @noinspection AlterInForeachInspection */
-            foreach ($language_all_chars['orig'] as $origKey => &$origValue) {
-                if ($replaceKey === $origKey) {
-                    $return[$replaceValue][] = $origValue;
-                }
-            }
+        foreach ($language_all_chars as $key => &$value) {
+            $return[$value][] = $key;
         }
 
         $CHARS_ARRAY[$cacheKey] = $return;
+
+        /** @noinspection PhpSillyAssignmentInspection - hack for phpstan */
+        /** @var array<string, array<int, string>> $return */
+        $return = $return;
 
         return $return;
     }
@@ -354,7 +358,7 @@ final class ASCII
 
             /** @noinspection AlterInForeachInspection */
             /** @psalm-suppress PossiblyNullIterator - we use the prepare* methods here, so we don't get NULL here */
-            foreach (self::$ASCII_MAPS_AND_EXTRAS as &$map) {
+            foreach (self::$ASCII_MAPS_AND_EXTRAS ?? [] as &$map) {
                 $CHARS_ARRAY[$cacheKey][] = $map;
             }
         } else {
@@ -362,7 +366,7 @@ final class ASCII
 
             /** @noinspection AlterInForeachInspection */
             /** @psalm-suppress PossiblyNullIterator - we use the prepare* methods here, so we don't get NULL here */
-            foreach (self::$ASCII_MAPS as &$map) {
+            foreach (self::$ASCII_MAPS ?? [] as &$map) {
                 $CHARS_ARRAY[$cacheKey][] = $map;
             }
         }
@@ -482,7 +486,7 @@ final class ASCII
              *
              * @var array<string, string>
              */
-            $map = self::$ASCII_MAPS[self::EXTRA_MSWORD_CHARS_LANGUAGE_CODE];
+            $map = self::$ASCII_MAPS[self::EXTRA_MSWORD_CHARS_LANGUAGE_CODE] ?? [];
 
             $MSWORD_CACHE = [
                 'orig'    => \array_keys($map),
@@ -519,8 +523,7 @@ final class ASCII
         if (!isset($WHITESPACE_CACHE[$cacheKey])) {
             self::prepareAsciiMaps();
 
-            /** @psalm-suppress PossiblyNullArrayAccess - we use the prepare* methods here, so we don't get NULL here */
-            $WHITESPACE_CACHE[$cacheKey] = self::$ASCII_MAPS[self::EXTRA_WHITESPACE_CHARS_LANGUAGE_CODE];
+            $WHITESPACE_CACHE[$cacheKey] = self::$ASCII_MAPS[self::EXTRA_WHITESPACE_CHARS_LANGUAGE_CODE] ?? [];
 
             if ($keepNonBreakingSpace === true) {
                 unset($WHITESPACE_CACHE[$cacheKey]["\xc2\xa0"]);
@@ -1088,7 +1091,7 @@ final class ASCII
 
             /** @psalm-suppress PossiblyNullArgument - we use the prepare* methods here, so we don't get NULL here */
             self::$ASCII_MAPS_AND_EXTRAS = \array_merge_recursive(
-                self::$ASCII_MAPS,
+                self::$ASCII_MAPS ?? [],
                 self::getData('ascii_extras_by_languages')
             );
         }

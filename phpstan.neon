@@ -7,6 +7,4 @@ parameters:
         - %currentWorkingDirectory%/tests/*
     autoload_files:
         - %currentWorkingDirectory%/vendor/autoload.php
-    ignoreErrors:
-        - "#.*should return array\\('orig'.*#"
-        - '#array<string, array<string, string>>#'
+
