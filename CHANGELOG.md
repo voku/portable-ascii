@@ -1,5 +1,10 @@
 # Changelog
 
+### 1.4.2 (2019-12-13)
+
+- optimize the performance v2
+- more fixes for non-ascii regex
+
 ### 1.4.1 (2019-12-13)
 
 - fix regex for non-ascii
