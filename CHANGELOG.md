@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.4.4 (2019-12-19)
+
+- use "@psalm-immutable" and "@psalm-pure"
+
 ### 1.4.2 (2019-12-13)
 
 - optimize the performance v2
