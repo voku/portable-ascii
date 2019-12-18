@@ -1,6 +1,6 @@
 # Changelog
 
-### 1.4.4 (2019-12-19)
+### 1.4.3 (2019-12-19)
 
 - use "@psalm-immutable" and "@psalm-pure"
 
