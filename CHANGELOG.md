@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.4.5 (2019-12-19)
+
+- use "@psalm-pure" v2
+
 ### 1.4.4 (2019-12-19)
 
 - use "@psalm-pure"
