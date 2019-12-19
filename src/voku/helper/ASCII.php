@@ -219,6 +219,11 @@ final class ASCII
      */
     public static function charsArrayWithMultiLanguageValues(bool $replace_extra_symbols = false): array
     {
+        /**
+         * @psalm-suppress ImpureStaticVariable
+         *
+         * @var array<string,array>
+         */
         static $CHARS_ARRAY = [];
         $cacheKey = '' . $replace_extra_symbols;
 
@@ -264,6 +269,7 @@ final class ASCII
      * @param bool   $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      * @param bool   $asOrigReplaceArray    [optional] <p>TRUE === return thr {orig: string[], replace: string[]}
      *                                      array</p>
+     * @psalm-pure
      *
      * @return array{orig: string[], replace: string[]}|array<string, string>
      *                     <p>An array of replacements.</p>
@@ -276,6 +282,11 @@ final class ASCII
         $language = self::get_language($language);
 
         // init
+        /**
+         * @psalm-suppress ImpureStaticVariable
+         *
+         * @var array<string,array>
+         */
         static $CHARS_ARRAY = [];
         $cacheKey = '' . $replace_extra_symbols . '-' . $asOrigReplaceArray;
 
@@ -345,6 +356,7 @@ final class ASCII
      * @param bool $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      * @param bool $asOrigReplaceArray    [optional] <p>TRUE === return thr {orig: string[], replace: string[]}
      *                                    array</p>
+     * @psalm-pure
      *
      * @return array{orig: string[], replace: string[]}|array<string, string>
      *                     <p>An array of replacements.</p>
@@ -354,6 +366,11 @@ final class ASCII
         bool $asOrigReplaceArray = true
     ): array {
         // init
+        /**
+         * @psalm-suppress ImpureStaticVariable
+         *
+         * @var array<string,array>
+         */
         static $CHARS_ARRAY = [];
         $cacheKey = '' . $replace_extra_symbols . '-' . $asOrigReplaceArray;
 
@@ -405,6 +422,8 @@ final class ASCII
      *                                            $normalize_whitespace</p>
      * @param bool   $remove_invisible_characters [optional] <p>Set to false, if you not want to remove invisible
      *                                            characters e.g.: "\0"</p>
+     *
+     * @psalm-pure
      *
      * @return string
      *                <p>A clean UTF-8 string.</p>
@@ -476,6 +495,8 @@ final class ASCII
      *
      * @param string $str <p>The string to be normalized.</p>
      *
+     * @psalm-pure
+     *
      * @return string
      *                <p>A string with normalized characters for commonly used chars in Word documents.</p>
      */
@@ -486,9 +507,14 @@ final class ASCII
         }
 
         // init
-        static $MSWORD_CACHE = [];
+        /**
+         * @psalm-suppress ImpureStaticVariable
+         *
+         * @var array{orig: string[], replace: string[]}
+         */
+        static $MSWORD_CACHE = ['orig' => [], 'replace' => []];
 
-        if (!isset($MSWORD_CACHE['orig'])) {
+        if (empty($MSWORD_CACHE['orig'])) {
             self::prepareAsciiMaps();
 
             /**
@@ -515,6 +541,8 @@ final class ASCII
      * @param bool   $keepBidiUnicodeControls [optional] <p>Set to true, to keep non-printable (for the web)
      *                                        bidirectional text chars.</p>
      *
+     * @psalm-pure
+     *
      * @return string
      *                <p>A string with normalized whitespace.</p>
      */
@@ -527,6 +555,11 @@ final class ASCII
             return '';
         }
 
+        /**
+         * @psalm-suppress ImpureStaticVariable
+         *
+         * @var array<int,array<string,string>>
+         */
         static $WHITESPACE_CACHE = [];
         $cacheKey = (int) $keepNonBreakingSpace;
 
@@ -543,10 +576,15 @@ final class ASCII
         }
 
         if ($keepBidiUnicodeControls === false) {
+            /**
+             * @var array<int,string>|null
+             *
+             * @psalm-suppress ImpureStaticVariable
+             */
             static $BIDI_UNICODE_CONTROLS_CACHE = null;
 
             if ($BIDI_UNICODE_CONTROLS_CACHE === null) {
-                $BIDI_UNICODE_CONTROLS_CACHE = \array_values(self::$BIDI_UNI_CODE_CONTROLS_TABLE);
+                $BIDI_UNICODE_CONTROLS_CACHE = self::$BIDI_UNI_CODE_CONTROLS_TABLE;
             }
 
             $str = \str_replace($BIDI_UNICODE_CONTROLS_CACHE, '', $str);
@@ -615,6 +653,8 @@ final class ASCII
      *                                             at the same time. | NULL === auto-setting, depended on the
      *                                             language</p>
      *
+     * @psalm-pure
+     *
      * @return string
      *                <p>A string that contains only ASCII characters.</p>
      */
@@ -655,6 +695,11 @@ final class ASCII
             $language_all_chars = self::charsArrayWithSingleLanguageValues($replace_extra_symbols);
             $str = \str_replace($language_all_chars['orig'], $language_all_chars['replace'], $str);
         } else {
+            /**
+             * @psalm-suppress ImpureStaticVariable
+             *
+             * @var array<string,array{orig: string[], replace: string[]}>
+             */
             static $REPLACE_HELPER_CACHE = [];
             $cacheKey = $language . '-' . $replace_single_chars_only . '-' . $replace_extra_symbols;
 
@@ -665,8 +710,8 @@ final class ASCII
 
                 $langAll = self::charsArrayWithSingleLanguageValues($replace_extra_symbols);
                 if (!empty($langAll)) {
-                    assert(is_array($langAll['orig']));
-                    assert(is_array($langAll['replace']));
+                    \assert(\is_array($langAll['orig']));
+                    \assert(\is_array($langAll['replace']));
 
                     $helperTmp['orig'][] = $langAll['orig'];
                     $helperTmp['replace'][] = $langAll['replace'];
@@ -674,8 +719,8 @@ final class ASCII
 
                 $langSpecific = self::charsArrayWithOneLanguage($language, $replace_extra_symbols);
                 if (!empty($langSpecific)) {
-                    assert(is_array($langSpecific['orig']));
-                    assert(is_array($langSpecific['replace']));
+                    \assert(\is_array($langSpecific['orig']));
+                    \assert(\is_array($langSpecific['replace']));
 
                     $helperTmp['orig'][] = $langSpecific['orig'];
                     $helperTmp['replace'][] = $langSpecific['replace'];
@@ -688,6 +733,8 @@ final class ASCII
                     $helperTmp['orig'],
                     $helperTmp['replace']
                 );
+
+                \assert(\is_array($REPLACE_HELPER_CACHE[$cacheKey]));
             }
 
             $charDone = [];
@@ -729,6 +776,8 @@ final class ASCII
      * @param bool   $use_transliterate <p>ASCII::to_transliterate() is used by default - unsafe characters are
      *                                  simply replaced with hyphen otherwise.</p>
      * @param string $fallback_char
+     *
+     * @psalm-pure
      *
      * @return string
      *                <p>A string that contains only safe characters for a filename.</p>
@@ -779,6 +828,7 @@ final class ASCII
      * @param bool                  $use_str_to_lower      [optional] <p>Use "string to lower" for the input.</p>
      * @param bool                  $use_transliterate     [optional]  <p>Use ASCII::to_transliterate() for unknown
      *                                                     chars.</p>
+     * @psalm-pure
      *
      * @return string
      *                <p>A string that has been converted to an URL slug.</p>
@@ -846,6 +896,8 @@ final class ASCII
      *                             But you can also use NULL to keep the unknown chars.</p>
      * @param bool        $strict  [optional] <p>Use "transliterator_transliterate()" from PHP-Intl
      *
+     * @psalm-pure
+     *
      * @return string
      *                <p>A String that contains only ASCII characters.</p>
      */
@@ -854,16 +906,33 @@ final class ASCII
         $unknown = '?',
         bool $strict = false
     ): string {
+        /**
+         * @psalm-suppress ImpureStaticVariable
+         *
+         * @var array<int,string>|null
+         */
         static $UTF8_TO_TRANSLIT = null;
+
+        /**
+         * @psalm-suppress ImpureStaticVariable
+         *
+         * null|\Transliterator
+         */
         static $TRANSLITERATOR = null;
-        static $SUPPORT = [];
+
+        /**
+         * @psalm-suppress ImpureStaticVariable
+         *
+         * @var bool|null
+         */
+        static $SUPPORT_INTL = null;
 
         if ($str === '') {
             return '';
         }
 
-        if (!isset($SUPPORT['intl'])) {
-            $SUPPORT['intl'] = \extension_loaded('intl');
+        if ($SUPPORT_INTL === null) {
+            $SUPPORT_INTL = \extension_loaded('intl');
         }
 
         // check if we only have ASCII, first (better performance)
@@ -886,7 +955,7 @@ final class ASCII
         if (
             $strict === true
             &&
-            $SUPPORT['intl'] === true
+            $SUPPORT_INTL === true
         ) {
             if (!isset($TRANSLITERATOR)) {
                 // INFO: see "*-Latin" rules via "transliterator_list_ids()"
