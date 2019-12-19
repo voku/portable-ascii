@@ -214,6 +214,8 @@ final class ASCII
      *
      * @param bool $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      *
+     * @psalm-pure
+     *
      * @return array<string, array<int, string>>
      *                       <p>An array of replacements.</p>
      */
