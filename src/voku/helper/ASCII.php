@@ -669,14 +669,14 @@ final class ASCII
      * en, en_GB, or en-GB. For example, passing "de" results in "äöü" mapping
      * to "aeoeue" rather than "aou" as in other languages.
      *
-     * @param string $str                      <p>The input string.</p>
-     * @param string $language                 [optional] <p>Language of the source string.
-     *                                         (default is 'en') | ASCII::*_LANGUAGE_CODE</p>
-     * @param bool   $remove_unsupported_chars [optional] <p>Whether or not to remove the
-     *                                         unsupported characters.</p>
-     * @param bool   $replace_extra_symbols    [optional]  <p>Add some more replacements e.g. "£" with " pound
-     *                                         ".</p>
-     * @param bool   $use_transliterate        [optional]  <p>Use ASCII::to_transliterate() for unknown chars.</p>
+     * @param string    $str                       <p>The input string.</p>
+     * @param string    $language                  [optional] <p>Language of the source string.
+     *                                             (default is 'en') | ASCII::*_LANGUAGE_CODE</p>
+     * @param bool      $remove_unsupported_chars  [optional] <p>Whether or not to remove the
+     *                                             unsupported characters.</p>
+     * @param bool      $replace_extra_symbols     [optional]  <p>Add some more replacements e.g. "£" with " pound
+     *                                             ".</p>
+     * @param bool      $use_transliterate         [optional]  <p>Use ASCII::to_transliterate() for unknown chars.</p>
      * @param bool|null $replace_single_chars_only [optional]  <p>Single char replacement is better for the
      *                                             performance, but some languages need to replace more then one char
      *                                             at the same time. | NULL === auto-setting, depended on the
@@ -718,7 +718,7 @@ final class ASCII
         /**
          * @psalm-suppress ImpureStaticVariable
          *
-         * @var array<string,string>
+         * @var array<string,array<string,string>>
          */
         static $REPLACE_HELPER_CACHE = [];
         $cacheKey = $language . '-' . $replace_extra_symbols;
@@ -746,7 +746,6 @@ final class ASCII
                 }
             }
         } else {
-            /** @psalm-suppress PossiblyInvalidArgument */
             $str = \strtr($str, $REPLACE_HELPER_CACHE[$cacheKey]);
         }
 
