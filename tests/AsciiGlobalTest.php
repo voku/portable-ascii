@@ -52,10 +52,11 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         static::assertSame(
             [
                 0 => 'б',
-                1 => 'ဗ',
-                2 => 'ბ',
-                3 => 'ب',
-                4 => 'پ',
+                1 => 'բ',
+                2 => 'ဗ',
+                3 => 'ბ',
+                4 => 'ب',
+                5 => 'پ',
             ],
             $array['b']
         );
@@ -67,10 +68,11 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         static::assertSame(
             [
                 0 => 'б',
-                1 => 'ဗ',
-                2 => 'ბ',
-                3 => 'ب',
-                4 => 'پ',
+                1 => 'բ',
+                2 => 'ဗ',
+                3 => 'ბ',
+                4 => 'ب',
+                5 => 'پ',
             ],
             $array['b']
         );
@@ -82,10 +84,11 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         static::assertSame(
             [
                 0 => 'б',
-                1 => 'ဗ',
-                2 => 'ბ',
-                3 => 'ب',
-                4 => 'پ',
+                1 => 'բ',
+                2 => 'ဗ',
+                3 => 'ბ',
+                4 => 'ب',
+                5 => 'پ',
             ],
             $array['b']
         );
@@ -106,10 +109,11 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         static::assertSame(
             [
                 0 => 'б',
-                1 => 'ဗ',
-                2 => 'ბ',
-                3 => 'ب',
-                4 => 'پ',
+                1 => 'բ',
+                2 => 'ဗ',
+                3 => 'ბ',
+                4 => 'ب',
+                5 => 'پ',
             ],
             $array['b']
         );
@@ -388,7 +392,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['      ! " # $ % & \' ( ) * + , @ `', " \v \t \n" . ' ! " # $ % & \' ( ) * + , @ `'], // ascii symbols
             ['foo bar |  | ~', 'fòô bàř | 🅉 | ~'],
             [' TEST 3C', ' ŤÉŚŢ 3°C'],
-            [' TEST 3C', ' ŤÉŚŢ 3°C', ASCII::ENGLISH_LANGUAGE_CODE, true, true],
+            [' TEST 3 Celsius ', ' ŤÉŚŢ 3°C', ASCII::ENGLISH_LANGUAGE_CODE, true, true],
             ['f = z = 3', 'φ = ź = 3'],
             ['perevirka', 'перевірка'],
             ['ly\'saya gora', 'лысая гора'],
@@ -548,7 +552,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['aouAOUss', 'äöüÄÖÜß', ASCII::FRENCH_SWITZERLAND_LANGUAGE_CODE],
             ['h H sht Sht a A ia yo', 'х Х щ Щ ъ Ъ иа йо', 'bg'],
             // Valid ASCII + Invalid Chars
-            ['a-', "a\xa0\xa1-öäü"],
+            ['a-oau', "a\xa0\xa1-öäü"],
             // Valid 2 Octet Sequence
             ['n', "\xc3\xb1"], // ñ
             // Invalid 2 Octet Sequence
@@ -577,7 +581,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             // Valid 6 Octet Sequence (but not Unicode!)
             ['', "\xfc\xa1\xa1\xa1\xa1\xa1"],
             // Valid 6 Octet Sequence (but not Unicode!) + UTF-8 EN SPACE
-            ['', "\xfc\xa1\xa1\xa1\xa1\xa1\xe2\x80\x82"],
+            [' ', "\xfc\xa1\xa1\xa1\xa1\xa1\xe2\x80\x82"],
         ];
     }
 

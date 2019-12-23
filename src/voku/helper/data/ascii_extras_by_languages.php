@@ -78,6 +78,17 @@ return [
         '&' => ' aura ',
         '+' => ' palasa ',
     ],
+    // Armenian
+    'hy' => [
+        '=' => ' havasar ',
+        '%' => ' tvokvos ',
+        '∑' => ' gvoumar ',
+        '∆' => ' delta ',
+        '∞' => ' ansahmanvouthyvoun ',
+        '♥' => ' ser ',
+        '&' => ' ev ',
+        '+' => ' gvoumarats ',
+    ],
     // Swedish
     'sv' => [
         '=' => ' lika ',
@@ -89,6 +100,17 @@ return [
         '&' => ' och ',
         '+' => ' plus ',
     ],
+    // Turkmen
+    'tk' => [
+        '=' => ' den ',
+        '%' => ' yuzde ',
+        '∑' => ' jem ',
+        '∆' => ' delta ',
+        '∞' => ' mudimilik ',
+        '♥' => ' soygi ',
+        '&' => ' we ',
+        '+' => ' yzy ',
+    ],
     // Turkish
     'tr' => [
         '=' => ' esit ',
@@ -96,7 +118,7 @@ return [
         '∑' => ' Toplam ',
         '∆' => ' delta ',
         '∞' => ' sonsuzluk ',
-        '♥' => ' Ask ',
+        '♥' => ' ask ',
         '&' => ' ve ',
         '+' => ' arti ',
     ],

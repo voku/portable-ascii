@@ -7,4 +7,6 @@ parameters:
         - %currentWorkingDirectory%/tests/*
     autoload_files:
         - %currentWorkingDirectory%/vendor/autoload.php
+    ignoreErrors:
+        - '#function strtr expects array#'
 

@@ -74,11 +74,11 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
             'deja vu'                                  => 'deja vu',
             'déjà vu'                                  => 'deja vu',
             'déjà σσς iıii'                            => 'deja sss iiii',
-            "test\x80-\xBFöäü"                         => 'test-',
+            "test\x80-\xBFöäü"                         => 'test-oau',
             'Internationalizaetion'                    => 'Internationalizaetion',
             "中 - &#20013; - %&? - \xc2\x80"            => ' - &#20013; - %&? - ',
             'Un été brûlant sur la côte'               => 'Un ete brulant sur la cote',
-            'Αυτή είναι μια δοκιμή'                    => 'Aiti einai mia dokimi',
+            'Αυτή είναι μια δοκιμή'                    => 'Auti inai mia dokimi',
             'أحبك'                                     => 'ahbk',
             'キャンパス'                                    => '',
             'биологическом'                            => 'biologiceskom',
@@ -130,6 +130,14 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame('κόσ?με 	%00 | tes%20öäü%20\u00edtest', ASCII::remove_invisible_characters("κόσ\0με 	%00 | tes%20öäü%20\u00edtest", false, '?'));
         static::assertSame('κόσμε 	 | tes%20öäü%20\u00edtest', ASCII::remove_invisible_characters("κόσ\0με 	%00 | tes%20öäü%20\u00edtest", true, ''));
+    }
+
+    public function testGetSupportedLanguages()
+    {
+        $languages = ASCII::getAllLanguages();
+
+        static::assertArrayHasKey('german', $languages, \print_r($languages, true));
+        static::assertSame('de', $languages['german']);
     }
 
     public function testInvalidCharToAscii()
