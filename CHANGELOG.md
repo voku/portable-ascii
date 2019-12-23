@@ -1,8 +1,8 @@
 # Changelog
 
-### 1.5.0 (2019-12-23)
+### 1.4.6 (2019-12-23)
 
-- revert api to version 1.3.x -> remove "$replace_single_chars_only"
+- optimize "ASCII::to_ascii()" performance
 - add "armenian" chars
 - add "ASCII:getAllLanguages()"
 

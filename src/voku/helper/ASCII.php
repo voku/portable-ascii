@@ -677,6 +677,10 @@ final class ASCII
      * @param bool   $replace_extra_symbols    [optional]  <p>Add some more replacements e.g. "£" with " pound
      *                                         ".</p>
      * @param bool   $use_transliterate        [optional]  <p>Use ASCII::to_transliterate() for unknown chars.</p>
+     * @param bool|null $replace_single_chars_only [optional]  <p>Single char replacement is better for the
+     *                                             performance, but some languages need to replace more then one char
+     *                                             at the same time. | NULL === auto-setting, depended on the
+     *                                             language</p>
      *
      * @psalm-pure
      *
@@ -688,10 +692,25 @@ final class ASCII
         string $language = self::ENGLISH_LANGUAGE_CODE,
         bool $remove_unsupported_chars = true,
         bool $replace_extra_symbols = false,
-        bool $use_transliterate = false
+        bool $use_transliterate = false,
+        bool $replace_single_chars_only = null
     ): string {
         if ($str === '') {
             return '';
+        }
+
+        if ($replace_single_chars_only === null) {
+            $multi_length_char_languages = [
+                self::GREEKLISH_LANGUAGE_CODE,
+                self::GREEK_LANGUAGE_CODE,
+                self::MYANMAR_LANGUAGE_CODE,
+            ];
+
+            if (\in_array($language, $multi_length_char_languages, true)) {
+                $replace_single_chars_only = false;
+            } else {
+                $replace_single_chars_only = true;
+            }
         }
 
         $language = self::get_language($language);
@@ -712,8 +731,24 @@ final class ASCII
             $REPLACE_HELPER_CACHE[$cacheKey] = \array_merge([], $langAll, $langSpecific);
         }
 
-        /** @psalm-suppress PossiblyInvalidArgument */
-        $str = \strtr($str, $REPLACE_HELPER_CACHE[$cacheKey]);
+        if ($replace_single_chars_only) {
+            $charDone = [];
+            if (\preg_match_all('/' . self::$REGEX_ASCII . ($replace_extra_symbols ? '|[=+&%$@\p{Sc}]' : '') . '/u', $str, $matches)) {
+                foreach ($matches[0] as $char) {
+                    if (
+                        !isset($charDone[$char])
+                        &&
+                        isset($REPLACE_HELPER_CACHE[$cacheKey][$char])
+                    ) {
+                        $charDone[$char] = true;
+                        $str = \str_replace($char, $REPLACE_HELPER_CACHE[$cacheKey][$char], $str);
+                    }
+                }
+            }
+        } else {
+            /** @psalm-suppress PossiblyInvalidArgument */
+            $str = \strtr($str, $REPLACE_HELPER_CACHE[$cacheKey]);
+        }
 
         /** @psalm-suppress PossiblyNullOperand - we use the prepare* methods here, so we don't get NULL here */
         if (!isset(self::$ASCII_MAPS[$language])) {
