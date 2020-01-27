@@ -189,6 +189,8 @@ final class ASCII
      * Get all languages from the constants "ASCII::.*LANGUAGE_CODE".
      *
      * @return array<string,string>
+     *
+     * @noinspection PhpDocMissingThrowsInspection
      */
     public static function getAllLanguages(): array
     {
@@ -199,9 +201,7 @@ final class ASCII
             return $LANGUAGES;
         }
 
-        $reflectionClass = new \ReflectionClass(__CLASS__);
-        $constants = $reflectionClass->getConstants();
-        foreach ($constants as $constant => $lang) {
+        foreach ((new \ReflectionClass(__CLASS__))->getConstants() as $constant => $lang) {
             if (\strpos($constant, 'EXTRA') !== false) {
                 $LANGUAGES[\strtolower($constant)] = $lang;
             } else {
@@ -327,6 +327,7 @@ final class ASCII
         if ($replace_extra_symbols) {
             self::prepareAsciiAndExtrasMaps();
 
+            /** @noinspection DuplicatedCode */
             if (isset(self::$ASCII_MAPS_AND_EXTRAS[$language])) {
                 $tmpArray = self::$ASCII_MAPS_AND_EXTRAS[$language];
 
@@ -352,6 +353,7 @@ final class ASCII
         } else {
             self::prepareAsciiMaps();
 
+            /** @noinspection DuplicatedCode */
             if (isset(self::$ASCII_MAPS[$language])) {
                 $tmpArray = self::$ASCII_MAPS[$language];
 
@@ -376,7 +378,7 @@ final class ASCII
             }
         }
 
-        return $CHARS_ARRAY[$cacheKey][$language];
+        return $CHARS_ARRAY[$cacheKey][$language] ?? ['orig' => [], 'replace' => []];
     }
 
     /**
@@ -480,15 +482,15 @@ final class ASCII
         /x';
         $str = (string) \preg_replace($regex, '$1', $str);
 
-        if ($normalize_whitespace === true) {
+        if ($normalize_whitespace) {
             $str = self::normalize_whitespace($str, $keep_non_breaking_space);
         }
 
-        if ($normalize_msword === true) {
+        if ($normalize_msword) {
             $str = self::normalize_msword($str);
         }
 
-        if ($remove_invisible_characters === true) {
+        if ($remove_invisible_characters) {
             $str = self::remove_invisible_characters($str);
         }
 
@@ -597,14 +599,14 @@ final class ASCII
 
             $WHITESPACE_CACHE[$cacheKey] = self::$ASCII_MAPS[self::EXTRA_WHITESPACE_CHARS_LANGUAGE_CODE] ?? [];
 
-            if ($keepNonBreakingSpace === true) {
+            if ($keepNonBreakingSpace) {
                 unset($WHITESPACE_CACHE[$cacheKey]["\xc2\xa0"]);
             }
 
             $WHITESPACE_CACHE[$cacheKey] = \array_keys($WHITESPACE_CACHE[$cacheKey]);
         }
 
-        if ($keepBidiUnicodeControls === false) {
+        if (!$keepBidiUnicodeControls) {
             /**
              * @var array<int,string>|null
              *
@@ -645,8 +647,10 @@ final class ASCII
         // init
         $non_displayables = [];
 
-        // every control character except newline (dec 10),
-        // carriage return (dec 13) and horizontal tab (dec 09)
+        // every control character except:
+        // - newline (dec 10),
+        // - carriage return (dec 13),
+        // - horizontal tab (dec 09)
         if ($url_encoded) {
             $non_displayables[] = '/%0[0-8bcefBCEF]/'; // url encoded 00-08, 11, 12, 14, 15
             $non_displayables[] = '/%1[0-9a-fA-F]/'; // url encoded 16-31
@@ -754,11 +758,12 @@ final class ASCII
             $use_transliterate = true;
         }
 
-        if ($use_transliterate === true) {
+        if ($use_transliterate) {
+            /** @noinspection ArgumentEqualsDefaultValueInspection */
             $str = self::to_transliterate($str, null, false);
         }
 
-        if ($remove_unsupported_chars === true) {
+        if ($remove_unsupported_chars) {
             $str = (string) \str_replace(["\n\r", "\n", "\r", "\t"], ' ', $str);
             $str = (string) \preg_replace('/' . self::$REGEX_ASCII . '/', '', $str);
         }
@@ -784,7 +789,7 @@ final class ASCII
         bool $use_transliterate = true,
         string $fallback_char = '-'
     ): string {
-        if ($use_transliterate === true) {
+        if ($use_transliterate) {
             $str = self::to_transliterate($str, $fallback_char);
         }
 
@@ -863,7 +868,7 @@ final class ASCII
             $str
         );
 
-        if ($use_str_to_lower === true) {
+        if ($use_str_to_lower) {
             $str = \strtolower($str);
         }
 
@@ -897,6 +902,8 @@ final class ASCII
      *
      * @return string
      *                <p>A String that contains only ASCII characters.</p>
+     *
+     * @noinspection ParameterDefaultValueIsNotNullInspection
      */
     public static function to_transliterate(
         string $str,
@@ -934,7 +941,7 @@ final class ASCII
 
         // check if we only have ASCII, first (better performance)
         $str_tmp = $str;
-        if (self::is_ascii($str) === true) {
+        if (self::is_ascii($str)) {
             return $str;
         }
 
@@ -944,13 +951,13 @@ final class ASCII
         if (
             $str_tmp !== $str
             &&
-            self::is_ascii($str) === true
+            self::is_ascii($str)
         ) {
             return $str;
         }
 
         if (
-            $strict === true
+            $strict
             &&
             $SUPPORT_INTL === true
         ) {
@@ -974,7 +981,7 @@ final class ASCII
                 if (
                     $str_tmp !== $str
                     &&
-                    self::is_ascii($str_tmp) === true
+                    self::is_ascii($str_tmp)
                 ) {
                     return $str_tmp;
                 }
@@ -1178,7 +1185,7 @@ final class ASCII
      *
      * @return array<mixed>
      */
-    private static function getDataIfExists(string $file)
+    private static function getDataIfExists(string $file): array
     {
         $file = __DIR__ . '/data/' . $file . '.php';
         if (\file_exists($file)) {
