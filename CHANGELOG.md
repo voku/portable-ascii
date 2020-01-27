@@ -1,5 +1,11 @@
 # Changelog
 
+### 1.4.7 (2020-01-27)
+
+- fix possible wrong type from "getDataIfExists()" -> e.g. a bug reported where "/data/" was modified
+- inline variables
+- do not use "=== true" for "bool"-types
+
 ### 1.4.6 (2019-12-23)
 
 - optimize "ASCII::to_ascii()" performance
