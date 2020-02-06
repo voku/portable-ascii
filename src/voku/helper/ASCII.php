@@ -705,12 +705,14 @@ final class ASCII
 
         if ($replace_single_chars_only === null) {
             $multi_length_char_languages = [
-                self::GREEKLISH_LANGUAGE_CODE,
-                self::GREEK_LANGUAGE_CODE,
-                self::MYANMAR_LANGUAGE_CODE,
+                self::GREEKLISH_LANGUAGE_CODE => self::GREEKLISH_LANGUAGE_CODE,
+                self::GREEK_LANGUAGE_CODE     => self::GREEK_LANGUAGE_CODE,
+                self::MYANMAR_LANGUAGE_CODE   => self::MYANMAR_LANGUAGE_CODE,
             ];
 
-            if (\in_array($language, $multi_length_char_languages, true)) {
+            if ($language === '') {
+                $replace_single_chars_only = true;
+            } elseif (isset($multi_length_char_languages[$language])) {
                 $replace_single_chars_only = false;
             } else {
                 $replace_single_chars_only = true;

@@ -59,6 +59,58 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame('testing', ASCII::to_ascii($str));
     }
 
+    public function testToAsciiEmptyLanguage()
+    {
+        $testsStrict = [
+            ' '                                        => ' ',
+            ''                                         => '',
+            'أبز'                                      => 'abz',
+            "\xe2\x80\x99"                             => '\'',
+            'Ɓtest'                                    => 'Btest',
+            '  -ABC-中文空白-  '                           => '  -ABC-Zhong Wen Kong Bai -  ',
+            "      - abc- \xc2\x87"                    => '      - abc- ++',
+            'STRAẞE'                                   => 'STRASSE',
+            'abc'                                      => 'abc',
+            'deja vu'                                  => 'deja vu',
+            'déjà vu'                                  => 'deja vu',
+            'déjà σσς iıii'                            => 'deja sss iiii',
+            "test\x80-\xBFöäü"                         => 'test-oau',
+            'Internationalizaetion'                    => 'Internationalizaetion',
+            "中 - &#20013; - %&? - \xc2\x80"            => 'Zhong  - &#20013; - %&? - EUR',
+            'Un été brûlant sur la côte'               => 'Un ete brulant sur la cote',
+            'Αυτή είναι μια δοκιμή'                    => 'Aiti einai mia dokimi',
+            'أحبك'                                     => 'ahbk',
+            'キャンパス'                                    => 'kiyanpasu',
+            'биологическом'                            => 'biologiceskom',
+            '정, 병호'                                    => 'jeong, byeongho',
+            'ますだ, よしひこ'                                => 'masuda, yosihiko',
+            'मोनिच'                                    => 'MaoNaiCa',
+            'क्षȸ'                                     => 'KaShhadb',
+            'أحبك 😀'                                   => 'ahbk ',
+            'ذرزسشصضطظعغػؼؽؾؿ 5.99€'                   => 'thrzsshsdtthaagh 5.99EUR',
+            'ذرزسشصضطظعغػؼؽؾؿ £5.99'                   => 'thrzsshsdtthaagh PS5.99',
+            '׆אבגדהוזחטיךכלםמן $5.99'                  => 'bgdhvzkhtykklmmn $5.99',
+            '日一国会人年大十二本中長出三同 ¥5990'                    => 'Ri Yi Guo Hui Ren Nian Da Shi Er Ben Zhong Chang Chu San Tong  YEN5990',
+            '5.99€ 日一国会人年大十 $5.99'                     => '5.99EUR Ri Yi Guo Hui Ren Nian Da Shi  $5.99',
+            'בגדה@ضطظعغػ.com'                          => 'bgdh@dtthaagh.com',
+            '年大十@ضطظعغػ'                               => 'Nian Da Shi @dtthaagh',
+            'בגדה & 年大十'                               => 'bgdh & Nian Da Shi ',
+            '国&ם at ضطظعغػ.הוז'                        => 'Guo &m at dtthaagh.hvz',
+            'my username is @בגדה'                     => 'my username is @bgdh',
+            'The review gave 5* to ظعغػ'               => 'The review gave 5* to thaagh',
+            'use 年大十@ضطظعغػ.הוז to get a 10% discount' => 'use Nian Da Shi @dtthaagh.hvz to get a 10% discount',
+            '日 = הط^2'                                 => 'Ri  = ht^2',
+            'ךכלם 国会 غػؼؽ 9.81 m/s2'                   => 'kklm Guo Hui  gh 9.81 m/s2',
+            'The #会 comment at @בגדה = 10% of *&*'     => 'The #Hui  comment at @bgdh = 10% of *&*',
+            '∀ i ∈ ℕ'                                  => ' i  N',
+            '👍 💩 😄 ❤ 👍 💩 😄 ❤أحبك'                      => '       ahbk',
+        ];
+
+        foreach ($testsStrict as $before => $after) {
+            static::assertSame($after, ASCII::to_ascii($before, ''), 'tested: ' . $before);
+        }
+    }
+
     public function testToAscii()
     {
         $testsStrict = [
