@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.4.8 (2020-02-06)
+
+- small optimization for "ASCII::to_ascii()" performance
+
 ### 1.4.7 (2020-01-27)
 
 - fix possible wrong type from "getDataIfExists()" -> e.g. a bug reported where "/data/" was modified
