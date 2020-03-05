@@ -49,7 +49,7 @@ If you like a more Object Oriented Way to edit strings, then you can take a look
 
 ```php
 // Portable ASCII
-use voku\helper\ASCII;
+use Voku\Helper\ASCII;
 ASCII::to_transliterate('déjà σσς iıii'); // 'deja sss iiii'
 
 // voku/Stringy
