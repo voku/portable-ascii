@@ -26,13 +26,13 @@
     },
     "autoload": {
         "psr-4": {
-            "voku\\": "src/voku/",
-            "voku\\tests\\": "tests/"
+            "Voku\\": "src/voku/",
+            "Voku\\Tests\\": "tests/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "voku\\tests\\": "tests/"
+            "Voku\\Tests\\": "tests/"
         }
     }
 }
