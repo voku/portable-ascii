@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace voku\tests;
+namespace Voku\Tests;
 
-use voku\helper\ASCII;
+use Voku\Helper\ASCII;
 
 /**
  * @internal
