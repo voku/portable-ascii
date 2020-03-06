@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.4.9 (2020-03-06)
+
+- ASCII::to_slugify() -> fix php warning from empty "separator"
+
 ### 1.4.8 (2020-02-06)
 
 - small optimization for "ASCII::to_ascii()" performance
