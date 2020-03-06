@@ -879,7 +879,7 @@ final class ASCII
         $str = (string) \preg_replace('/[\\-_\\s]+/', $separator, $str);
 
         $l = \strlen($separator);
-        if (\strpos($str, $separator) === 0) {
+        if ($l && \strpos($str, $separator) === 0) {
             $str = (string) \substr($str, $l);
         }
 

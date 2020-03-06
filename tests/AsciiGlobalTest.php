@@ -32,6 +32,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['a_string_with_underscores', 'A_string with_underscores', '_'],
             ['a_string_with_dashes', 'A string-with-dashes', '_'],
             ['one_euro_or_a_dollar', 'one € or a $', '_'],
+            ['sometext', 'some text', ''],
             ['a\string\with\dashes', 'A string-with-dashes', '\\'],
             ['an_odd_string', '--   An odd__   string-_', '_'],
             ['Stoynostta-tryabva-da-bade-lazha', 'Стойността трябва да бъде лъжа', '-', 'bg', false],
