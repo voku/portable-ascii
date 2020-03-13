@@ -733,7 +733,8 @@ final class ASCII
             &&
             $EXTRA_SYMBOLS_CACHE === null
         ) {
-            foreach (self::$ASCII_EXTRAS as $extrasLanguageTmp => $extrasDataTmp) {
+            $EXTRA_SYMBOLS_CACHE = [];
+            foreach (self::$ASCII_EXTRAS ?? [] as $extrasLanguageTmp => $extrasDataTmp) {
                 foreach ($extrasDataTmp as $extrasDataKeyTmp => $extrasDataValueTmp) {
                     $EXTRA_SYMBOLS_CACHE[$extrasDataKeyTmp] = $extrasDataKeyTmp;
                 }
