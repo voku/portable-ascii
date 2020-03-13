@@ -146,6 +146,11 @@ final class ASCII
     private static $ASCII_MAPS_AND_EXTRAS;
 
     /**
+     * @var array<string, array<string, string>>|null
+     */
+    private static $ASCII_EXTRAS;
+
+    /**
      * @var array<string, int>|null
      */
     private static $ORD;
@@ -703,23 +708,9 @@ final class ASCII
             return '';
         }
 
-        if ($replace_single_chars_only === null) {
-            $multi_length_char_languages = [
-                self::GREEKLISH_LANGUAGE_CODE => self::GREEKLISH_LANGUAGE_CODE,
-                self::GREEK_LANGUAGE_CODE     => self::GREEK_LANGUAGE_CODE,
-                self::MYANMAR_LANGUAGE_CODE   => self::MYANMAR_LANGUAGE_CODE,
-            ];
-
-            if ($language === '') {
-                $replace_single_chars_only = true;
-            } elseif (isset($multi_length_char_languages[$language])) {
-                $replace_single_chars_only = false;
-            } else {
-                $replace_single_chars_only = true;
-            }
-        }
-
         $language = self::get_language($language);
+
+        static $EXTRA_SYMBOLS_CACHE = null;
 
         /**
          * @psalm-suppress ImpureStaticVariable
@@ -737,22 +728,95 @@ final class ASCII
             $REPLACE_HELPER_CACHE[$cacheKey] = \array_merge([], $langAll, $langSpecific);
         }
 
-        if ($replace_single_chars_only) {
-            $charDone = [];
-            if (\preg_match_all('/' . self::$REGEX_ASCII . ($replace_extra_symbols ? '|[=+&%$@\p{Sc}]' : '') . '/u', $str, $matches)) {
-                foreach ($matches[0] as $char) {
+        if (
+            $replace_extra_symbols
+            &&
+            $EXTRA_SYMBOLS_CACHE === null
+        ) {
+            foreach (self::$ASCII_EXTRAS as $extrasLanguageTmp => $extrasDataTmp) {
+                foreach ($extrasDataTmp as $extrasDataKeyTmp => $extrasDataValueTmp) {
+                    $EXTRA_SYMBOLS_CACHE[$extrasDataKeyTmp] = $extrasDataKeyTmp;
+                }
+            }
+            $EXTRA_SYMBOLS_CACHE = \implode('',$EXTRA_SYMBOLS_CACHE);
+        }
+
+        $charDone = [];
+        if (\preg_match_all('/' . self::$REGEX_ASCII . ($replace_extra_symbols ? '|[' . $EXTRA_SYMBOLS_CACHE . ']' : '') . '/u', $str, $matches)) {
+
+            if (!$replace_single_chars_only) {
+                foreach ($matches[0] as $keyTmp => $char) {
+                    if (isset($matches[0][$keyTmp + 2])) {
+                        $threeChars = $matches[0][$keyTmp + 0] . $matches[0][$keyTmp + 1] . $matches[0][$keyTmp + 2];
+                    } else {
+                        $threeChars = null;
+                    }
                     if (
-                        !isset($charDone[$char])
+                        $threeChars
                         &&
-                        isset($REPLACE_HELPER_CACHE[$cacheKey][$char])
+                        !isset($charDone[$threeChars])
+                        &&
+                        isset($REPLACE_HELPER_CACHE[$cacheKey][$threeChars])
+                        &&
+                        strpos($str, $threeChars) !== false
                     ) {
-                        $charDone[$char] = true;
-                        $str = \str_replace($char, $REPLACE_HELPER_CACHE[$cacheKey][$char], $str);
+                        // DEBUG
+                        //\var_dump($str, $threeChars, $REPLACE_HELPER_CACHE[$cacheKey][$threeChars]);
+
+                        $charDone[$threeChars] = true;
+                        $str = \str_replace($threeChars, $REPLACE_HELPER_CACHE[$cacheKey][$threeChars], $str);
+
+                        // DEBUG
+                        //\var_dump($str, "\n");
+                    }
+                }
+
+                foreach ($matches[0] as $keyTmp => $char) {
+                    if (isset($matches[0][$keyTmp + 1])) {
+                        $twoChars = $matches[0][$keyTmp + 0] . $matches[0][$keyTmp + 1];
+                    } else {
+                        $twoChars = null;
+                    }
+                    if (
+                        $twoChars
+                        &&
+                        !isset($charDone[$twoChars])
+                        &&
+                        isset($REPLACE_HELPER_CACHE[$cacheKey][$twoChars])
+                        &&
+                        strpos($str, $twoChars) !== false
+                    ) {
+                        // DEBUG
+                        //\var_dump($str, $twoChars, $REPLACE_HELPER_CACHE[$cacheKey][$twoChars]);
+
+                        $charDone[$twoChars] = true;
+                        $str = \str_replace($twoChars, $REPLACE_HELPER_CACHE[$cacheKey][$twoChars], $str);
+
+                        // DEBUG
+                        //\var_dump($str, "\n");
                     }
                 }
             }
-        } else {
-            $str = \strtr($str, $REPLACE_HELPER_CACHE[$cacheKey]);
+
+            foreach ($matches[0] as $keyTmp => $char) {
+                if (
+                    !isset($charDone[$char])
+                    &&
+                    isset($REPLACE_HELPER_CACHE[$cacheKey][$char])
+                    &&
+                    strpos($str, $char) !== false
+                ) {
+                    // DEBUG
+                    //\var_dump($str, $char, $REPLACE_HELPER_CACHE[$cacheKey][$char]);
+
+                    $charDone[$char] = true;
+                    $str = \str_replace($char, $REPLACE_HELPER_CACHE[$cacheKey][$char], $str);
+
+                    // DEBUG
+                    //\var_dump($str, "\n");
+                }
+            }
+
         }
 
         /** @psalm-suppress PossiblyNullOperand - we use the prepare* methods here, so we don't get NULL here */
@@ -1208,11 +1272,12 @@ final class ASCII
     {
         if (self::$ASCII_MAPS_AND_EXTRAS === null) {
             self::prepareAsciiMaps();
+            self::prepareAsciiExtras();
 
             /** @psalm-suppress PossiblyNullArgument - we use the prepare* methods here, so we don't get NULL here */
             self::$ASCII_MAPS_AND_EXTRAS = \array_merge_recursive(
                 self::$ASCII_MAPS ?? [],
-                self::getData('ascii_extras_by_languages')
+                self::$ASCII_EXTRAS ?? []
             );
         }
     }
@@ -1226,6 +1291,18 @@ final class ASCII
     {
         if (self::$ASCII_MAPS === null) {
             self::$ASCII_MAPS = self::getData('ascii_by_languages');
+        }
+    }
+
+    /**
+     * @psalm-pure
+     *
+     * @return void
+     */
+    private static function prepareAsciiExtras()
+    {
+        if (self::$ASCII_EXTRAS === null) {
+            self::$ASCII_EXTRAS = self::getData('ascii_extras_by_languages');
         }
     }
 }

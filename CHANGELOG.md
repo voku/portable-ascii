@@ -1,5 +1,10 @@
 # Changelog
 
+### 1.4.10 (2020-03-13)
+
+- ASCII::to_ascii() -> fix extra symbol handling in the regex
+- ASCII::to_ascii() -> fix for languages with multi-length-special-char (e.g. Greek -> 'ει' => 'i')
+
 ### 1.4.9 (2020-03-06)
 
 - ASCII::to_slugify() -> fix php warning from empty "separator"

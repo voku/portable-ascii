@@ -393,7 +393,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['      ! " # $ % & \' ( ) * + , @ `', " \v \t \n" . ' ! " # $ % & \' ( ) * + , @ `'], // ascii symbols
             ['foo bar |  | ~', 'fòô bàř | 🅉 | ~'],
             [' TEST 3C', ' ŤÉŚŢ 3°C'],
-            [' TEST 3C', ' ŤÉŚŢ 3°C', ASCII::ENGLISH_LANGUAGE_CODE, true, true],
+            [' TEST 3 Celsius ', ' ŤÉŚŢ 3°C', ASCII::ENGLISH_LANGUAGE_CODE, true, true],
             ['f = z = 3', 'φ = ź = 3'],
             ['perevirka', 'перевірка'],
             ['ly\'saya gora', 'лысая гора'],
