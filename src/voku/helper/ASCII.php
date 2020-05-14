@@ -781,12 +781,11 @@ final class ASCII
                     $EXTRA_SYMBOLS_CACHE[$extrasDataKeyTmp] = $extrasDataKeyTmp;
                 }
             }
-            $EXTRA_SYMBOLS_CACHE = \implode('',$EXTRA_SYMBOLS_CACHE);
+            $EXTRA_SYMBOLS_CACHE = \implode('', $EXTRA_SYMBOLS_CACHE);
         }
 
         $charDone = [];
         if (\preg_match_all('/' . self::$REGEX_ASCII . ($replace_extra_symbols ? '|[' . $EXTRA_SYMBOLS_CACHE . ']' : '') . '/u', $str, $matches)) {
-
             if (!$replace_single_chars_only) {
                 foreach ($matches[0] as $keyTmp => $char) {
                     if (isset($matches[0][$keyTmp + 2])) {
@@ -859,7 +858,6 @@ final class ASCII
                     //\var_dump($str, "\n");
                 }
             }
-
         }
 
         /** @psalm-suppress PossiblyNullOperand - we use the prepare* methods here, so we don't get NULL here */
