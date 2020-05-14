@@ -220,6 +220,12 @@ final class ASCII
     /**
      * Returns an replacement array for ASCII methods.
      *
+     * EXAMPLE: <code>
+     * $array = ASCII::charsArray();
+     *
+     * var_dump($array['ru']['б']); // 'b'
+     * </code>
+     *
      * @psalm-suppress InvalidNullableReturnType - we use the prepare* methods here, so we don't get NULL here
      *
      * @param bool $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
@@ -243,6 +249,12 @@ final class ASCII
 
     /**
      * Returns an replacement array for ASCII methods with a mix of multiple languages.
+     *
+     * EXAMPLE: <code>
+     * $array = ASCII::charsArrayWithMultiLanguageValues();
+     *
+     * var_dump($array['b']); // ['β', 'б', 'ဗ', 'ბ', 'ب']
+     * </code>
      *
      * @param bool $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      *
@@ -295,6 +307,13 @@ final class ASCII
      *
      * For example, German will map 'ä' to 'ae', while other languages
      * will simply return e.g. 'a'.
+     *
+     * EXAMPLE: <code>
+     * $array = ASCII::charsArrayWithOneLanguage('ru');
+     *
+     * $tmpKey = \array_search('yo', $array['replace']);
+     * echo $array['orig'][$tmpKey]; // 'ё'
+     * </code>
      *
      * @psalm-suppress InvalidNullableReturnType - we use the prepare* methods here, so we don't get NULL here
      *
@@ -388,6 +407,13 @@ final class ASCII
 
     /**
      * Returns an replacement array for ASCII methods with multiple languages.
+     *
+     * EXAMPLE: <code>
+     * $array = ASCII::charsArrayWithSingleLanguageValues();
+     *
+     * $tmpKey = \array_search('hnaik', $array['replace']);
+     * echo $array['orig'][$tmpKey]; // '၌'
+     * </code>
      *
      * @param bool $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      * @param bool $asOrigReplaceArray    [optional] <p>TRUE === return thr {orig: string[], replace: string[]}
@@ -505,6 +531,10 @@ final class ASCII
     /**
      * Checks if a string is 7 bit ASCII.
      *
+     * EXAMPLE: <code>
+     * ASCII::is_ascii('白'); // false
+     * </code>
+     *
      * @param string $str <p>The string to check.</p>
      *
      * @psalm-pure
@@ -528,6 +558,10 @@ final class ASCII
      * Returns a string with smart quotes, ellipsis characters, and dashes from
      * Windows-1252 (commonly used in Word documents) replaced by their ASCII
      * equivalents.
+     *
+     * EXAMPLE: <code>
+     * ASCII::normalize_msword('„Abcdef…”'); // '"Abcdef..."'
+     * </code>
      *
      * @param string $str <p>The string to be normalized.</p>
      *
@@ -571,6 +605,10 @@ final class ASCII
 
     /**
      * Normalize the whitespace.
+     *
+     * EXAMPLE: <code>
+     * ASCII::normalize_whitespace("abc-\xc2\xa0-öäü-\xe2\x80\xaf-\xE2\x80\xAC", true); // "abc-\xc2\xa0-öäü- -"
+     * </code>
      *
      * @param string $str                     <p>The string to be normalized.</p>
      * @param bool   $keepNonBreakingSpace    [optional] <p>Set to true, to keep non-breaking-spaces.</p>
@@ -677,6 +715,10 @@ final class ASCII
      * for language-specific transliteration in any of the following formats:
      * en, en_GB, or en-GB. For example, passing "de" results in "äöü" mapping
      * to "aeoeue" rather than "aou" as in other languages.
+     *
+     * EXAMPLE: <code>
+     * ASCII::to_ascii('�Düsseldorf�', 'en'); // Dusseldorf
+     * </code>
      *
      * @param string    $str                       <p>The input string.</p>
      * @param string    $language                  [optional] <p>Language of the source string.
@@ -841,6 +883,10 @@ final class ASCII
     /**
      * Convert given string to safe filename (and keep string case).
      *
+     * EXAMPLE: <code>
+     * ASCII::to_filename('שדגשדג.png', true)); // 'shdgshdg.png'
+     * </code>
+     *
      * @param string $str
      * @param bool   $use_transliterate <p>ASCII::to_transliterate() is used by default - unsafe characters are
      *                                  simply replaced with hyphen otherwise.</p>
@@ -959,6 +1005,10 @@ final class ASCII
      * Returns an ASCII version of the string. A set of non-ASCII characters are
      * replaced with their closest ASCII counterparts, and the rest are removed
      * unless instructed otherwise.
+     *
+     * EXAMPLE: <code>
+     * ASCII::to_transliterate('déjà σσς iıii'); // 'deja sss iiii'
+     * </code>
      *
      * @param string      $str     <p>The input string.</p>
      * @param string|null $unknown [optional] <p>Character use if character unknown. (default is '?')
