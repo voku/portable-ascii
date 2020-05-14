@@ -84,23 +84,23 @@ The API from the "ASCII"-Class is written as small static methods.
 
 ## Class methods
 
-<table><tr><td><a href="#charsarraybool-replace_extra_symbols">charsArray</a>
-</td><td><a href="#charsarraywithmultilanguagevaluesbool-replace_extra_symbols-arraystringarrayintstring">charsArrayWithMultiLanguageValues</a>
-</td><td><a href="#charsarraywithonelanguagestring-language-bool-replace_extra_symbols-bool-asorigreplacearray">charsArrayWithOneLanguage</a>
-</td><td><a href="#charsarraywithsinglelanguagevaluesbool-replace_extra_symbols-bool-asorigreplacearray">charsArrayWithSingleLanguageValues</a>
+<table><tr><td><a href="#charsarraybool-replace_extra_symbols-array">charsArray</a>
+</td><td><a href="#charsarraywithmultilanguagevaluesbool-replace_extra_symbols-array">charsArrayWithMultiLanguageValues</a>
+</td><td><a href="#charsarraywithonelanguagestring-language-bool-replace_extra_symbols-bool-asorigreplacearray-array">charsArrayWithOneLanguage</a>
+</td><td><a href="#charsarraywithsinglelanguagevaluesbool-replace_extra_symbols-bool-asorigreplacearray-array">charsArrayWithSingleLanguageValues</a>
 </td></tr><tr><td><a href="#cleanstring-str-bool-normalize_whitespace-bool-keep_non_breaking_space-bool-normalize_msword-bool-remove_invisible_characters-string">clean</a>
-</td><td><a href="#getalllanguages-arraystringstring">getAllLanguages</a>
+</td><td><a href="#getalllanguages-string">getAllLanguages</a>
 </td><td><a href="#is_asciistring-str-bool">is_ascii</a>
 </td><td><a href="#normalize_mswordstring-str-string">normalize_msword</a>
 </td></tr><tr><td><a href="#normalize_whitespacestring-str-bool-keepnonbreakingspace-bool-keepbidiunicodecontrols-string">normalize_whitespace</a>
 </td><td><a href="#remove_invisible_charactersstring-str-bool-url_encoded-string-replacement-string">remove_invisible_characters</a>
 </td><td><a href="#to_asciistring-str-string-language-bool-remove_unsupported_chars-bool-replace_extra_symbols-bool-use_transliterate-boolnull-replace_single_chars_only-string">to_ascii</a>
 </td><td><a href="#to_filenamestring-str-bool-use_transliterate-string-fallback_char-string">to_filename</a>
-</td></tr><tr><td><a href="#to_slugifystring-str-string-separator-string-language-array-replacements-bool-replace_extra_symbols-bool-use_str_to_lower-bool-use_transliterate-string">to_slugify</a>
-</td><td><a href="#to_transliteratebool-str-stringnull-unknown-bool-strict-string">to_transliterate</a>
+</td></tr><tr><td><a href="#to_slugifystring-str-string-separator-string-language-string-replacements-bool-replace_extra_symbols-bool-use_str_to_lower-bool-use_transliterate-string">to_slugify</a>
+</td><td><a href="#to_transliteratestring-str-stringnull-unknown-bool-strict-string">to_transliterate</a>
 </td></tr></table>
 
-## charsArray(bool $replace_extra_symbols): 
+## charsArray(bool $replace_extra_symbols): array
 <a href="#class-methods">↑</a>
 Returns an replacement array for ASCII methods.
 
@@ -118,62 +118,94 @@ var_dump($array['ru']['б']); // 'b'
 
 --------
 
-## charsArrayWithMultiLanguageValues(bool $replace_extra_symbols): array<string,array<int,string>>
+## charsArrayWithMultiLanguageValues(bool $replace_extra_symbols): array
 <a href="#class-methods">↑</a>
+Returns an replacement array for ASCII methods with a mix of multiple languages.
 
+EXAMPLE: <code>
+$array = ASCII::charsArrayWithMultiLanguageValues();
+
+var_dump($array['b']); // ['β', 'б', 'ဗ', 'ბ', 'ب']
+</code>
 
 **Parameters:**
-- `bool $replace_extra_symbols`
+- `bool $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>`
 
 **Return:**
-- `array<string,array<int,string>>`
+- `array <p>An array of replacements.</p>`
 
 --------
 
-## charsArrayWithOneLanguage(string $language, bool $replace_extra_symbols, bool $asOrigReplaceArray): 
+## charsArrayWithOneLanguage(string $language, bool $replace_extra_symbols, bool $asOrigReplaceArray): array
 <a href="#class-methods">↑</a>
+Returns an replacement array for ASCII methods with one language.
 
+For example, German will map 'ä' to 'ae', while other languages
+will simply return e.g. 'a'.
+
+EXAMPLE: <code>
+$array = ASCII::charsArrayWithOneLanguage('ru');
+
+$tmpKey = \array_search('yo', $array['replace']);
+echo $array['orig'][$tmpKey]; // 'ё'
+</code>
 
 **Parameters:**
-- `string $language`
-- `bool $replace_extra_symbols`
-- `bool $asOrigReplaceArray`
+- `string $language [optional] <p>Language of the source string e.g.: en, de_at, or de-ch.
+(default is 'en') | ASCII::*_LANGUAGE_CODE</p>`
+- `bool $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>`
+- `bool $asOrigReplaceArray [optional] <p>TRUE === return thr {orig: string[], replace: string[]}
+array</p>`
 
 **Return:**
-- `array`
+- `array <p>An array of replacements.</p>`
 
 --------
 
-## charsArrayWithSingleLanguageValues(bool $replace_extra_symbols, bool $asOrigReplaceArray): 
+## charsArrayWithSingleLanguageValues(bool $replace_extra_symbols, bool $asOrigReplaceArray): array
 <a href="#class-methods">↑</a>
+Returns an replacement array for ASCII methods with multiple languages.
 
+EXAMPLE: <code>
+$array = ASCII::charsArrayWithSingleLanguageValues();
+
+$tmpKey = \array_search('hnaik', $array['replace']);
+echo $array['orig'][$tmpKey]; // '၌'
+</code>
 
 **Parameters:**
-- `bool $replace_extra_symbols`
-- `bool $asOrigReplaceArray`
+- `bool $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>`
+- `bool $asOrigReplaceArray [optional] <p>TRUE === return thr {orig: string[], replace: string[]}
+array</p>`
 
 **Return:**
-- `array`
+- `array <p>An array of replacements.</p>`
 
 --------
 
 ## clean(string $str, bool $normalize_whitespace, bool $keep_non_breaking_space, bool $normalize_msword, bool $remove_invisible_characters): string
 <a href="#class-methods">↑</a>
-
+Accepts a string and removes all non-UTF-8 characters from it + extras if needed.
 
 **Parameters:**
-- `string $str`
-- `bool $normalize_whitespace`
-- `bool $keep_non_breaking_space`
-- `bool $normalize_msword`
-- `bool $remove_invisible_characters`
+- `string $str <p>The string to be sanitized.</p>`
+- `bool $normalize_whitespace [optional] <p>Set to true, if you need to normalize the
+whitespace.</p>`
+- `bool $keep_non_breaking_space [optional] <p>Set to true, to keep non-breaking-spaces, in
+combination with
+$normalize_whitespace</p>`
+- `bool $normalize_msword [optional] <p>Set to true, if you need to normalize MS Word chars
+e.g.: "…"
+=> "..."</p>`
+- `bool $remove_invisible_characters [optional] <p>Set to false, if you not want to remove invisible
+characters e.g.: "\0"</p>`
 
 **Return:**
-- `string`
+- `string <p>A clean UTF-8 string.</p>`
 
 --------
 
-## getAllLanguages(): array<string,string>
+## getAllLanguages(): string[]
 <a href="#class-methods">↑</a>
 Get all languages from the constants "ASCII::.*LANGUAGE_CODE".
 
@@ -181,51 +213,73 @@ Get all languages from the constants "ASCII::.*LANGUAGE_CODE".
 __nothing__
 
 **Return:**
-- `array<string,string>`
+- `string[]`
 
 --------
 
 ## is_ascii(string $str): bool
 <a href="#class-methods">↑</a>
+Checks if a string is 7 bit ASCII.
 
+EXAMPLE: <code>
+ASCII::is_ascii('白'); // false
+</code>
 
 **Parameters:**
-- `string $str`
+- `string $str <p>The string to check.</p>`
 
 **Return:**
-- `bool`
+- `bool <p>
+<strong>true</strong> if it is ASCII<br>
+<strong>false</strong> otherwise
+</p>`
 
 --------
 
 ## normalize_msword(string $str): string
 <a href="#class-methods">↑</a>
+Returns a string with smart quotes, ellipsis characters, and dashes from
+Windows-1252 (commonly used in Word documents) replaced by their ASCII
+equivalents.
 
+EXAMPLE: <code>
+ASCII::normalize_msword('„Abcdef…”'); // '"Abcdef..."'
+</code>
 
 **Parameters:**
-- `string $str`
+- `string $str <p>The string to be normalized.</p>`
 
 **Return:**
-- `string`
+- `string <p>A string with normalized characters for commonly used chars in Word documents.</p>`
 
 --------
 
 ## normalize_whitespace(string $str, bool $keepNonBreakingSpace, bool $keepBidiUnicodeControls): string
 <a href="#class-methods">↑</a>
+Normalize the whitespace.
 
+EXAMPLE: <code>
+ASCII::normalize_whitespace("abc-\xc2\xa0-öäü-\xe2\x80\xaf-\xE2\x80\xAC", true); // "abc-\xc2\xa0-öäü- -"
+</code>
 
 **Parameters:**
-- `string $str`
-- `bool $keepNonBreakingSpace`
-- `bool $keepBidiUnicodeControls`
+- `string $str <p>The string to be normalized.</p>`
+- `bool $keepNonBreakingSpace [optional] <p>Set to true, to keep non-breaking-spaces.</p>`
+- `bool $keepBidiUnicodeControls [optional] <p>Set to true, to keep non-printable (for the web)
+bidirectional text chars.</p>`
 
 **Return:**
-- `string`
+- `string <p>A string with normalized whitespace.</p>`
 
 --------
 
 ## remove_invisible_characters(string $str, bool $url_encoded, string $replacement): string
 <a href="#class-methods">↑</a>
+Remove invisible characters from a string.
 
+e.g.: This prevents sandwiching null characters between ascii characters, like Java\0script.
+
+copy&past from https://github.com/bcit-ci/CodeIgniter/blob/develop/system/core/Common.php
 
 **Parameters:**
 - `string $str`
@@ -239,64 +293,99 @@ __nothing__
 
 ## to_ascii(string $str, string $language, bool $remove_unsupported_chars, bool $replace_extra_symbols, bool $use_transliterate, bool|null $replace_single_chars_only): string
 <a href="#class-methods">↑</a>
+Returns an ASCII version of the string. A set of non-ASCII characters are
+replaced with their closest ASCII counterparts, and the rest are removed
+by default. The language or locale of the source string can be supplied
+for language-specific transliteration in any of the following formats:
+en, en_GB, or en-GB. For example, passing "de" results in "äöü" mapping
+to "aeoeue" rather than "aou" as in other languages.
 
+EXAMPLE: <code>
+ASCII::to_ascii('�Düsseldorf�', 'en'); // Dusseldorf
+</code>
 
 **Parameters:**
-- `string $str`
-- `string $language`
-- `bool $remove_unsupported_chars`
-- `bool $replace_extra_symbols`
-- `bool $use_transliterate`
-- `bool|null $replace_single_chars_only`
+- `string $str <p>The input string.</p>`
+- `string $language [optional] <p>Language of the source string.
+(default is 'en') | ASCII::*_LANGUAGE_CODE</p>`
+- `bool $remove_unsupported_chars [optional] <p>Whether or not to remove the
+unsupported characters.</p>`
+- `bool $replace_extra_symbols [optional]  <p>Add some more replacements e.g. "£" with " pound
+".</p>`
+- `bool $use_transliterate [optional]  <p>Use ASCII::to_transliterate() for unknown chars.</p>`
+- `bool|null $replace_single_chars_only [optional]  <p>Single char replacement is better for the
+performance, but some languages need to replace more then one char
+at the same time. | NULL === auto-setting, depended on the
+language</p>`
 
 **Return:**
-- `string`
+- `string <p>A string that contains only ASCII characters.</p>`
 
 --------
 
 ## to_filename(string $str, bool $use_transliterate, string $fallback_char): string
 <a href="#class-methods">↑</a>
+Convert given string to safe filename (and keep string case).
 
+EXAMPLE: <code>
+ASCII::to_filename('שדגשדג.png', true)); // 'shdgshdg.png'
+</code>
 
 **Parameters:**
 - `string $str`
-- `bool $use_transliterate`
+- `bool $use_transliterate <p>ASCII::to_transliterate() is used by default - unsafe characters are
+simply replaced with hyphen otherwise.</p>`
 - `string $fallback_char`
 
 **Return:**
-- `string`
+- `string <p>A string that contains only safe characters for a filename.</p>`
 
 --------
 
-## to_slugify(string $str, string $separator, string $language, array $replacements, bool $replace_extra_symbols, bool $use_str_to_lower, bool $use_transliterate): string
+## to_slugify(string $str, string $separator, string $language, string[] $replacements, bool $replace_extra_symbols, bool $use_str_to_lower, bool $use_transliterate): string
 <a href="#class-methods">↑</a>
-
+Converts the string into an URL slug. This includes replacing non-ASCII
+characters with their closest ASCII equivalents, removing remaining
+non-ASCII and non-alphanumeric characters, and replacing whitespace with
+$separator. The separator defaults to a single dash, and the string
+is also converted to lowercase. The language of the source string can
+also be supplied for language-specific transliteration.
 
 **Parameters:**
 - `string $str`
-- `string $separator`
-- `string $language`
-- `array $replacements`
-- `bool $replace_extra_symbols`
-- `bool $use_str_to_lower`
-- `bool $use_transliterate`
+- `string $separator [optional] <p>The string used to replace whitespace.</p>`
+- `string $language [optional] <p>Language of the source string.
+(default is 'en') | ASCII::*_LANGUAGE_CODE</p>`
+- `array<string, string> $replacements [optional] <p>A map of replaceable strings.</p>`
+- `bool $replace_extra_symbols [optional]  <p>Add some more replacements e.g. "£" with "
+pound ".</p>`
+- `bool $use_str_to_lower [optional] <p>Use "string to lower" for the input.</p>`
+- `bool $use_transliterate [optional]  <p>Use ASCII::to_transliterate() for unknown
+chars.</p>`
 
 **Return:**
-- `string`
+- `string <p>A string that has been converted to an URL slug.</p>`
 
 --------
 
-## to_transliterate(bool $str, string|null $unknown, bool $strict): string
+## to_transliterate(string $str, string|null $unknown, bool $strict): string
 <a href="#class-methods">↑</a>
+Returns an ASCII version of the string. A set of non-ASCII characters are
+replaced with their closest ASCII counterparts, and the rest are removed
+unless instructed otherwise.
 
+EXAMPLE: <code>
+ASCII::to_transliterate('déjà σσς iıii'); // 'deja sss iiii'
+</code>
 
 **Parameters:**
-- `bool $str`
-- `null|string $unknown`
-- `bool $strict`
+- `string $str <p>The input string.</p>`
+- `null|string $unknown [optional] <p>Character use if character unknown. (default is '?')
+But you can also use NULL to keep the unknown chars.</p>`
+- `bool $strict [optional] <p>Use "transliterator_transliterate()" from PHP-Intl`
 
 **Return:**
-- `string`
+- `string <p>A String that contains only ASCII characters.</p>`
 
 --------
 

@@ -193,7 +193,9 @@ final class ASCII
     /**
      * Get all languages from the constants "ASCII::.*LANGUAGE_CODE".
      *
-     * @return array<string,string>
+     * @return string[]
+     *
+     * @psalm-return array<string, string>
      *
      * @noinspection PhpDocMissingThrowsInspection
      */
@@ -232,7 +234,9 @@ final class ASCII
      *
      * @psalm-pure
      *
-     * @return array<string, array<string , string>>
+     * @return array
+     *
+     * @psalm-return array<string, array<string , string>>
      */
     public static function charsArray(bool $replace_extra_symbols = false): array
     {
@@ -260,15 +264,16 @@ final class ASCII
      *
      * @psalm-pure
      *
+     * @return array <p>An array of replacements.</p>
+     *
      * @return array<string, array<int, string>>
-     *                       <p>An array of replacements.</p>
      */
     public static function charsArrayWithMultiLanguageValues(bool $replace_extra_symbols = false): array
     {
         /**
          * @psalm-suppress ImpureStaticVariable
          *
-         * @var array<string,array>
+         * @var array<string, array>
          */
         static $CHARS_ARRAY = [];
         $cacheKey = '' . $replace_extra_symbols;
@@ -324,8 +329,10 @@ final class ASCII
      *                                      array</p>
      * @psalm-pure
      *
-     * @return array{orig: string[], replace: string[]}|array<string, string>
-     *                     <p>An array of replacements.</p>
+     * @return array <p>An array of replacements.</p>
+     *
+     * @psalm-return array{orig: string[], replace: string[]}|array<string, string>
+     *
      */
     public static function charsArrayWithOneLanguage(
         string $language = self::ENGLISH_LANGUAGE_CODE,
@@ -338,7 +345,7 @@ final class ASCII
         /**
          * @psalm-suppress ImpureStaticVariable
          *
-         * @var array<string,array>
+         * @var array<string, array>
          */
         static $CHARS_ARRAY = [];
         $cacheKey = '' . $replace_extra_symbols . '-' . $asOrigReplaceArray;
@@ -420,8 +427,9 @@ final class ASCII
      *                                    array</p>
      * @psalm-pure
      *
-     * @return array{orig: string[], replace: string[]}|array<string, string>
-     *                     <p>An array of replacements.</p>
+     * @return array <p>An array of replacements.</p>
+     *
+     * @psalm-return array{orig: string[], replace: string[]}|array<string, string>
      */
     public static function charsArrayWithSingleLanguageValues(
         bool $replace_extra_symbols = false,
@@ -576,7 +584,6 @@ final class ASCII
             return '';
         }
 
-        // init
         /**
          * @psalm-suppress ImpureStaticVariable
          *
@@ -658,6 +665,7 @@ final class ASCII
             static $BIDI_UNICODE_CONTROLS_CACHE = null;
 
             if ($BIDI_UNICODE_CONTROLS_CACHE === null) {
+                /** @noinspection PsalmLocalImmutableInspection */
                 $BIDI_UNICODE_CONTROLS_CACHE = self::$BIDI_UNI_CODE_CONTROLS_TABLE;
             }
 
@@ -1107,6 +1115,7 @@ final class ASCII
         }
 
         if (self::$ORD === null) {
+            /** @noinspection PsalmLocalImmutableInspection */
             self::$ORD = self::getData('ascii_ord');
         }
 
@@ -1324,6 +1333,7 @@ final class ASCII
             self::prepareAsciiExtras();
 
             /** @psalm-suppress PossiblyNullArgument - we use the prepare* methods here, so we don't get NULL here */
+            /** @noinspection PsalmLocalImmutableInspection */
             self::$ASCII_MAPS_AND_EXTRAS = \array_merge_recursive(
                 self::$ASCII_MAPS ?? [],
                 self::$ASCII_EXTRAS ?? []
@@ -1339,6 +1349,7 @@ final class ASCII
     private static function prepareAsciiMaps()
     {
         if (self::$ASCII_MAPS === null) {
+            /** @noinspection PsalmLocalImmutableInspection */
             self::$ASCII_MAPS = self::getData('ascii_by_languages');
         }
     }
@@ -1351,6 +1362,7 @@ final class ASCII
     private static function prepareAsciiExtras()
     {
         if (self::$ASCII_EXTRAS === null) {
+            /** @noinspection PsalmLocalImmutableInspection */
             self::$ASCII_EXTRAS = self::getData('ascii_extras_by_languages');
         }
     }
