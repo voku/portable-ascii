@@ -224,7 +224,6 @@ final class ASCII
      *
      * EXAMPLE: <code>
      * $array = ASCII::charsArray();
-     *
      * var_dump($array['ru']['б']); // 'b'
      * </code>
      *
@@ -256,7 +255,6 @@ final class ASCII
      *
      * EXAMPLE: <code>
      * $array = ASCII::charsArrayWithMultiLanguageValues();
-     *
      * var_dump($array['b']); // ['β', 'б', 'ဗ', 'ბ', 'ب']
      * </code>
      *
@@ -315,7 +313,6 @@ final class ASCII
      *
      * EXAMPLE: <code>
      * $array = ASCII::charsArrayWithOneLanguage('ru');
-     *
      * $tmpKey = \array_search('yo', $array['replace']);
      * echo $array['orig'][$tmpKey]; // 'ё'
      * </code>
@@ -417,7 +414,6 @@ final class ASCII
      *
      * EXAMPLE: <code>
      * $array = ASCII::charsArrayWithSingleLanguageValues();
-     *
      * $tmpKey = \array_search('hnaik', $array['replace']);
      * echo $array['orig'][$tmpKey]; // '၌'
      * </code>

@@ -106,7 +106,6 @@ Returns an replacement array for ASCII methods.
 
 EXAMPLE: <code>
 $array = ASCII::charsArray();
-
 var_dump($array['ru']['б']); // 'b'
 </code>
 
@@ -124,7 +123,6 @@ Returns an replacement array for ASCII methods with a mix of multiple languages.
 
 EXAMPLE: <code>
 $array = ASCII::charsArrayWithMultiLanguageValues();
-
 var_dump($array['b']); // ['β', 'б', 'ဗ', 'ბ', 'ب']
 </code>
 
@@ -145,7 +143,6 @@ will simply return e.g. 'a'.
 
 EXAMPLE: <code>
 $array = ASCII::charsArrayWithOneLanguage('ru');
-
 $tmpKey = \array_search('yo', $array['replace']);
 echo $array['orig'][$tmpKey]; // 'ё'
 </code>
@@ -168,7 +165,6 @@ Returns an replacement array for ASCII methods with multiple languages.
 
 EXAMPLE: <code>
 $array = ASCII::charsArrayWithSingleLanguageValues();
-
 $tmpKey = \array_search('hnaik', $array['replace']);
 echo $array['orig'][$tmpKey]; // '၌'
 </code>
