@@ -3,7 +3,22 @@
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/vendor/autoload.php';
 
-$readmeText = (new \voku\PhpReadmeHelper\GenerateApi())->generate(
+$readmeGenerator = new \voku\PhpReadmeHelper\GenerateApi();
+$readmeGenerator->templateMethod = <<<RAW
+#### %name%
+<a href="#class-methods">↑</a>
+%description%
+
+**Parameters:**
+%params%
+
+**Return:**
+- `%return%`
+
+--------
+
+RAW;
+$readmeText = ($readmeGenerator)->generate(
     __DIR__ . '/../src/voku/helper/ASCII.php',
     __DIR__ . '/docs/base.md'
 );

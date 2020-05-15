@@ -100,7 +100,7 @@ The API from the "ASCII"-Class is written as small static methods.
 </td><td><a href="#to_transliteratestring-str-stringnull-unknown-bool-strict-string">to_transliterate</a>
 </td></tr></table>
 
-## charsArray(bool $replace_extra_symbols): array
+#### charsArray(bool $replace_extra_symbols): array
 <a href="#class-methods">↑</a>
 Returns an replacement array for ASCII methods.
 
@@ -118,7 +118,7 @@ var_dump($array['ru']['б']); // 'b'
 
 --------
 
-## charsArrayWithMultiLanguageValues(bool $replace_extra_symbols): array
+#### charsArrayWithMultiLanguageValues(bool $replace_extra_symbols): array
 <a href="#class-methods">↑</a>
 Returns an replacement array for ASCII methods with a mix of multiple languages.
 
@@ -136,7 +136,7 @@ var_dump($array['b']); // ['β', 'б', 'ဗ', 'ბ', 'ب']
 
 --------
 
-## charsArrayWithOneLanguage(string $language, bool $replace_extra_symbols, bool $asOrigReplaceArray): array
+#### charsArrayWithOneLanguage(string $language, bool $replace_extra_symbols, bool $asOrigReplaceArray): array
 <a href="#class-methods">↑</a>
 Returns an replacement array for ASCII methods with one language.
 
@@ -162,7 +162,7 @@ array</p>`
 
 --------
 
-## charsArrayWithSingleLanguageValues(bool $replace_extra_symbols, bool $asOrigReplaceArray): array
+#### charsArrayWithSingleLanguageValues(bool $replace_extra_symbols, bool $asOrigReplaceArray): array
 <a href="#class-methods">↑</a>
 Returns an replacement array for ASCII methods with multiple languages.
 
@@ -183,7 +183,7 @@ array</p>`
 
 --------
 
-## clean(string $str, bool $normalize_whitespace, bool $keep_non_breaking_space, bool $normalize_msword, bool $remove_invisible_characters): string
+#### clean(string $str, bool $normalize_whitespace, bool $keep_non_breaking_space, bool $normalize_msword, bool $remove_invisible_characters): string
 <a href="#class-methods">↑</a>
 Accepts a string and removes all non-UTF-8 characters from it + extras if needed.
 
@@ -205,7 +205,7 @@ characters e.g.: "\0"</p>`
 
 --------
 
-## getAllLanguages(): string[]
+#### getAllLanguages(): string[]
 <a href="#class-methods">↑</a>
 Get all languages from the constants "ASCII::.*LANGUAGE_CODE".
 
@@ -217,7 +217,7 @@ __nothing__
 
 --------
 
-## is_ascii(string $str): bool
+#### is_ascii(string $str): bool
 <a href="#class-methods">↑</a>
 Checks if a string is 7 bit ASCII.
 
@@ -236,7 +236,7 @@ ASCII::is_ascii('白'); // false
 
 --------
 
-## normalize_msword(string $str): string
+#### normalize_msword(string $str): string
 <a href="#class-methods">↑</a>
 Returns a string with smart quotes, ellipsis characters, and dashes from
 Windows-1252 (commonly used in Word documents) replaced by their ASCII
@@ -254,7 +254,7 @@ ASCII::normalize_msword('„Abcdef…”'); // '"Abcdef..."'
 
 --------
 
-## normalize_whitespace(string $str, bool $keepNonBreakingSpace, bool $keepBidiUnicodeControls): string
+#### normalize_whitespace(string $str, bool $keepNonBreakingSpace, bool $keepBidiUnicodeControls): string
 <a href="#class-methods">↑</a>
 Normalize the whitespace.
 
@@ -273,7 +273,7 @@ bidirectional text chars.</p>`
 
 --------
 
-## remove_invisible_characters(string $str, bool $url_encoded, string $replacement): string
+#### remove_invisible_characters(string $str, bool $url_encoded, string $replacement): string
 <a href="#class-methods">↑</a>
 Remove invisible characters from a string.
 
@@ -291,7 +291,7 @@ copy&past from https://github.com/bcit-ci/CodeIgniter/blob/develop/system/core/C
 
 --------
 
-## to_ascii(string $str, string $language, bool $remove_unsupported_chars, bool $replace_extra_symbols, bool $use_transliterate, bool|null $replace_single_chars_only): string
+#### to_ascii(string $str, string $language, bool $remove_unsupported_chars, bool $replace_extra_symbols, bool $use_transliterate, bool|null $replace_single_chars_only): string
 <a href="#class-methods">↑</a>
 Returns an ASCII version of the string. A set of non-ASCII characters are
 replaced with their closest ASCII counterparts, and the rest are removed
@@ -323,7 +323,7 @@ language</p>`
 
 --------
 
-## to_filename(string $str, bool $use_transliterate, string $fallback_char): string
+#### to_filename(string $str, bool $use_transliterate, string $fallback_char): string
 <a href="#class-methods">↑</a>
 Convert given string to safe filename (and keep string case).
 
@@ -342,7 +342,7 @@ simply replaced with hyphen otherwise.</p>`
 
 --------
 
-## to_slugify(string $str, string $separator, string $language, string[] $replacements, bool $replace_extra_symbols, bool $use_str_to_lower, bool $use_transliterate): string
+#### to_slugify(string $str, string $separator, string $language, string[] $replacements, bool $replace_extra_symbols, bool $use_str_to_lower, bool $use_transliterate): string
 <a href="#class-methods">↑</a>
 Converts the string into an URL slug. This includes replacing non-ASCII
 characters with their closest ASCII equivalents, removing remaining
@@ -368,7 +368,7 @@ chars.</p>`
 
 --------
 
-## to_transliterate(string $str, string|null $unknown, bool $strict): string
+#### to_transliterate(string $str, string|null $unknown, bool $strict): string
 <a href="#class-methods">↑</a>
 Returns an ASCII version of the string. A set of non-ASCII characters are
 replaced with their closest ASCII counterparts, and the rest are removed
