@@ -6,7 +6,7 @@ require __DIR__ . '/vendor/autoload.php';
 $readmeGenerator = new \voku\PhpReadmeHelper\GenerateApi();
 $readmeGenerator->templateMethod = <<<RAW
 #### %name%
-<a href="#class-methods">↑</a>
+<a href="#voku-php-readme-class-methods">↑</a>
 %description%
 
 **Parameters:**
