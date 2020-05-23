@@ -2,7 +2,7 @@
 
 return [
     // Dutch (Flemish)
-    'nl' => [
+    'nl'                => [
         '=' => ' gelijk ',
         '%' => ' procent ',
         '∑' => ' som ',
@@ -13,7 +13,7 @@ return [
         '+' => ' plus ',
     ],
     // Italian
-    'it' => [
+    'it'                => [
         '=' => ' uguale ',
         '%' => ' percent ',
         '∑' => ' somma ',
@@ -24,7 +24,7 @@ return [
         '+' => ' piu ',
     ],
     // Macedonian
-    'mk' => [
+    'mk'                => [
         '=' => ' ednakva ',
         '%' => ' procenti ',
         '∑' => ' zbir ',
@@ -35,7 +35,7 @@ return [
         '+' => ' plus ',
     ],
     // Portuguese (Brazil)
-    'pt' => [
+    'pt'                => [
         '=' => ' igual ',
         '%' => ' por cento ',
         '∑' => ' soma ',
@@ -46,7 +46,7 @@ return [
         '+' => ' mais ',
     ],
     // Greek(lish) (Elláda)
-    'el__greeklish' => [
+    'el__greeklish'     => [
         '=' => ' isos ',
         '%' => ' tois ekato ',
         '∑' => ' athroisma ',
@@ -57,7 +57,7 @@ return [
         '+' => ' syn ',
     ],
     // Greek (Elláda)
-    'el' => [
+    'el'                => [
         '=' => ' isos ',
         '%' => ' tois ekato ',
         '∑' => ' athroisma ',
@@ -68,7 +68,7 @@ return [
         '+' => ' syn ',
     ],
     // Hindi
-    'hi' => [
+    'hi'                => [
         '=' => ' samana ',
         '%' => ' paratisata ',
         '∑' => ' yoga ',
@@ -79,7 +79,7 @@ return [
         '+' => ' palasa ',
     ],
     // Armenian
-    'hy' => [
+    'hy'                => [
         '=' => ' havasar ',
         '%' => ' tvokvos ',
         '∑' => ' gvoumar ',
@@ -90,7 +90,7 @@ return [
         '+' => ' gvoumarats ',
     ],
     // Swedish
-    'sv' => [
+    'sv'                => [
         '=' => ' lika ',
         '%' => ' procent ',
         '∑' => ' summa ',
@@ -101,7 +101,7 @@ return [
         '+' => ' plus ',
     ],
     // Turkmen
-    'tk' => [
+    'tk'                => [
         '=' => ' den ',
         '%' => ' yuzde ',
         '∑' => ' jem ',
@@ -112,7 +112,7 @@ return [
         '+' => ' yzy ',
     ],
     // Turkish
-    'tr' => [
+    'tr'                => [
         '=' => ' esit ',
         '%' => ' yuzde ',
         '∑' => ' Toplam ',
@@ -123,7 +123,7 @@ return [
         '+' => ' arti ',
     ],
     // Bulgarian
-    'bg' => [
+    'bg'                => [
         '=' => ' raven ',
         '%' => ' na sto ',
         '∑' => ' suma ',
@@ -134,7 +134,7 @@ return [
         '+' => ' plus ',
     ],
     // Hungarian
-    'hu' => [
+    'hu'                => [
         '=' => ' Egyenlo ',
         '%' => ' Szazalek ',
         '∑' => ' osszeg ',
@@ -145,7 +145,7 @@ return [
         '+' => ' Plusz ',
     ],
     // Myanmar (Burmese)
-    'my' => [
+    'my'                => [
         '=' => ' ttn:ttnnym? ',
         '%' => ' raakhngnn:k ',
         '∑' => ' ld ',
@@ -156,7 +156,7 @@ return [
         '+' => ' ape?ng: ',
     ],
     // Croatian (Hrvatska)
-    'hr' => [
+    'hr'                => [
         '=' => ' Jednaki ',
         '%' => ' Posto ',
         '∑' => ' zbroj ',
@@ -167,7 +167,7 @@ return [
         '+' => ' Plus ',
     ],
     // Finnish
-    'fi' => [
+    'fi'                => [
         '=' => ' Sama ',
         '%' => ' Prosenttia ',
         '∑' => ' sum ',
@@ -178,7 +178,7 @@ return [
         '+' => ' Plus ',
     ],
     // Georgian (Kartvelian)
-    'ka' => [
+    'ka'                => [
         '=' => ' tanasts\'ori ',
         '%' => ' p\'rotsent\'i ',
         '∑' => ' tankha ',
@@ -189,7 +189,7 @@ return [
         '+' => ' p\'lus ',
     ],
     // Russian
-    'ru' => [
+    'ru'                => [
         '=' => ' ravnyj ',
         '%' => ' procent ',
         '∑' => ' summa ',
@@ -211,7 +211,7 @@ return [
         '+' => ' plus ',
     ],
     // Russian - GOST 7.79-2000(B)
-    'ru__gost_2000_b' => [
+    'ru__gost_2000_b'   => [
         '=' => ' ravnyj ',
         '%' => ' procent ',
         '∑' => ' summa ',
@@ -222,7 +222,7 @@ return [
         '+' => ' plus ',
     ],
     // Ukrainian
-    'uk' => [
+    'uk'                => [
         '=' => ' rivnij ',
         '%' => ' vidsotkiv ',
         '∑' => ' suma ',
@@ -233,7 +233,7 @@ return [
         '+' => ' plus ',
     ],
     // Kazakh
-    'kk' => [
+    'kk'                => [
         '=' => ' ten\' ',
         '%' => ' Pajyzdar ',
         '∑' => ' zalpy ',
@@ -244,7 +244,7 @@ return [
         '+' => ' plus ',
     ],
     // Czech
-    'cs' => [
+    'cs'                => [
         '=' => ' rovnat se ',
         '%' => ' procento ',
         '∑' => ' soucet ',
@@ -255,7 +255,7 @@ return [
         '+' => ' plus ',
     ],
     // Danish
-    'da' => [
+    'da'                => [
         '=' => ' Lige ',
         '%' => ' Prozent ',
         '∑' => ' sum ',
@@ -266,7 +266,7 @@ return [
         '+' => ' Plus ',
     ],
     // Polish
-    'pl' => [
+    'pl'                => [
         '=' => ' rowny ',
         '%' => ' procent ',
         '∑' => ' suma ',
@@ -277,7 +277,7 @@ return [
         '+' => ' plus ',
     ],
     // Romanian
-    'ro' => [
+    'ro'                => [
         '=' => ' egal ',
         '%' => ' la suta ',
         '∑' => ' suma ',
@@ -288,7 +288,7 @@ return [
         '+' => ' la care se adauga ',
     ],
     // Esperanto
-    'eo' => [
+    'eo'                => [
         '=' => ' Egalaj ',
         '%' => ' Procento ',
         '∑' => ' sumo ',
@@ -299,7 +299,7 @@ return [
         '+' => ' Pli ',
     ],
     // Estonian
-    'et' => [
+    'et'                => [
         '=' => ' Vordsed ',
         '%' => ' Protsenti ',
         '∑' => ' summa ',
@@ -310,7 +310,7 @@ return [
         '+' => ' Pluss ',
     ],
     // Latvian
-    'lv' => [
+    'lv'                => [
         '=' => ' vienads ',
         '%' => ' procents ',
         '∑' => ' summa ',
@@ -321,7 +321,7 @@ return [
         '+' => ' pluss ',
     ],
     // Lithuanian
-    'lt' => [
+    'lt'                => [
         '=' => ' lygus ',
         '%' => ' procentu ',
         '∑' => ' suma ',
@@ -332,7 +332,7 @@ return [
         '+' => ' plius ',
     ],
     // Norwegian
-    'no' => [
+    'no'                => [
         '=' => ' Lik ',
         '%' => ' Prosent ',
         '∑' => ' sum ',
@@ -343,7 +343,7 @@ return [
         '+' => ' Pluss ',
     ],
     // Vietnamese
-    'vi' => [
+    'vi'                => [
         '=' => ' cong bang ',
         '%' => ' phan tram ',
         '∑' => ' tong so ',
@@ -354,7 +354,7 @@ return [
         '+' => ' them ',
     ],
     // Arabic
-    'ar' => [
+    'ar'                => [
         '=' => ' mtsawy ',
         '%' => ' nsbh mywyh ',
         '∑' => ' mjmw\' ',
@@ -365,7 +365,7 @@ return [
         '+' => ' zayd ',
     ],
     // Persian (Farsi)
-    'fa' => [
+    'fa'                => [
         '=' => ' brabr ',
         '%' => ' dr sd ',
         '∑' => ' mjmw\' ',
@@ -376,7 +376,7 @@ return [
         '+' => ' bh \'lawh ',
     ],
     // Serbian
-    'sr' => [
+    'sr'                => [
         '=' => ' jednak ',
         '%' => ' procenat ',
         '∑' => ' zbir ',
@@ -387,7 +387,7 @@ return [
         '+' => ' vise ',
     ],
     // Serbian - Cyrillic
-    'sr__cyr' => [
+    'sr__cyr'           => [
         '=' => ' jednak ',
         '%' => ' procenat ',
         '∑' => ' zbir ',
@@ -398,7 +398,7 @@ return [
         '+' => ' vise ',
     ],
     // Serbian - Latin
-    'sr__lat' => [
+    'sr__lat'           => [
         '=' => ' jednak ',
         '%' => ' procenat ',
         '∑' => ' zbir ',
@@ -409,7 +409,7 @@ return [
         '+' => ' vise ',
     ],
     // Azerbaijani
-    'az' => [
+    'az'                => [
         '=' => ' b@rab@r ',
         '%' => ' faiz ',
         '∑' => ' m@bl@g ',
@@ -420,7 +420,7 @@ return [
         '+' => ' plus ',
     ],
     // Slovak
-    'sk' => [
+    'sk'                => [
         '=' => ' rovny ',
         '%' => ' percento ',
         '∑' => ' sucet ',
@@ -431,7 +431,7 @@ return [
         '+' => ' viac ',
     ],
     // French
-    'fr' => [
+    'fr'                => [
         '=' => ' Egal ',
         '%' => ' Pourcentage ',
         '∑' => ' somme ',
@@ -442,7 +442,7 @@ return [
         '+' => ' Plus ',
     ],
     // Austrian (French)
-    'fr_at' => [
+    'fr_at'             => [
         '=' => ' Egal ',
         '%' => ' Pourcentage ',
         '∑' => ' somme ',
@@ -453,7 +453,7 @@ return [
         '+' => ' Plus ',
     ],
     // Switzerland (French)
-    'fr_ch' => [
+    'fr_ch'             => [
         '=' => ' Egal ',
         '%' => ' Pourcentage ',
         '∑' => ' somme ',
@@ -464,7 +464,7 @@ return [
         '+' => ' Plus ',
     ],
     // German
-    'de' => [
+    'de'                => [
         '=' => ' gleich ',
         '%' => ' Prozent ',
         '∑' => ' gesamt ',
@@ -475,7 +475,7 @@ return [
         '+' => ' plus ',
     ],
     // Austrian (German)
-    'de_at' => [
+    'de_at'             => [
         '=' => ' gleich ',
         '%' => ' Prozent ',
         '∑' => ' gesamt ',
@@ -486,7 +486,7 @@ return [
         '+' => ' plus ',
     ],
     // Switzerland (German)
-    'de_ch' => [
+    'de_ch'             => [
         '=' => ' gleich ',
         '%' => ' Prozent ',
         '∑' => ' gesamt ',
@@ -497,7 +497,7 @@ return [
         '+' => ' plus ',
     ],
     // English
-    'en' => [
+    'en'                => [
         '=' => ' equal ',
         '%' => ' percent ',
         '∑' => ' sum ',
@@ -510,7 +510,7 @@ return [
     // Currency
     //
     // url: https://en.wikipedia.org/wiki/Currency_symbol
-    'currency' => [
+    'currency'          => [
         '€'  => ' Euro ',
         '$'  => ' Dollar ',
         '₢'  => ' cruzeiro ',
@@ -565,7 +565,7 @@ return [
     // Temperature
     //
     // url: https://en.wikipedia.org/wiki/Conversion_of_units_of_temperature
-    'temperature' => [
+    'temperature'       => [
         '°De' => ' Delisle ',
         '°Re' => ' Reaumur ', // Réaumur
         '°Ro' => ' Romer ', // Rømer
@@ -574,7 +574,7 @@ return [
         '°F'  => ' Fahrenheit ',
         '°N'  => ' Newton ',
     ],
-    'latin_symbols' => [
+    'latin_symbols'     => [
         '=' => '=',
         '%' => '%',
         '∑' => '∑',
