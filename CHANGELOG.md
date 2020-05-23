@@ -1,5 +1,10 @@
 # Changelog
 
+### master
+
+- merge ASCII transliterations from "avian2/unidecode" (python)
+  -> https://github.com/avian2/unidecode/
+
 ### 1.4.11 (2020-05-23)
 
 - "composer.json" -> remove "autoload-dev" stuff from "autoload"
