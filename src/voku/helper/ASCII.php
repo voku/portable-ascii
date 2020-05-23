@@ -1184,7 +1184,7 @@ final class ASCII
 
             $bank = $ord >> 8;
             if (!isset($UTF8_TO_TRANSLIT[$bank])) {
-                $UTF8_TO_TRANSLIT[$bank] = self::getDataIfExists(\sprintf('x%02x', $bank));
+                $UTF8_TO_TRANSLIT[$bank] = self::getDataIfExists(\sprintf('x%03x', $bank));
             }
 
             $new_char = $ord & 255;
