@@ -228,6 +228,11 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         // ---
 
+        $str = "\xc2\x92\x00\n\x01\n\x7f\xe2\x80\x99";
+        static::assertSame("'\n\n'", ASCII::to_transliterate($str));
+
+        // ---
+
         $str = "a\nb\nc";
         static::assertSame("a\nb\nc", ASCII::to_ascii($str, 'en', false));
 
