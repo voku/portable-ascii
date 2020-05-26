@@ -1,5 +1,10 @@
 # Changelog
 
+### 1.5.1 (2020-05-26)
+
+- fix merge ASCII transliterations from "avian2/unidecode" (python)
+  -> https://github.com/avian2/unidecode/
+  
 ### 1.5.0 (2020-05-24)
 
 - merge ASCII transliterations from "avian2/unidecode" (python)
