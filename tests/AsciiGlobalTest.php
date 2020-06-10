@@ -43,6 +43,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['Gai-Bian-Shu-De-Zhi-Ying-Wei', '該變數的值應為', '-', 'zh_TW', false, false, true],
             ['Gai-Bian-Liang-De-Zhi-Ying-Wei', '该变量的值应为', '-', ASCII::CHINESE_LANGUAGE_CODE, false, true, true],
             ['Gai-Bian-Shu-De-Zhi-Ying-Wei', '該變數的值應為', '-', 'zh_TW', false, true, true],
+            ['ami-banglay-ktha-bli', 'আমি বাংলায় কথা বলি', '-', ASCII::BENGALI_LANGUAGE_CODE, true, true, true]
         ];
     }
 
@@ -452,7 +453,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['hangugeo', '한국어', ASCII::KOREAN_LANGUAGE_CODE],
             ['Ky\'rgy\'zca', 'Кыргызча', ASCII::KIRGHIZ_LANGUAGE_CODE],
             ['Hayeren', 'Հայերեն', ASCII::ARMENIAN_LANGUAGE_CODE],
-            ['baaNlaa', 'বাংলা', ASCII::BENGALI_LANGUAGE_CODE],
+            ['bangla', 'বাংলা', ASCII::BENGALI_LANGUAGE_CODE],
             ['belaruskaya', 'беларуская', ASCII::BELARUSIAN_LANGUAGE_CODE],
             ['\'amaarenyaa', 'አማርኛ', ASCII::AMHARIC_LANGUAGE_CODE],
             ['Ri Ben Yu  (nihongo)', '日本語 (にほんご)', ASCII::JAPANESE_LANGUAGE_CODE],
