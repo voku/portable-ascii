@@ -103,6 +103,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
                 'The #会 comment at @בגדה = 10% of *&*'     => 'The #hui comment at @bgdh = 10% of *&*',
                 '∀ i ∈ ℕ'                                  => '? i ? N',
                 '👍 💩 😄 ❤ 👍 💩 😄 ❤أحبك'                      => '? ? ?  ? ? ? ahbk',
+                'আমার সোনার বাংলা'                       => 'amar sonar bangla',
                 // Valid ASCII + Invalid Chars
                 "a\xa0\xa1-öäü" => 'a-oau',
                 // Valid 2 Octet Sequence
@@ -174,6 +175,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
             'κόσμε'                         => 'kosme',
             '中'                             => 'Zhong ',
             '«foobar»'                      => '<<foobar>>',
+            'বাংলা'                       => 'bangla',
             // Valid UTF-8 + UTF-8 NO-BREAK SPACE
             "κόσμε\xc2\xa0" => 'kosme ',
             // Valid UTF-8 + Invalid Chars
