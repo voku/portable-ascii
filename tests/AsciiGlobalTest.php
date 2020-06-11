@@ -59,6 +59,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 3 => 'ბ',
                 4 => 'ب',
                 5 => 'پ',
+                6 => 'ব'
             ],
             $array['b']
         );
@@ -75,6 +76,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 3 => 'ბ',
                 4 => 'ب',
                 5 => 'پ',
+                6 => 'ব'
             ],
             $array['b']
         );
@@ -91,6 +93,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 3 => 'ბ',
                 4 => 'ب',
                 5 => 'پ',
+                6 => 'ব'
             ],
             $array['b']
         );
@@ -116,6 +119,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 3 => 'ბ',
                 4 => 'ب',
                 5 => 'پ',
+                6 => 'ব'
             ],
             $array['b']
         );
@@ -523,6 +527,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['musteri', 'müştəri', ASCII::AZERBAIJANI_LANGUAGE_CODE],
             ['zakaznik', 'zákazník', ASCII::SLOVAK_LANGUAGE_CODE],
             ['francais', 'français', ASCII::FRENCH_LANGUAGE_CODE],
+            ['bangla', 'বাংলা', ASCII::BENGALI_LANGUAGE_CODE],
             ['user@host', 'user@host'],
             ['', '漢字'],
             ['xin chao the gioi', 'xin chào thế giới'],
