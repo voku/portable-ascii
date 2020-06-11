@@ -43,7 +43,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['Gai-Bian-Shu-De-Zhi-Ying-Wei', '該變數的值應為', '-', 'zh_TW', false, false, true],
             ['Gai-Bian-Liang-De-Zhi-Ying-Wei', '该变量的值应为', '-', ASCII::CHINESE_LANGUAGE_CODE, false, true, true],
             ['Gai-Bian-Shu-De-Zhi-Ying-Wei', '該變數的值應為', '-', 'zh_TW', false, true, true],
-            ['ami-banglay-ktha-bli', 'আমি বাংলায় কথা বলি', '-', ASCII::BENGALI_LANGUAGE_CODE, true, true, true]
+            ['ami-banglay-ktha-bli-ngkx', 'আমি বাংলায় কথা বলি ... ঙ্ক্ষ', '-', ASCII::BENGALI_LANGUAGE_CODE, true, true, true],
         ];
     }
 
@@ -59,7 +59,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 3 => 'ბ',
                 4 => 'ب',
                 5 => 'پ',
-                6 => 'ব'
+                6 => 'ব',
             ],
             $array['b']
         );
@@ -76,7 +76,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 3 => 'ბ',
                 4 => 'ب',
                 5 => 'پ',
-                6 => 'ব'
+                6 => 'ব',
             ],
             $array['b']
         );
@@ -93,7 +93,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 3 => 'ბ',
                 4 => 'ب',
                 5 => 'پ',
-                6 => 'ব'
+                6 => 'ব',
             ],
             $array['b']
         );
@@ -119,7 +119,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 3 => 'ბ',
                 4 => 'ب',
                 5 => 'پ',
-                6 => 'ব'
+                6 => 'ব',
             ],
             $array['b']
         );

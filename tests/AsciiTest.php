@@ -104,7 +104,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
             'The #会 comment at @בגדה = 10% of *&*'     => 'The #Hui  comment at @bgdh = 10% of *&*',
             '∀ i ∈ ℕ'                                  => ' i  N',
             '👍 💩 😄 ❤ 👍 💩 😄 ❤أحبك'                      => '       ahbk',
-            'আমি'                       => 'ami',
+            'আমি'                                      => 'ami',
         ];
 
         foreach ($testsStrict as $before => $after) {
@@ -157,7 +157,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
             'The #会 comment at @בגדה = 10% of *&*'     => 'The # comment at @ = 10% of *&*',
             '∀ i ∈ ℕ'                                  => ' i  ',
             '👍 💩 😄 ❤ 👍 💩 😄 ❤أحبك'                      => '       ahbk',
-            'আমি   '                       => 'ami   ',
+            'আমি   '                                   => 'ami   ',
         ];
 
         foreach ($testsStrict as $before => $after) {
