@@ -265,8 +265,10 @@ final class ASCII
      *
      * @psalm-pure
      *
-     * @return array         <p>An array of replacements.</p>
-     * @return array<string, array<int, string>>
+     * @return array
+     *               <p>An array of replacements.</p>
+     *
+     * @psalm-return array<string, array<int, string>>
      */
     public static function charsArrayWithMultiLanguageValues(bool $replace_extra_symbols = false): array
     {
@@ -324,9 +326,11 @@ final class ASCII
      * @param bool   $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      * @param bool   $asOrigReplaceArray    [optional] <p>TRUE === return {orig: string[], replace: string[]}
      *                                      array</p>
+     *
      * @psalm-pure
      *
-     * @return array <p>An array of replacements.</p>
+     * @return array
+     *               <p>An array of replacements.</p>
      *
      * @psalm-return array{orig: string[], replace: string[]}|array<string, string>
      */
@@ -418,9 +422,11 @@ final class ASCII
      * @param bool $replace_extra_symbols [optional] <p>Add some more replacements e.g. "£" with " pound ".</p>
      * @param bool $asOrigReplaceArray    [optional] <p>TRUE === return {orig: string[], replace: string[]}
      *                                    array</p>
+     *
      * @psalm-pure
      *
-     * @return array <p>An array of replacements.</p>
+     * @return array
+     *               <p>An array of replacements.</p>
      *
      * @psalm-return array{orig: string[], replace: string[]}|array<string, string>
      */
