@@ -12,4 +12,9 @@
         </ignoreFiles>
     </projectFiles>
 
+    <issueHandlers>
+        <ImpureStaticProperty errorLevel="suppress" />
+        <ImpureStaticVariable errorLevel="suppress" />
+    </issueHandlers>
+
 </psalm>
