@@ -379,7 +379,7 @@ ASCII::to_transliterate('déjà σσς iıii'); // 'deja sss iiii'
 
 **Parameters:**
 - `string $str <p>The input string.</p>`
-- `null|string $unknown [optional] <p>Character use if character unknown. (default is '?')
+- `string|null $unknown [optional] <p>Character use if character unknown. (default is '?')
 But you can also use NULL to keep the unknown chars.</p>`
 - `bool $strict [optional] <p>Use "transliterator_transliterate()" from PHP-Intl`
 
