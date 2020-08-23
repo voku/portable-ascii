@@ -245,7 +245,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         // ---
 
-        $str = "ä-ö-ü";
+        $str = 'ä-ö-ü';
         static::assertSame('ae-oe-ue', ASCII::to_ascii($str, 'de', true));
     }
 
