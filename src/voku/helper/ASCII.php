@@ -1263,8 +1263,10 @@ final class ASCII
                     ||
                     $new_char === '[?] '
                 ) {
+                    /** @psalm-suppress ImpureByReferenceAssignment */
                     $c = $unknown ?? $c;
                 } else {
+                    /** @psalm-suppress ImpureByReferenceAssignment */
                     $c = $new_char;
                 }
             } else {
@@ -1279,6 +1281,7 @@ final class ASCII
                 echo "bank:" . $bank . "\n\n";
                  */
 
+                /** @psalm-suppress ImpureByReferenceAssignment */
                 $c = $unknown ?? $c;
             }
 
@@ -1356,13 +1359,11 @@ final class ASCII
     private static function getDataIfExists(string $file): array
     {
         $file = __DIR__ . '/data/' . $file . '.php';
-        /**
-         * @noinspection LowPerformingFilesystemOperationsInspection
-         * -> we use this only once, so no extra caching is needed
-         */
-        if (\file_exists($file)) {
+        /** @psalm-suppress ImpureFunctionCall */
+        if (\is_file($file)) {
             /** @noinspection PhpIncludeInspection */
             /** @noinspection UsingInclusionReturnValueInspection */
+            /** @psalm-suppress UnresolvableInclude */
             return include $file;
         }
 
