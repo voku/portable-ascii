@@ -13,6 +13,7 @@
     </projectFiles>
 
     <issueHandlers>
+        <ImpureByReferenceAssignment errorLevel="suppress" />
         <ImpureStaticProperty errorLevel="suppress" />
         <ImpureStaticVariable errorLevel="suppress" />
     </issueHandlers>

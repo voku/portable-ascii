@@ -1263,10 +1263,8 @@ final class ASCII
                     ||
                     $new_char === '[?] '
                 ) {
-                    /** @psalm-suppress ImpureByReferenceAssignment */
                     $c = $unknown ?? $c;
                 } else {
-                    /** @psalm-suppress ImpureByReferenceAssignment */
                     $c = $new_char;
                 }
             } else {
@@ -1281,7 +1279,6 @@ final class ASCII
                 echo "bank:" . $bank . "\n\n";
                  */
 
-                /** @psalm-suppress ImpureByReferenceAssignment */
                 $c = $unknown ?? $c;
             }
 
