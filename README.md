@@ -64,6 +64,7 @@ but this repo is more modular and portable, because it has no dependencies.
 
 *   No extensions are required to run this library. Portable ASCII only needs PCRE library that is available by default since PHP 4.2.0 and cannot be disabled since PHP 5.3.0. "\u" modifier support in PCRE for ASCII handling is not a must.
 *   PHP 7.0 is the minimum requirement
+*   PHP 8.0 is also supported
 
 ## Usage
 
