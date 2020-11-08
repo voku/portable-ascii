@@ -1,5 +1,11 @@
 # Changelog
 
+### 1.5.4 (2020-11-08)
+
+- add some missing replacements in U+23xx page (thanks @marcoffee)
+- fix "Russian" char-mapping (thanks @ilyahoilik)
+- running test with PHP 8.0 rc3
+
 ### 1.5.3 (2020-07-23)
 
 - fix "Georgian" char-mapping (thanks @waska14)
