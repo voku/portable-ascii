@@ -172,7 +172,6 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
             "Κόσμε\x20"                                                                        => 'Κόσμε ',
             "öäü-κόσμ\x0εκόσμε-äöü"                                                            => 'öäü-κόσμεκόσμε-äöü',
             'öäü-κόσμεκόσμε-äöüöäü-κόσμεκόσμε-äöü'                                             => 'öäü-κόσμεκόσμε-äöüöäü-κόσμεκόσμε-äöü',
-            "äöüäöüäöü-κόσμεκόσμεäöüäöüäöü\xe1\x9a\x80κόσμεκόσμεäöüäöüäöü-κόσμεκόσμε"          => 'äöüäöüäöü-κόσμεκόσμεäöüäöüäöü κόσμεκόσμεäöüäöüäöü-κόσμεκόσμε',
             'äöüäöüäöü-κόσμεκόσμεäöüäöüäöü-Κόσμεκόσμεäöüäöüäöü-κόσμεκόσμεäöüäöüäöü-κόσμεκόσμε' => 'äöüäöüäöü-κόσμεκόσμεäöüäöüäöü-Κόσμεκόσμεäöüäöüäöü-κόσμεκόσμεäöüäöüäöü-κόσμεκόσμε',
             '  '                                                                               => '  ',
             ''                                                                                 => '',
@@ -180,7 +179,14 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         foreach ($testArray as $before => $after) {
             static::assertSame($after, ASCII::remove_invisible_characters($before), 'error by ' . $before);
+            static::assertSame($after, ASCII::remove_invisible_characters($before, true, '', true), 'error by ' . $before);
+            static::assertSame($after, ASCII::remove_invisible_characters($before, false, '', false), 'error by ' . $before);
         }
+
+        static::assertSame('äöüäöüäöü-κόσμεκόσμεäöüäöüäöü κόσμεκόσμεäöüäöüäöü-κόσμεκόσμε', ASCII::remove_invisible_characters("äöüäöüäöü-κόσμεκόσμεäöüäöüäöü\xe1\x9a\x80κόσμεκόσμεäöüäöüäöü-κόσμεκόσμε"));
+
+        static::assertSame('%*ł€! ‎|  ', ASCII::remove_invisible_characters('%*ł€! ‎|  '));
+        static::assertSame('%*ł€! |' . "\n " . "\t", ASCII::remove_invisible_characters('%*ł€! ‎|  ' . "\t", false, '', false));
 
         static::assertSame('κόσ?με 	%00 | tes%20öäü%20\u00edtest', ASCII::remove_invisible_characters("κόσ\0με 	%00 | tes%20öäü%20\u00edtest", false, '?'));
         static::assertSame('κόσμε 	 | tes%20öäü%20\u00edtest', ASCII::remove_invisible_characters("κόσ\0με 	%00 | tes%20öäü%20\u00edtest", true, ''));

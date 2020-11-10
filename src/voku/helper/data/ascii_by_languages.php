@@ -2856,7 +2856,7 @@ return [
         "\xe2\x80\xaf" => ' ', // 'NARROW NO-BREAK SPACE'
         "\xe2\x81\x9f" => ' ', // 'MEDIUM MATHEMATICAL SPACE'
         "\xe3\x80\x80" => ' ', // 'IDEOGRAPHIC SPACE'
-        "\xef\xbe\xa0" => ' ', // HALFWIDTH HANGUL FILLER
+        "\xef\xbe\xa0" => ' ', // 'HALFWIDTH HANGUL FILLER'
     ],
     // commonly used in Word documents
     'msword' => [

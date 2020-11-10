@@ -612,10 +612,11 @@ final class ASCII
      * ASCII::normalize_whitespace("abc-\xc2\xa0-öäü-\xe2\x80\xaf-\xE2\x80\xAC", true); // "abc-\xc2\xa0-öäü- -"
      * </code>
      *
-     * @param string $str                     <p>The string to be normalized.</p>
-     * @param bool   $keepNonBreakingSpace    [optional] <p>Set to true, to keep non-breaking-spaces.</p>
-     * @param bool   $keepBidiUnicodeControls [optional] <p>Set to true, to keep non-printable (for the web)
-     *                                        bidirectional text chars.</p>
+     * @param string $str                          <p>The string to be normalized.</p>
+     * @param bool   $keepNonBreakingSpace         [optional] <p>Set to true, to keep non-breaking-spaces.</p>
+     * @param bool   $keepBidiUnicodeControls      [optional] <p>Set to true, to keep non-printable (for the web)
+     *                                             bidirectional text chars.</p>
+     * @param bool   $replaceSeparatorsWithNewline [optional] <p>Set to true, to convert LINE and PARAGRAPH SEPARATOR with "\n".</p>
      *
      * @psalm-pure
      *
@@ -625,7 +626,8 @@ final class ASCII
     public static function normalize_whitespace(
         string $str,
         bool $keepNonBreakingSpace = false,
-        bool $keepBidiUnicodeControls = false
+        bool $keepBidiUnicodeControls = false,
+        bool $replaceSeparatorsWithNewline = false
     ): string {
         if ($str === '') {
             return '';
@@ -636,6 +638,10 @@ final class ASCII
          */
         static $WHITESPACE_CACHE = [];
         $cacheKey = (int) $keepNonBreakingSpace;
+
+        if ($replaceSeparatorsWithNewline) {
+            $str = \str_replace(["\xe2\x80\xa8", "\xe2\x80\xa9"], "\n", $str);
+        }
 
         if (!isset($WHITESPACE_CACHE[$cacheKey])) {
             self::prepareAsciiMaps();
@@ -675,6 +681,7 @@ final class ASCII
      * @param string $str
      * @param bool   $url_encoded
      * @param string $replacement
+     * @param bool   $keep_control_characters
      *
      * @psalm-pure
      *
@@ -683,7 +690,8 @@ final class ASCII
     public static function remove_invisible_characters(
         string $str,
         bool $url_encoded = false,
-        string $replacement = ''
+        string $replacement = '',
+        bool $keep_control_characters = true
     ): string {
         // init
         $non_displayables = [];
@@ -697,7 +705,12 @@ final class ASCII
             $non_displayables[] = '/%1[0-9a-fA-F]/'; // url encoded 16-31
         }
 
-        $non_displayables[] = '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/S'; // 00-08, 11, 12, 14-31, 127
+        if ($keep_control_characters) {
+            $non_displayables[] = '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/S'; // 00-08, 11, 12, 14-31, 127
+        } else {
+            $str = self::normalize_whitespace($str, false, false, true);
+            $non_displayables[] = '/[^\P{C}\s]/u';
+        }
 
         do {
             $str = (string) \preg_replace($non_displayables, $replacement, $str, -1, $count);
