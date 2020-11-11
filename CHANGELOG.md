@@ -1,5 +1,10 @@
 # Changelog
 
+### 1.5.5 (2020-11-12)
+
+- fix "Greeklish" char-mapping (thanks @sebdesign)
+- "ASCII::normalize_whitespace()" -> can now also remove "control characters" if needed
+
 ### 1.5.4 (2020-11-08)
 
 - add some missing replacements in U+23xx page (thanks @marcoffee)
