@@ -482,14 +482,14 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 'που ήρθαν να μας πουν τα κάλλαντα ήταν προσφυγόπουλα, κορίτσια συνήθως, από την Γεωργία.',
                 ASCII::GREEK_LANGUAGE_CODE,
             ],
-            ['A8hna', 'Αθήνα', ASCII::GREEKLISH_LANGUAGE_CODE],
+            ['Athhna', 'Αθήνα', ASCII::GREEKLISH_LANGUAGE_CODE],
             [
-                'As nros8esw ki egw oti ta teleutaia dyo xronia nou ekana Xristougenna sthn 8essalonikh ta mona naidia',
+                'As prosthesw ki egw oti ta teleutaia dyo xronia pou ekana Xristougenna sthn Thessalonikh ta mona paidia',
                 'Ας προσθέσω κι εγώ ότι τα τελευταία δύο χρόνια που έκανα Χριστούγεννα στην Θεσσαλονίκη τα μόνα παιδιά',
                 ASCII::GREEKLISH_LANGUAGE_CODE,
             ],
             [
-                'nou hr8an na mas noun ta kallanta htan nrosfygonoula, koritsia synh8ws, ano thn Gewrgia.',
+                'pou hrthan na mas poun ta kallanta htan prosfygopoula, koritsia synhthws, apo thn Gewrgia.',
                 'που ήρθαν να μας πουν τα κάλλαντα ήταν προσφυγόπουλα, κορίτσια συνήθως, από την Γεωργία.',
                 ASCII::GREEKLISH_LANGUAGE_CODE,
             ],
