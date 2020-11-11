@@ -96,8 +96,8 @@ The API from the "ASCII"-Class is written as small static methods.
 </td><td><a href="#getalllanguages-string">getAllLanguages</a>
 </td><td><a href="#is_asciistring-str-bool">is_ascii</a>
 </td><td><a href="#normalize_mswordstring-str-string">normalize_msword</a>
-</td></tr><tr><td><a href="#normalize_whitespacestring-str-bool-keepnonbreakingspace-bool-keepbidiunicodecontrols-string">normalize_whitespace</a>
-</td><td><a href="#remove_invisible_charactersstring-str-bool-url_encoded-string-replacement-string">remove_invisible_characters</a>
+</td></tr><tr><td><a href="#normalize_whitespacestring-str-bool-keepnonbreakingspace-bool-keepbidiunicodecontrols-bool-replaceseparatorswithnewline-string">normalize_whitespace</a>
+</td><td><a href="#remove_invisible_charactersstring-str-bool-url_encoded-string-replacement-bool-keep_control_characters-string">remove_invisible_characters</a>
 </td><td><a href="#to_asciistring-str-string-language-bool-remove_unsupported_chars-bool-replace_extra_symbols-bool-use_transliterate-boolnull-replace_single_chars_only-string">to_ascii</a>
 </td><td><a href="#to_filenamestring-str-bool-use_transliterate-string-fallback_char-string">to_filename</a>
 </td></tr><tr><td><a href="#to_slugifystring-str-string-separator-string-language-string-replacements-bool-replace_extra_symbols-bool-use_str_to_lower-bool-use_transliterate-string">to_slugify</a>
@@ -254,7 +254,7 @@ ASCII::normalize_msword('„Abcdef…”'); // '"Abcdef..."'
 
 --------
 
-#### normalize_whitespace(string $str, bool $keepNonBreakingSpace, bool $keepBidiUnicodeControls): string
+#### normalize_whitespace(string $str, bool $keepNonBreakingSpace, bool $keepBidiUnicodeControls, bool $replaceSeparatorsWithNewline): string
 <a href="#voku-php-readme-class-methods">↑</a>
 Normalize the whitespace.
 
@@ -267,13 +267,14 @@ ASCII::normalize_whitespace("abc-\xc2\xa0-öäü-\xe2\x80\xaf-\xE2\x80\xAC", tru
 - `bool $keepNonBreakingSpace [optional] <p>Set to true, to keep non-breaking-spaces.</p>`
 - `bool $keepBidiUnicodeControls [optional] <p>Set to true, to keep non-printable (for the web)
 bidirectional text chars.</p>`
+- `bool $replaceSeparatorsWithNewline [optional] <p>Set to true, to convert LINE and PARAGRAPH SEPARATOR with "\n".</p>`
 
 **Return:**
 - `string <p>A string with normalized whitespace.</p>`
 
 --------
 
-#### remove_invisible_characters(string $str, bool $url_encoded, string $replacement): string
+#### remove_invisible_characters(string $str, bool $url_encoded, string $replacement, bool $keep_control_characters): string
 <a href="#voku-php-readme-class-methods">↑</a>
 Remove invisible characters from a string.
 
@@ -285,6 +286,7 @@ copy&past from https://github.com/bcit-ci/CodeIgniter/blob/develop/system/core/C
 - `string $str`
 - `bool $url_encoded`
 - `string $replacement`
+- `bool $keep_control_characters`
 
 **Return:**
 - `string`
