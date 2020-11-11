@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.5.6 (2020-11-12)
+    
+- "ASCII::normalize_whitespace()" -> can now also remove "control characters" if needed (+ VERTICAL TAB)
+
 ### 1.5.5 (2020-11-12)
 
 - fix "Greeklish" char-mapping (thanks @sebdesign)
