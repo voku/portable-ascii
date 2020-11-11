@@ -2852,7 +2852,6 @@ return [
         "\xe2\x80\x8a" => ' ', // 'HAIR SPACE'
         "\xe2\x80\xa8" => ' ', // 'LINE SEPARATOR'
         "\xe2\x80\xa9" => ' ', // 'PARAGRAPH SEPARATOR'
-        "\xE2\xAD\xBF" => ' ', // 'VERTICAL TAB KEY'
         "\xe2\x80\x8b" => ' ', // 'ZERO WIDTH SPACE'
         "\xe2\x80\xaf" => ' ', // 'NARROW NO-BREAK SPACE'
         "\xe2\x81\x9f" => ' ', // 'MEDIUM MATHEMATICAL SPACE'

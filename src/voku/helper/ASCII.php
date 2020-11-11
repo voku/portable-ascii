@@ -616,7 +616,7 @@ final class ASCII
      * @param bool   $keepNonBreakingSpace         [optional] <p>Set to true, to keep non-breaking-spaces.</p>
      * @param bool   $keepBidiUnicodeControls      [optional] <p>Set to true, to keep non-printable (for the web)
      *                                             bidirectional text chars.</p>
-     * @param bool   $replaceSeparatorsWithNewline [optional] <p>Set to true, to convert LINE-, PARAGRAPH-SEPARATOR and VERTICAL TAB KEY with "\n".</p>
+     * @param bool   $normalize_control_characters [optional] <p>Set to true, to convert LINE-, PARAGRAPH-SEPARATOR with "\n" and LINE TABULATION with "\t".</p>
      *
      * @psalm-pure
      *
@@ -627,7 +627,7 @@ final class ASCII
         string $str,
         bool $keepNonBreakingSpace = false,
         bool $keepBidiUnicodeControls = false,
-        bool $replaceSeparatorsWithNewline = false
+        bool $normalize_control_characters = false
     ): string {
         if ($str === '') {
             return '';
@@ -639,8 +639,8 @@ final class ASCII
         static $WHITESPACE_CACHE = [];
         $cacheKey = (int) $keepNonBreakingSpace;
 
-        if ($replaceSeparatorsWithNewline) {
-            $str = \str_replace(["\xe2\x80\xa8", "\xe2\x80\xa9", "\xE2\xAD\xBF"], "\n", $str);
+        if ($normalize_control_characters) {
+            $str = \str_replace(["\xe2\x80\xa8", "\xe2\x80\xa9", "\x0B"], ["\n", "\n", "\t"], $str);
         }
 
         if (!isset($WHITESPACE_CACHE[$cacheKey])) {

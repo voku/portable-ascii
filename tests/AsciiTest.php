@@ -185,8 +185,8 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame('äöüäöüäöü-κόσμεκόσμεäöüäöüäöü κόσμεκόσμεäöüäöüäöü-κόσμεκόσμε', ASCII::remove_invisible_characters("äöüäöüäöü-κόσμεκόσμεäöüäöüäöü\xe1\x9a\x80κόσμεκόσμεäöüäöüäöü-κόσμεκόσμε"));
 
-        static::assertSame('%*ł€! ‎|  ', ASCII::remove_invisible_characters('%*ł€! ‎|  '));
-        static::assertSame('%*ł€! |' . "\n " . "\t", ASCII::remove_invisible_characters('%*ł€! ‎|  ' . "\t", false, '', false));
+        static::assertSame('%*ł€! ‎| | ', ASCII::remove_invisible_characters('%*ł€! ‎| | '));
+        static::assertSame('%*ł€! |' . "\n|\t " . "\t", ASCII::remove_invisible_characters('%*ł€! ‎| | ' . "\t", false, '', false));
 
         static::assertSame('κόσ?με 	%00 | tes%20öäü%20\u00edtest', ASCII::remove_invisible_characters("κόσ\0με 	%00 | tes%20öäü%20\u00edtest", false, '?'));
         static::assertSame('κόσμε 	 | tes%20öäü%20\u00edtest', ASCII::remove_invisible_characters("κόσ\0με 	%00 | tes%20öäü%20\u00edtest", true, ''));
