@@ -640,7 +640,25 @@ final class ASCII
         $cacheKey = (int) $keepNonBreakingSpace;
 
         if ($normalize_control_characters) {
-            $str = \str_replace(["\xe2\x80\xa8", "\xe2\x80\xa9", "\x0B"], ["\n", "\n", "\t"], $str);
+            $str = \str_replace(
+                [
+                    "\x0d\x0c",     // 'END OF LINE'
+                    "\xe2\x80\xa8", // 'LINE SEPARATOR'
+                    "\xe2\x80\xa9", // 'PARAGRAPH SEPARATOR'
+                    "\x0c",         // 'FORM FEED'
+                    "\x0d",         // 'CARRIAGE RETURN'
+                    "\x0b",         // 'VERTICAL TAB'
+                ],
+                [
+                    "\n",
+                    "\n",
+                    "\n",
+                    "\n",
+                    "\n",
+                    "\t",
+                ],
+                $str
+            );
         }
 
         if (!isset($WHITESPACE_CACHE[$cacheKey])) {
@@ -681,7 +699,7 @@ final class ASCII
      * @param string $str
      * @param bool   $url_encoded
      * @param string $replacement
-     * @param bool   $keep_control_characters
+     * @param bool   $keep_basic_control_characters
      *
      * @psalm-pure
      *
@@ -691,7 +709,7 @@ final class ASCII
         string $str,
         bool $url_encoded = false,
         string $replacement = '',
-        bool $keep_control_characters = true
+        bool $keep_basic_control_characters = true
     ): string {
         // init
         $non_displayables = [];
@@ -705,7 +723,7 @@ final class ASCII
             $non_displayables[] = '/%1[0-9a-fA-F]/'; // url encoded 16-31
         }
 
-        if ($keep_control_characters) {
+        if ($keep_basic_control_characters) {
             $non_displayables[] = '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/S'; // 00-08, 11, 12, 14-31, 127
         } else {
             $str = self::normalize_whitespace($str, false, false, true);

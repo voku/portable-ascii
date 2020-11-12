@@ -2,7 +2,7 @@
 
 ### 1.5.6 (2020-11-12)
     
-- "ASCII::normalize_whitespace()" -> can now also remove "control characters" if needed (+ VERTICAL TAB)
+- "ASCII::normalize_whitespace()" -> can now also remove "control characters" if needed v2
 
 ### 1.5.5 (2020-11-12)
 
