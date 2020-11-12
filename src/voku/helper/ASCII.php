@@ -616,7 +616,7 @@ final class ASCII
      * @param bool   $keepNonBreakingSpace         [optional] <p>Set to true, to keep non-breaking-spaces.</p>
      * @param bool   $keepBidiUnicodeControls      [optional] <p>Set to true, to keep non-printable (for the web)
      *                                             bidirectional text chars.</p>
-     * @param bool   $normalize_control_characters [optional] <p>Set to true, to convert LINE-, PARAGRAPH-SEPARATOR with "\n" and LINE TABULATION with "\t".</p>
+     * @param bool   $normalize_control_characters [optional] <p>Set to true, to convert e.g. LINE-, PARAGRAPH-SEPARATOR with "\n" and LINE TABULATION with "\t".</p>
      *
      * @psalm-pure
      *
