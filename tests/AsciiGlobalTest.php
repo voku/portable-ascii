@@ -260,7 +260,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         // ---
 
-        static::assertTrue(\count($arrayMore) > \count($array));
+        static::assertGreaterThan(\count($array), \count($arrayMore));
     }
 
     public function testFilterFile()
