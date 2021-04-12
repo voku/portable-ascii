@@ -200,7 +200,7 @@ final class ASCII
      *
      * @return string[]
      *
-     * @psalm-return array<string, string>
+     * @phpstan-return array<string, string>
      */
     public static function getAllLanguages(): array
     {
@@ -238,7 +238,7 @@ final class ASCII
      *
      * @return array
      *
-     * @psalm-return array<string, array<string , string>>
+     * @phpstan-return array<string, array<string , string>>
      */
     public static function charsArray(bool $replace_extra_symbols = false): array
     {
@@ -268,7 +268,7 @@ final class ASCII
      * @return array
      *               <p>An array of replacements.</p>
      *
-     * @psalm-return array<string, array<int, string>>
+     * @phpstan-return array<string, array<int, string>>
      */
     public static function charsArrayWithMultiLanguageValues(bool $replace_extra_symbols = false): array
     {
@@ -300,10 +300,7 @@ final class ASCII
 
         $CHARS_ARRAY[$cacheKey] = $return;
 
-        /** @noinspection PhpSillyAssignmentInspection - hack for phpstan */
-        /** @var array<string, array<int, string>> $return */
-        $return = $return;
-
+        /** @var array<string, array<int, string>> $return - hack for phpstan */
         return $return;
     }
 
@@ -332,7 +329,7 @@ final class ASCII
      * @return array
      *               <p>An array of replacements.</p>
      *
-     * @psalm-return array{orig: string[], replace: string[]}|array<string, string>
+     * @phpstan-return array{orig: string[], replace: string[]}|array<string, string>
      */
     public static function charsArrayWithOneLanguage(
         string $language = self::ENGLISH_LANGUAGE_CODE,
@@ -428,7 +425,7 @@ final class ASCII
      * @return array
      *               <p>An array of replacements.</p>
      *
-     * @psalm-return array{orig: string[], replace: string[]}|array<string, string>
+     * @phpstan-return array{orig: string[], replace: string[]}|array<string, string>
      */
     public static function charsArrayWithSingleLanguageValues(
         bool $replace_extra_symbols = false,
@@ -807,7 +804,7 @@ final class ASCII
             $EXTRA_SYMBOLS_CACHE === null
         ) {
             $EXTRA_SYMBOLS_CACHE = [];
-            foreach (self::$ASCII_EXTRAS ?? [] as $extrasLanguageTmp => $extrasDataTmp) {
+            foreach (self::$ASCII_EXTRAS ?? [] as $extrasDataTmp) {
                 foreach ($extrasDataTmp as $extrasDataKeyTmp => $extrasDataValueTmp) {
                     $EXTRA_SYMBOLS_CACHE[$extrasDataKeyTmp] = $extrasDataKeyTmp;
                 }
@@ -933,7 +930,7 @@ final class ASCII
                 }
             }
 
-            foreach ($matches[0] as $keyTmp => $char) {
+            foreach ($matches[0] as $char) {
                 if (
                     !isset($charDone[$char])
                     &&
