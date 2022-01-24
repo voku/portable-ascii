@@ -642,12 +642,10 @@ final class ASCII
                     "\x0d\x0c",     // 'END OF LINE'
                     "\xe2\x80\xa8", // 'LINE SEPARATOR'
                     "\xe2\x80\xa9", // 'PARAGRAPH SEPARATOR'
-                    "\x0c",         // 'FORM FEED'
-                    "\x0d",         // 'CARRIAGE RETURN'
-                    "\x0b",         // 'VERTICAL TAB'
+                    "\x0c",         // 'FORM FEED' // "\f"
+                    "\x0b",         // 'VERTICAL TAB' // "\v"
                 ],
                 [
-                    "\n",
                     "\n",
                     "\n",
                     "\n",
@@ -732,6 +730,70 @@ final class ASCII
         } while ($count !== 0);
 
         return $str;
+    }
+
+    /**
+     *  WARNING: This method will return broken characters and is only for special cases.
+     *
+     * Convert two UTF-8 encoded string to a single-byte strings suitable for
+     * functions that need the same string length after the conversion.
+     *
+     * The function simply uses (and updates) a tailored dynamic encoding
+     * (in/out map parameter) where non-ascii characters are remapped to
+     * the range [128-255] in order of appearance.
+     *
+     * @param string $str1
+     * @param string $str2
+     *
+     * @return string[]
+     *
+     * @phpstan-return array{0: string, 1: string}
+     */
+    public static function to_ascii_remap(string $str1, string $str2): array {
+        $charMap = [];
+        $str1 = self::to_ascii_remap_intern($str1, $charMap);
+        $str2 = self::to_ascii_remap_intern($str2, $charMap);
+
+        return [$str1, $str2];
+    }
+
+    /**
+     * WARNING: This method will return broken characters and is only for special cases.
+     *
+     * Convert a UTF-8 encoded string to a single-byte string suitable for
+     * functions that need the same string length after the conversion.
+     *
+     * The function simply uses (and updates) a tailored dynamic encoding
+     * (in/out map parameter) where non-ascii characters are remapped to
+     * the range [128-255] in order of appearance.
+     *
+     * Thus, it supports up to 128 different multibyte code points max over
+     * the whole set of strings sharing this encoding.
+     *
+     * Source: https://github.com/KEINOS/mb_levenshtein
+     *
+     * @param  string $str UTF-8 string to be converted to extended ASCII.
+     * @return string Mapped borken string.
+     */
+    private static function to_ascii_remap_intern(string $str, array &$map): string
+    {
+        // find all utf-8 characters
+        $matches = [];
+        if (!\preg_match_all('/[\xC0-\xF7][\x80-\xBF]+/', $str, $matches)) {
+            return $str; // plain ascii string
+        }
+
+        // update the encoding map with the characters not already met
+        $mapCount = \count($map);
+        foreach ($matches[0] as $mbc) {
+            if (!isset($map[$mbc])) {
+                $map[$mbc] = \chr(128 + $mapCount);
+                $mapCount++;
+            }
+        }
+
+        // finally remap non-ascii characters
+        return \strtr($str, $map);
     }
 
     /**

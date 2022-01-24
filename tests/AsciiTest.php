@@ -11,6 +11,11 @@ use voku\helper\ASCII;
  */
 final class AsciiTest extends \PHPUnit\Framework\TestCase
 {
+    public function testToAsciiRemap()
+    {
+        static::assertSame(['testi' . \chr(128) . 'g', 'testing'], ASCII::to_ascii_remap('testiñg', 'testing'));
+    }
+
     public function testUtf8()
     {
         $str = 'testiñg';
