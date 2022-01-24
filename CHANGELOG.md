@@ -1,5 +1,11 @@
 # Changelog
 
+### 1.6.1 (2021-01-24)
+
+- revert: prefer "Russian - Passport (2013), ICAO" instead of "Russian - GOST 7.79-2000(B)"
+- revert: fix "Ukrainian" char-mapping (thanks to @Andr1yk0)
+- revert: fix "Persian" char-mapping (thanks to @frost-cyber)
+
 ### 1.6.0 (2021-01-24)
 
 - prefer "Russian - Passport (2013), ICAO" instead of "Russian - GOST 7.79-2000(B)"
