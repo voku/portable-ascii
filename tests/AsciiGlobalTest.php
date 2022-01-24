@@ -58,8 +58,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 2 => 'ဗ',
                 3 => 'ბ',
                 4 => 'ب',
-                5 => 'پ',
-                6 => 'ব',
+                5 => 'ব',
             ],
             $array['b']
         );
@@ -75,8 +74,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 2 => 'ဗ',
                 3 => 'ბ',
                 4 => 'ب',
-                5 => 'پ',
-                6 => 'ব',
+                5 => 'ব',
             ],
             $array['b']
         );
@@ -92,8 +90,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 2 => 'ဗ',
                 3 => 'ბ',
                 4 => 'ب',
-                5 => 'پ',
-                6 => 'ব',
+                5 => 'ব',
             ],
             $array['b']
         );
@@ -119,7 +116,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
                 3 => 'ბ',
                 4 => 'ب',
                 5 => 'پ',
-                6 => 'ব',
+                5 => 'ব',
             ],
             $array['b']
         );
@@ -451,7 +448,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['Uzbek', 'Ўзбек', ASCII::UZBEK_LANGUAGE_CODE],
             ['Turkmen', 'Түркмен', ASCII::TURKMEN_LANGUAGE_CODE],
             ['aithy', 'ไทย', ASCII::THAI_LANGUAGE_CODE],
-            ['bSto', 'پښتو', ASCII::PASHTO_LANGUAGE_CODE],
+            ['pSto', 'پښتو', ASCII::PASHTO_LANGUAGE_CODE],
             ['odd\'iaa', 'ଓଡ଼ିଆ', ASCII::ORIYA_LANGUAGE_CODE],
             ['Mongol xe\'l', 'Монгол хэл', ASCII::MONGOLIAN_LANGUAGE_CODE],
             ['hangugeo', '한국어', ASCII::KOREAN_LANGUAGE_CODE],
