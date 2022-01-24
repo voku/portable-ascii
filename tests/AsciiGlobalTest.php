@@ -511,6 +511,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['horokh', 'горох', ASCII::UKRAINIAN_LANGUAGE_CODE],
             ['shchastya', 'щастя', ASCII::UKRAINIAN_LANGUAGE_CODE],
             ['Chernivtsi', 'Чернівці', ASCII::UKRAINIAN_LANGUAGE_CODE],
+            ['shtany', 'штани', ASCII::UKRAINIAN_LANGUAGE_CODE],
             ['universitet', 'университет', ASCII::KAZAKH_LANGUAGE_CODE],
             ['univerzitni', 'univerzitní', ASCII::CZECH_LANGUAGE_CODE],
             ['besoegende', 'besøgende', ASCII::DANISH_LANGUAGE_CODE],
