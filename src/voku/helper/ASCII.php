@@ -749,7 +749,8 @@ final class ASCII
      *
      * @phpstan-return array{0: string, 1: string}
      */
-    public static function to_ascii_remap(string $str1, string $str2): array {
+    public static function to_ascii_remap(string $str1, string $str2): array
+    {
         $charMap = [];
         $str1 = self::to_ascii_remap_intern($str1, $charMap);
         $str2 = self::to_ascii_remap_intern($str2, $charMap);
