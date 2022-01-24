@@ -25,9 +25,9 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['user-at-host', 'user@host'],
             ['using-strings-like-foo-bar', 'Using strings like fòô bàř'],
             ['numbers-1234', 'numbers 1234'],
-            ['perevirka-ryadka', 'перевірка рядка'],
+            ['perevirka-riadka', 'перевірка рядка'],
             ['bukvar-s-bukvoi-y', 'букварь с буквой ы'],
-            ['podexal-k-podezdu-moego-doma', 'подъехал к подъезду моего дома'],
+            ['podieexal-k-podieezdu-moego-doma', 'подъехал к подъезду моего дома'],
             ['foo:bar:baz', 'Foo bar baz', ':'],
             ['a_string_with_underscores', 'A_string with_underscores', '_'],
             ['a_string_with_dashes', 'A string-with-dashes', '_'],
@@ -348,7 +348,6 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         $replace_extra_symbols = false,
         $use_transliterate = false
     ) {
-        $result = '';
         for ($i = 0; $i <= 2; ++$i) { // keep this loop for simple performance tests
             $result = ASCII::to_ascii(
                 $str,
@@ -398,7 +397,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             [' TEST 3 Celsius ', ' ŤÉŚŢ 3°C', ASCII::ENGLISH_LANGUAGE_CODE, true, true],
             ['f = z = 3', 'φ = ź = 3'],
             ['perevirka', 'перевірка'],
-            ['lysaya gora', 'лысая гора'],
+            ['lysaia gora', 'лысая гора'],
             ['I  ', 'I ♥ 字'],
             ['I  ', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE],
             ['I ♥ 字', 'I ♥ 字', ASCII::ENGLISH_LANGUAGE_CODE, false],
@@ -455,7 +454,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['Kyrgyzca', 'Кыргызча', ASCII::KIRGHIZ_LANGUAGE_CODE],
             ['Hayeren', 'Հայերեն', ASCII::ARMENIAN_LANGUAGE_CODE],
             ['bangla', 'বাংলা', ASCII::BENGALI_LANGUAGE_CODE],
-            ['belaruskaya', 'беларуская', ASCII::BELARUSIAN_LANGUAGE_CODE],
+            ['belaruskaia', 'беларуская', ASCII::BELARUSIAN_LANGUAGE_CODE],
             ['\'amaarenyaa', 'አማርኛ', ASCII::AMHARIC_LANGUAGE_CODE],
             ['Ri Ben Yu  (nihongo)', '日本語 (にほんご)', ASCII::JAPANESE_LANGUAGE_CODE],
             ['een oplossing - aou', 'één oplossing - äöü', ASCII::DUTCH_LANGUAGE_CODE],
@@ -464,7 +463,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['Eu nao falo portugues.', 'Eu não falo português.', ASCII::PORTUGUESE_LANGUAGE_CODE],
             ['lysaya gora', 'лысая гора', ASCII::RUSSIAN_LANGUAGE_CODE],
             ['lysaia gora', 'лысая гора', ASCII::RUSSIAN_PASSPORT_2013_LANGUAGE_CODE],
-            ['lysaya gora', 'лысая гора', ASCII::RUSSIAN_GOST_2000_B_LANGUAGE_CODE],
+            ['ly\'saya gora', 'лысая гора', ASCII::RUSSIAN_GOST_2000_B_LANGUAGE_CODE],
             ['shhuka', 'щука'],
             ['shhuka', 'щука', ASCII::EXTRA_LATIN_CHARS_LANGUAGE_CODE],
             ['Elliniko alfavito', 'Ελληνικό αλφάβητο', ASCII::GREEK_LANGUAGE_CODE],
@@ -506,7 +505,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['shhuka', 'щука', ASCII::RUSSIAN_GOST_2000_B_LANGUAGE_CODE],
             ['dity', 'діти', ASCII::UKRAINIAN_LANGUAGE_CODE],
             ['horokh', 'горох', ASCII::UKRAINIAN_LANGUAGE_CODE],
-            ['shchastya', 'щастя', ASCII::UKRAINIAN_LANGUAGE_CODE],
+            ['shchastia', 'щастя', ASCII::UKRAINIAN_LANGUAGE_CODE],
             ['Chernivtsi', 'Чернівці', ASCII::UKRAINIAN_LANGUAGE_CODE],
             ['shtany', 'штани', ASCII::UKRAINIAN_LANGUAGE_CODE],
             ['universitet', 'университет', ASCII::KAZAKH_LANGUAGE_CODE],
