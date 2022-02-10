@@ -1,5 +1,6 @@
 * text=auto
 
+/build export-ignore
 /doc export-ignore
 /tests export-ignore
 /.editorconfig export-ignore
