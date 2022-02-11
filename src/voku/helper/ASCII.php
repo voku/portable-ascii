@@ -272,9 +272,7 @@ final class ASCII
      */
     public static function charsArrayWithMultiLanguageValues(bool $replace_extra_symbols = false): array
     {
-        /**
-         * @var array<string, array>
-         */
+        /** @var array<string, array<string, array<int, string>>> */
         static $CHARS_ARRAY = [];
         $cacheKey = '' . $replace_extra_symbols;
 
@@ -329,6 +327,7 @@ final class ASCII
      * @return array
      *               <p>An array of replacements.</p>
      *
+     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
      * @phpstan-return array{orig: string[], replace: string[]}|array<string, string>
      */
     public static function charsArrayWithOneLanguage(
@@ -339,9 +338,7 @@ final class ASCII
         $language = self::get_language($language);
 
         // init
-        /**
-         * @var array<string, array>
-         */
+        /** @var array<string, array<string, array<string, string>|array{orig: string[], replace: string[]}>> */
         static $CHARS_ARRAY = [];
         $cacheKey = '' . $replace_extra_symbols . '-' . $asOrigReplaceArray;
 
@@ -432,9 +429,7 @@ final class ASCII
         bool $asOrigReplaceArray = true
     ): array {
         // init
-        /**
-         * @var array<string,array>
-         */
+        /** @var array<string, array<string, string>|array{orig: string[], replace: string[]}> */
         static $CHARS_ARRAY = [];
         $cacheKey = '' . $replace_extra_symbols . '-' . $asOrigReplaceArray;
 
@@ -460,6 +455,7 @@ final class ASCII
             }
         }
 
+        /** @phpstan-ignore-next-line - ... error? */
         $CHARS_ARRAY[$cacheKey] = \array_merge([], ...$CHARS_ARRAY[$cacheKey]);
 
         if ($asOrigReplaceArray) {
@@ -578,19 +574,13 @@ final class ASCII
             return '';
         }
 
-        /**
-         * @var array{orig: string[], replace: string[]}
-         */
+        /** @var array{orig: string[], replace: string[]} */
         static $MSWORD_CACHE = ['orig' => [], 'replace' => []];
 
         if (empty($MSWORD_CACHE['orig'])) {
             self::prepareAsciiMaps();
 
-            /**
-             * @psalm-suppress PossiblyNullArrayAccess - we use the prepare* methods here, so we don't get NULL here
-             *
-             * @var array<string, string>
-             */
+            /** @var array<string, string> */
             $map = self::$ASCII_MAPS[self::EXTRA_MSWORD_CHARS_LANGUAGE_CODE] ?? [];
 
             $MSWORD_CACHE = [
@@ -630,9 +620,7 @@ final class ASCII
             return '';
         }
 
-        /**
-         * @var array<int,array<string,string>>
-         */
+        /** @var array<int,array<string,string>> */
         static $WHITESPACE_CACHE = [];
         $cacheKey = (int) $keepNonBreakingSpace;
 
@@ -665,13 +653,11 @@ final class ASCII
                 unset($WHITESPACE_CACHE[$cacheKey]["\xc2\xa0"]);
             }
 
-            $WHITESPACE_CACHE[$cacheKey] = \array_keys($WHITESPACE_CACHE[$cacheKey]);
+            $WHITESPACE_CACHE[$cacheKey] = array_keys($WHITESPACE_CACHE[$cacheKey]);
         }
 
         if (!$keepBidiUnicodeControls) {
-            /**
-             * @var array<int,string>|null
-             */
+            /** @var array<int,string>|null */
             static $BIDI_UNICODE_CONTROLS_CACHE = null;
 
             if ($BIDI_UNICODE_CONTROLS_CACHE === null) {
@@ -759,45 +745,6 @@ final class ASCII
     }
 
     /**
-     * WARNING: This method will return broken characters and is only for special cases.
-     *
-     * Convert a UTF-8 encoded string to a single-byte string suitable for
-     * functions that need the same string length after the conversion.
-     *
-     * The function simply uses (and updates) a tailored dynamic encoding
-     * (in/out map parameter) where non-ascii characters are remapped to
-     * the range [128-255] in order of appearance.
-     *
-     * Thus, it supports up to 128 different multibyte code points max over
-     * the whole set of strings sharing this encoding.
-     *
-     * Source: https://github.com/KEINOS/mb_levenshtein
-     *
-     * @param  string $str UTF-8 string to be converted to extended ASCII.
-     * @return string Mapped borken string.
-     */
-    private static function to_ascii_remap_intern(string $str, array &$map): string
-    {
-        // find all utf-8 characters
-        $matches = [];
-        if (!\preg_match_all('/[\xC0-\xF7][\x80-\xBF]+/', $str, $matches)) {
-            return $str; // plain ascii string
-        }
-
-        // update the encoding map with the characters not already met
-        $mapCount = \count($map);
-        foreach ($matches[0] as $mbc) {
-            if (!isset($map[$mbc])) {
-                $map[$mbc] = \chr(128 + $mapCount);
-                $mapCount++;
-            }
-        }
-
-        // finally remap non-ascii characters
-        return \strtr($str, $map);
-    }
-
-    /**
      * Returns an ASCII version of the string. A set of non-ASCII characters are
      * replaced with their closest ASCII counterparts, and the rest are removed
      * by default. The language or locale of the source string can be supplied
@@ -826,6 +773,8 @@ final class ASCII
      *
      * @return string
      *                <p>A string that contains only ASCII characters.</p>
+     *
+     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
      */
     public static function to_ascii(
         string $str,
@@ -839,13 +788,12 @@ final class ASCII
             return '';
         }
 
+        /** @phpstan-var ASCII::*_LANGUAGE_CODE - hack for phpstan */
         $language = self::get_language($language);
 
         static $EXTRA_SYMBOLS_CACHE = null;
 
-        /**
-         * @var array<string,array<string,string>>
-         */
+        /** @var array<string,array<string,string>> */
         static $REPLACE_HELPER_CACHE = [];
         $cacheKey = $language . '-' . $replace_extra_symbols;
 
@@ -1019,7 +967,6 @@ final class ASCII
         }
 
         if ($use_transliterate) {
-            /** @noinspection ArgumentEqualsDefaultValueInspection */
             $str = self::to_transliterate($str, null, false);
         }
 
@@ -1061,9 +1008,9 @@ final class ASCII
 
         $str = (string) \preg_replace(
             [
-                '/[^' . $fallback_char_escaped . '.\\-a-zA-Z0-9\\s]/', // 1) remove un-needed chars
-                '/[\\s]+/u',                                           // 2) convert spaces to $fallback_char
-                '/[' . $fallback_char_escaped . ']+/u',                // 3) remove double $fallback_char's
+                '/[^' . $fallback_char_escaped . '.\\-a-zA-Z\d\\s]/', // 1) remove un-needed chars
+                '/\s+/u',                                             // 2) convert spaces to $fallback_char
+                '/[' . $fallback_char_escaped . ']+/u',               // 3) remove double $fallback_char's
             ],
             [
                 '',
@@ -1098,6 +1045,8 @@ final class ASCII
      *
      * @return string
      *                <p>A string that has been converted to an URL slug.</p>
+     *
+     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
      */
     public static function to_slugify(
         string $str,
@@ -1178,19 +1127,13 @@ final class ASCII
         $unknown = '?',
         bool $strict = false
     ): string {
-        /**
-         * @var array<int,string>|null
-         */
+        /** @var array<int,string>|null */
         static $UTF8_TO_TRANSLIT = null;
 
-        /**
-         * null|\Transliterator
-         */
+        /** null|\Transliterator */
         static $TRANSLITERATOR = null;
 
-        /**
-         * @var bool|null
-         */
+        /** @var bool|null */
         static $SUPPORT_INTL = null;
 
         if ($str === '') {
@@ -1225,9 +1168,7 @@ final class ASCII
         ) {
             if (!isset($TRANSLITERATOR)) {
                 // INFO: see "*-Latin" rules via "transliterator_list_ids()"
-                /**
-                 * @var \Transliterator
-                 */
+                /** @var \Transliterator */
                 $TRANSLITERATOR = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII;');
             }
 
@@ -1374,6 +1315,50 @@ final class ASCII
         }
 
         return $str_tmp;
+    }
+
+    /**
+     * WARNING: This method will return broken characters and is only for special cases.
+     *
+     * Convert a UTF-8 encoded string to a single-byte string suitable for
+     * functions that need the same string length after the conversion.
+     *
+     * The function simply uses (and updates) a tailored dynamic encoding
+     * (in/out map parameter) where non-ascii characters are remapped to
+     * the range [128-255] in order of appearance.
+     *
+     * Thus, it supports up to 128 different multibyte code points max over
+     * the whole set of strings sharing this encoding.
+     *
+     * Source: https://github.com/KEINOS/mb_levenshtein
+     *
+     * @param string $str <p>UTF-8 string to be converted to extended ASCII.</p>
+     * @param array  $map <p>Internal-Map of code points to ASCII characters.</p>
+     *
+     * @return string
+     *                <p>Mapped borken string.</p>
+     *
+     * @phpstan-param array<string, string> $map
+     */
+    private static function to_ascii_remap_intern(string $str, array &$map): string
+    {
+        // find all utf-8 characters
+        $matches = [];
+        if (!\preg_match_all('/[\xC0-\xF7][\x80-\xBF]+/', $str, $matches)) {
+            return $str; // plain ascii string
+        }
+
+        // update the encoding map with the characters not already met
+        $mapCount = \count($map);
+        foreach ($matches[0] as $mbc) {
+            if (!isset($map[$mbc])) {
+                $map[$mbc] = \chr(128 + $mapCount);
+                ++$mapCount;
+            }
+        }
+
+        // finally, remap non-ascii characters
+        return \strtr($str, $map);
     }
 
     /**
