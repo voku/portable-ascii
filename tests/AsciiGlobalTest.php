@@ -519,7 +519,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['vaiku darzelis', 'vaikų darželis', ASCII::LITHUANIAN_LANGUAGE_CODE],
             ['kundestoette', 'kundestøtte', ASCII::NORWEGIAN_LANGUAGE_CODE],
             ['truong hoc', 'trường học', ASCII::VIETNAMESE_LANGUAGE_CODE],
-            ['gamaa', 'جامعة', ASCII::ARABIC_LANGUAGE_CODE],
+            ['jamaa', 'جامعة', ASCII::ARABIC_LANGUAGE_CODE],
             ['danshgah', 'دانشگاه', ASCII::PERSIAN_LANGUAGE_CODE],
             ['univerzitet', 'универзитет', ASCII::SERBIAN_LANGUAGE_CODE],
             ['univerzitet', 'универзитет', ASCII::SERBIAN_CYRILLIC_LANGUAGE_CODE],
