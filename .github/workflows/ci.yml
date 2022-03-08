@@ -29,10 +29,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@2.17.0
+        uses: shivammathur/setup-php@2.17.1
         with:
           php-version: ${{ matrix.php }}
           coverage: xdebug
@@ -96,7 +96,7 @@ jobs:
 
       - name: Archive logs artifacts
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: logs_composer-${{ matrix.composer }}_php-${{ matrix.php }}
           path: |
