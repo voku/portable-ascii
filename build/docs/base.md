@@ -1,3 +1,5 @@
+[![SWUbanner](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://github.com/vshymanskyy/StandWithUkraine/blob/main/docs/README.md)
+
 [![Build Status](https://github.com/voku/portable-ascii/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/voku/portable-ascii/actions)
 [![Build status](https://ci.appveyor.com/api/projects/status/gnejjnk7qplr7f5t/branch/master?svg=true)](https://ci.appveyor.com/project/voku/portable-ascii/branch/master)
 [![codecov.io](https://codecov.io/github/voku/portable-ascii/coverage.svg?branch=master)](https://codecov.io/github/voku/portable-ascii?branch=master)
