@@ -1,5 +1,10 @@
 # Changelog
 
+### 2.0.1 (2022-03-08)
+
+- "To people of Russia": There is a war in Ukraine right now. The forces of the Russian Federation are attacking civilians.
+- optimize some phpdocs
+
 ### 2.0.0 (2022-01-24)
 
 - prefer "Russian - Passport (2013), ICAO" instead of "Russian - GOST 7.79-2000(B)"
