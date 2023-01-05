@@ -44,10 +44,10 @@ If you like a more Object Oriented Way to edit strings, then you can take a look
 
 ```php
 // Portable ASCII
-use voku\helper\ASCII;
+use Voku\Helper\ASCII;
 ASCII::to_transliterate('déjà σσς iıii'); // 'deja sss iiii'
 
-// voku/Stringy
+// Voku/Stringy
 use Stringy\Stringy as S;
 $stringy = S::create('déjà σσς iıii');
 $stringy->toTransliterate();              // 'deja sss iiii'
