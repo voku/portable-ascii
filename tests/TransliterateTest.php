@@ -303,7 +303,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('ahbk 😀 ♥ 𐎁 𠾴 ᎈ y', \strtolower(ASCII::to_transliterate('أحبك 😀 ♥ 𐎁 𠾴 ᎈ ý', null, false)));
     }
 
-    public function specialCharacterProvider(): array
+    public static function specialCharacterProvider(): array
     {
         return [
             ['ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩ', 'abcdefghijklmnopqrstuvwxyz'],
@@ -318,6 +318,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
     /**
      * @dataProvider specialCharacterProvider
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('specialCharacterProvider')]
     public function it_can_replace_special_characters(string $value, string $expected)
     {
         static::assertSame($expected, ASCII::to_transliterate($value));

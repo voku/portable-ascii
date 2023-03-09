@@ -11,7 +11,7 @@ use voku\helper\ASCII;
  */
 final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 {
-    public function slugifyProvider(): array
+    public static function slugifyProvider(): array
     {
         return [
             ['', ''],
@@ -308,6 +308,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
      * @param bool   $replace_extra_symbols
      * @param bool   $use_transliterate
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('slugifyProvider')]
     public function testSlugify(
         $expected,
         $str,
@@ -340,6 +341,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
      * @param bool   $replace_extra_symbols
      * @param bool   $use_transliterate
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('toAsciiProvider')]
     public function testToAscii(
         $expected,
         $str,
@@ -388,7 +390,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         }
     }
 
-    public function toAsciiProvider(): array
+    public static function toAsciiProvider(): array
     {
         return [
             ['      ! " # $ % & \' ( ) * + , @ `', " \v \t \n" . ' ! " # $ % & \' ( ) * + , @ `'], // ascii symbols
