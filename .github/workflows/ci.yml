@@ -24,6 +24,9 @@ jobs:
             7.4,
             8.0,
             8.1,
+            8.2,
+            8.3,
+            8.4
         ]
         composer: [basic]
     timeout-minutes: 10
@@ -88,11 +91,6 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           files: build/logs/clover.xml
-
-      - name: Upload coverage results to Scrutinizer
-        uses: sudo-bot/action-scrutinizer@latest
-        with:
-          cli-args: "--format=php-clover build/logs/clover.xml"
 
       - name: Archive logs artifacts
         if: ${{ failure() }}
