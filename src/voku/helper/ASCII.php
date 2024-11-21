@@ -1192,7 +1192,6 @@ final class ASCII
             $str_tmp = \transliterator_transliterate($TRANSLITERATOR, $str);
 
             if ($str_tmp !== false) {
-
                 // check again, if we only have ASCII, now ...
                 if (
                     $str_tmp !== $str
@@ -1285,7 +1284,6 @@ final class ASCII
             $new_char = $ord & 255;
 
             if (isset($UTF8_TO_TRANSLIT[$bank][$new_char])) {
-
                 // keep for debugging
                 /*
                 echo "file: " . sprintf('x%02x', $bank) . "\n";
@@ -1313,7 +1311,6 @@ final class ASCII
                     $c = $new_char;
                 }
             } else {
-
                 // keep for debugging missing chars
                 /*
                 echo "file: " . sprintf('x%02x', $bank) . "\n";

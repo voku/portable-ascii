@@ -51,7 +51,6 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
     {
         $testsStrict = [];
         if (\extension_loaded('intl') === true) {
-
             // ---
 
             $testString = \file_get_contents(__DIR__ . '/fixtures/sample-unicode-chart.txt');
