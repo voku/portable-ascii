@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.0.3 (2024-11-21)
+
+- use modern phpdocs e.g. list<int> or conditional-return annotations 
+
 ### 2.0.2 (2024-11-21)
 
 - small fix for PHP 8.4 (thanks to @gilbertoalbino)
