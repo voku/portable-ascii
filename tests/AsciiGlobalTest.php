@@ -11,7 +11,7 @@ use voku\helper\ASCII;
  */
 final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 {
-    public function slugifyProvider(): array
+    public static function slugifyProvider(): array
     {
         return [
             ['', ''],
@@ -388,7 +388,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         }
     }
 
-    public function toAsciiProvider(): array
+    public static function toAsciiProvider(): array
     {
         return [
             ['      ! " # $ % & \' ( ) * + , @ `', " \v \t \n" . ' ! " # $ % & \' ( ) * + , @ `'], // ascii symbols
