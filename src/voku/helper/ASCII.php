@@ -832,6 +832,8 @@ final class ASCII
 
             if ($replace_single_chars_only) {
                 foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $char => $replacement) {
+                    // Single UTF-8 code points are at most 4 bytes, so 5+ bytes
+                    // can be rejected without the regex check.
                     if (
                         isset($char[4])
                         ||
