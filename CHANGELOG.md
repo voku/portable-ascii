@@ -1,5 +1,11 @@
 # Changelog
 
+### unreleased
+
+- raise minimum PHP version from 7.0 to 7.1
+- update PHPUnit dev-dependency to support ~8.5 || ~9.6 || ~10.5 || ~11.5
+- modernize CI: add PHPStan job, update GitHub Actions workflow and AppVeyor config
+
 ### 2.0.3 (2024-11-21)
 
 - use modern phpdocs e.g. list<int> or conditional-return annotations 
