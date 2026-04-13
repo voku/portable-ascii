@@ -458,6 +458,8 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['\'amaarenyaa', 'አማርኛ', ASCII::AMHARIC_LANGUAGE_CODE],
             ['Ri Ben Yu  (nihongo)', '日本語 (にほんご)', ASCII::JAPANESE_LANGUAGE_CODE],
             ['een oplossing - aou', 'één oplossing - äöü', ASCII::DUTCH_LANGUAGE_CODE],
+            ['2 Aepfel', '2 Äpfel', ASCII::GERMAN_LANGUAGE_CODE],
+            ['Duesseldorf', 'Düsseldorf', ASCII::GERMAN_LANGUAGE_CODE],
             ['Universita', 'Università', ASCII::ITALIAN_LANGUAGE_CODE],
             ['Makedonska azbuka', 'Македонска азбука', ASCII::MACEDONIAN_LANGUAGE_CODE],
             ['Eu nao falo portugues.', 'Eu não falo português.', ASCII::PORTUGUESE_LANGUAGE_CODE],
