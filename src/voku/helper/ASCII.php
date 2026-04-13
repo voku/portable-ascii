@@ -1112,6 +1112,8 @@ final class ASCII
         /** @var array<string, array<string, string>> */
         static $WARM_MAPS = [];
 
+        // Prefix the cache key so unknown=null does not collide with an
+        // explicit fallback string such as "\x00".
         $unknownCacheKey = $unknown === null
             ? "\x00null"
             : "\x01" . $unknown;
