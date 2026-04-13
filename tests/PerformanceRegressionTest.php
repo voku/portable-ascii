@@ -111,27 +111,27 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
         $this->writeBenchmarks($benchmarks);
 
         static::assertLessThan(
-            6.0,
+            3.0,
             $benchmarks['to_ascii_ascii_short'] / $benchmarks['to_transliterate_ascii_short'],
             'ASCII-only to_ascii() became disproportionately slower than the ASCII fast path in to_transliterate().'
         );
         static::assertLessThan(
-            6.0,
+            4.5,
             $benchmarks['to_ascii_ascii_long'] / $benchmarks['to_transliterate_ascii_long'],
             'Long ASCII-only to_ascii() inputs regressed relative to to_transliterate().'
         );
         static::assertLessThan(
-            6.0,
+            3.0,
             $benchmarks['to_ascii_greek_long'] / $benchmarks['to_ascii_greek_long_single_char_only'],
             'Default multi-character Greek replacements became disproportionately expensive.'
         );
         static::assertLessThan(
-            10.0,
+            3.0,
             $benchmarks['to_ascii_myanmar_long'] / $benchmarks['to_ascii_myanmar_long_single_char_only'],
             'Default multi-character Myanmar replacements became disproportionately expensive.'
         );
         static::assertLessThan(
-            3.0,
+            1.75,
             $benchmarks['to_ascii_chinese_long_transliterate'] / $benchmarks['to_transliterate_chinese_long'],
             'The transliteration fallback path inside to_ascii() regressed relative to direct to_transliterate().'
         );
