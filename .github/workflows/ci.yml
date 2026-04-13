@@ -69,9 +69,16 @@ jobs:
           composer dump-autoload -o
 
       - name: Run tests
+        env:
+          COMPOSER_PROCESS_TIMEOUT: 0
         run: |
           mkdir -p build/logs
-          php vendor/bin/phpunit -c phpunit.xml --coverage-clover=build/logs/clover.xml
+          PHPUNIT_MAJOR=$(php vendor/bin/phpunit --version | grep -oP 'PHPUnit \K\d+')
+          if [ "$PHPUNIT_MAJOR" -ge 9 ]; then
+            php vendor/bin/phpunit -c phpunit.xml --coverage-filter src/ --coverage-clover=build/logs/clover.xml
+          else
+            php vendor/bin/phpunit -c phpunit.xml --whitelist src/ --coverage-clover=build/logs/clover.xml
+          fi
 
       - name: Run phpstan
         continue-on-error: true
@@ -80,13 +87,19 @@ jobs:
           php vendor/bin/phpstan analyse
 
       - name: Upload coverage results to Coveralls
+        if: success()
+        continue-on-error: true
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          composer global require php-coveralls/php-coveralls
-          php-coveralls --coverage_clover=build/logs/clover.xml -v
+          if [ -f build/logs/clover.xml ]; then
+            composer global require php-coveralls/php-coveralls
+            php-coveralls --coverage_clover=build/logs/clover.xml -v
+          fi
 
       - name: Upload coverage results to Codecov
+        if: success()
+        continue-on-error: true
         uses: codecov/codecov-action@v6
         with:
           files: build/logs/clover.xml

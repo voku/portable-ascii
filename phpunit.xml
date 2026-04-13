@@ -5,17 +5,14 @@
          stopOnFailure="false"
          bootstrap="tests/bootstrap.php"
 >
-    <coverage processUncoveredFiles="true">
+    <source>
         <include>
             <directory suffix=".php">./src/</directory>
         </include>
         <exclude>
             <directory>./src/voku/helper/data/</directory>
         </exclude>
-        <report>
-            <clover outputFile="build/logs/clover.xml"/>
-        </report>
-    </coverage>
+    </source>
     <testsuite name="ASCII Test Suite">
         <directory>tests</directory>
     </testsuite>
