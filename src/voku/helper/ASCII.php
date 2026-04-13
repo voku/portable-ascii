@@ -772,24 +772,30 @@ final class ASCII
         /** @phpstan-var ASCII::*_LANGUAGE_CODE $language - hack for phpstan */
         $language = self::get_language($language);
 
-        static $REPLACE_HELPER_CACHE = [];
-        $cacheKey = $language . '-' . $replace_extra_symbols . '-' . $replace_single_chars_only;
-
+        // fast path: pure printable ASCII — single regex covers is_ascii + no-control-chars
         if (
             !$replace_extra_symbols
             &&
-            self::is_ascii($str)
-            &&
-            (
-                !$remove_unsupported_chars
-                ||
-                \strpbrk($str, "\n\r\t") === false
-            )
+            !\preg_match('/[^\x20-\x7E]/', $str)
         ) {
             return $str;
         }
 
-        if (!self::is_valid_utf8($str)) {
+        // secondary fast path: has control chars like \n\r\t but otherwise ASCII
+        if (
+            !$replace_extra_symbols
+            &&
+            \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
+        ) {
+            if ($remove_unsupported_chars) {
+                return (string) \str_replace(["\n\r", "\n", "\r", "\t"], ' ', $str);
+            }
+
+            return $str;
+        }
+
+        // invalid UTF-8 fast path
+        if (\preg_match('//u', $str) !== 1) {
             self::prepareAsciiMaps();
 
             if (!isset(self::$ASCII_MAPS[$language])) {
@@ -807,6 +813,11 @@ final class ASCII
 
             return $str;
         }
+
+        static $REPLACE_HELPER_CACHE = [];
+        $cacheKey = $language . '-' . $replace_extra_symbols . '-' . $replace_single_chars_only;
+
+        static $MAP_BY_FIRST_BYTE = [];
 
         if (!isset($REPLACE_HELPER_CACHE[$cacheKey])) {
             $langAll = self::charsArrayWithSingleLanguageValues($replace_extra_symbols, false);
@@ -826,10 +837,30 @@ final class ASCII
                     }
                 }
             }
+
+            // pre-index by first byte for fast filtering
+            $MAP_BY_FIRST_BYTE[$cacheKey] = [];
+            foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $key => $val) {
+                $MAP_BY_FIRST_BYTE[$cacheKey][$key[0]][$key] = $val;
+            }
         }
 
         if ($REPLACE_HELPER_CACHE[$cacheKey] !== []) {
-            $str = \strtr($str, $REPLACE_HELPER_CACHE[$cacheKey]);
+            // use count_chars to find which byte values are present in the string
+            // and only include map entries whose first byte actually appears
+            $filteredMap = [];
+            foreach (\count_chars($str, 1) as $byte => $count) {
+                $fb = \chr($byte);
+                if (isset($MAP_BY_FIRST_BYTE[$cacheKey][$fb])) {
+                    foreach ($MAP_BY_FIRST_BYTE[$cacheKey][$fb] as $k => $v) {
+                        $filteredMap[$k] = $v;
+                    }
+                }
+            }
+
+            if ($filteredMap !== []) {
+                $str = \strtr($str, $filteredMap);
+            }
         }
 
         if (!isset(self::$ASCII_MAPS[$language])) {
@@ -842,7 +873,9 @@ final class ASCII
 
         if ($remove_unsupported_chars) {
             $str = (string) \str_replace(["\n\r", "\n", "\r", "\t"], ' ', $str);
-            $str = (string) \preg_replace('/' . self::$REGEX_ASCII . '/', '', $str);
+            if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 1) {
+                $str = (string) \preg_replace('/' . self::$REGEX_ASCII . '/', '', $str);
+            }
         }
 
         return $str;
@@ -1001,6 +1034,9 @@ final class ASCII
 
         static $SUPPORT_INTL = null;
 
+        /** @var array<string, string|false> */
+        static $TRANSLIT_CHAR_CACHE = [];
+
         if ($str === '') {
             return '';
         }
@@ -1010,20 +1046,33 @@ final class ASCII
         }
 
         // check if we only have ASCII, first (better performance)
-        $str_tmp = $str;
-        if (self::is_ascii($str)) {
+        if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0) {
             return $str;
         }
 
-        $str = self::clean($str);
-
-        // check again if we only have ASCII, now ...
-        if (
-            $str_tmp !== $str
-            &&
-            self::is_ascii($str)
-        ) {
-            return $str;
+        // only run the heavy clean() regex when the string has invalid UTF-8
+        if (\preg_match('//u', $str) === 1) {
+            $str_before_clean = $str;
+            $str = self::normalize_whitespace($str);
+            $str = self::normalize_msword($str);
+            $str = self::remove_invisible_characters($str);
+            if (
+                $str !== $str_before_clean
+                &&
+                \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
+            ) {
+                return $str;
+            }
+        } else {
+            $str_before_clean = $str;
+            $str = self::clean($str);
+            if (
+                $str !== $str_before_clean
+                &&
+                \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
+            ) {
+                return $str;
+            }
         }
 
         if (
@@ -1040,11 +1089,10 @@ final class ASCII
             $str_tmp = \transliterator_transliterate($TRANSLITERATOR, $str);
 
             if ($str_tmp !== false) {
-                // check again if we only have ASCII, now ...
                 if (
                     $str_tmp !== $str
                     &&
-                    self::is_ascii($str_tmp)
+                    \preg_match('/' . self::$REGEX_ASCII . '/', $str_tmp) === 0
                 ) {
                     return $str_tmp;
                 }
@@ -1057,124 +1105,101 @@ final class ASCII
             self::$ORD = self::getData('ascii_ord');
         }
 
-        \preg_match_all('/.|[^\x00]$/us', $str, $array_tmp);
-        $chars = $array_tmp[0];
-        $ord = null;
-        $str_tmp = '';
-        foreach ($chars as &$c) {
-            $ordC0 = self::$ORD[$c[0]];
+        /** @var array<string, array<string, string>> */
+        static $WARM_MAPS = [];
 
-            if ($ordC0 >= 0 && $ordC0 <= 127) {
-                $str_tmp .= $c;
+        $unknownKey = $unknown ?? "\x00";
 
-                continue;
+        // warm path: if we already built a map for this $unknown value, try it first
+        if (isset($WARM_MAPS[$unknownKey])) {
+            $str = \strtr($str, $WARM_MAPS[$unknownKey]);
+
+            if (!\preg_match('/[\xC0-\xFF]/', $str)) {
+                return $str;
             }
+        }
 
-            $ordC1 = self::$ORD[$c[1]];
+        // collect unique non-ASCII characters and build a strtr map
+        if (\preg_match_all('/[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF7][\x80-\xBF]{3}/', $str, $nonAsciiMatches)) {
+            $charMap = [];
+            $seen = [];
 
-            // ASCII - next please
-            if ($ordC0 >= 192 && $ordC0 <= 223) {
-                $ord = ($ordC0 - 192) * 64 + ($ordC1 - 128);
-            }
-
-            if ($ordC0 >= 224) {
-                $ordC2 = self::$ORD[$c[2]];
-
-                if ($ordC0 <= 239) {
-                    $ord = ($ordC0 - 224) * 4096 + ($ordC1 - 128) * 64 + ($ordC2 - 128);
+            foreach ($nonAsciiMatches[0] as $c) {
+                if (isset($seen[$c])) {
+                    continue;
                 }
+                $seen[$c] = true;
 
-                if ($ordC0 >= 240) {
-                    $ordC3 = self::$ORD[$c[3]];
+                if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
+                    $ordC0 = self::$ORD[$c[0]];
 
-                    if ($ordC0 <= 247) {
-                        $ord = ($ordC0 - 240) * 262144 + ($ordC1 - 128) * 4096 + ($ordC2 - 128) * 64 + ($ordC3 - 128);
-                    }
+                    if ($ordC0 === 254 || $ordC0 === 255) {
+                        $TRANSLIT_CHAR_CACHE[$c] = false;
+                    } else {
+                        $ordC1 = self::$ORD[$c[1]];
 
-                    // We only process valid UTF-8 chars (<= 4 byte), so we don't need this code here ...
-                    /*
-                    if ($ordC0 >= 248) {
-                        $ordC4 = self::$ORD[$c[4]];
-
-                        if ($ordC0 <= 251) {
-                            $ord = ($ordC0 - 248) * 16777216 + ($ordC1 - 128) * 262144 + ($ordC2 - 128) * 4096 + ($ordC3 - 128) * 64 + ($ordC4 - 128);
+                        if ($ordC0 <= 223) {
+                            $ord = ($ordC0 - 192) * 64 + ($ordC1 - 128);
+                        } elseif ($ordC0 <= 239) {
+                            $ord = ($ordC0 - 224) * 4096 + ($ordC1 - 128) * 64 + (self::$ORD[$c[2]] - 128);
+                        } elseif ($ordC0 <= 247) {
+                            $ord = ($ordC0 - 240) * 262144 + ($ordC1 - 128) * 4096 + (self::$ORD[$c[2]] - 128) * 64 + (self::$ORD[$c[3]] - 128);
+                        } else {
+                            $ord = null;
                         }
 
-                        if ($ordC0 >= 252) {
-                            $ordC5 = self::$ORD[$c[5]];
+                        if ($ord === null) {
+                            $TRANSLIT_CHAR_CACHE[$c] = false;
+                        } else {
+                            $bank = $ord >> 8;
+                            if (!isset($UTF8_TO_TRANSLIT[$bank])) {
+                                $UTF8_TO_TRANSLIT[$bank] = self::getDataIfExists(\sprintf('x%03x', $bank));
+                            }
 
-                            if ($ordC0 <= 253) {
-                                $ord = ($ordC0 - 252) * 1073741824 + ($ordC1 - 128) * 16777216 + ($ordC2 - 128) * 262144 + ($ordC3 - 128) * 4096 + ($ordC4 - 128) * 64 + ($ordC5 - 128);
+                            $bankPos = $ord & 255;
+
+                            if (isset($UTF8_TO_TRANSLIT[$bank][$bankPos])) {
+                                $translit = $UTF8_TO_TRANSLIT[$bank][$bankPos];
+                                if ($translit === '[?]' || $translit === '[?] ') {
+                                    $TRANSLIT_CHAR_CACHE[$c] = false;
+                                } else {
+                                    $TRANSLIT_CHAR_CACHE[$c] = $translit;
+                                }
+                            } else {
+                                $TRANSLIT_CHAR_CACHE[$c] = false;
                             }
                         }
                     }
-                     */
                 }
-            }
 
-            if (
-                $ordC0 === 254
-                ||
-                $ordC0 === 255
-                ||
-                $ord === null
-            ) {
-                $str_tmp .= $unknown ?? $c;
+                $cached = $TRANSLIT_CHAR_CACHE[$c];
 
-                continue;
-            }
-
-            $bank = $ord >> 8;
-            if (!isset($UTF8_TO_TRANSLIT[$bank])) {
-                $UTF8_TO_TRANSLIT[$bank] = self::getDataIfExists(\sprintf('x%03x', $bank));
-            }
-
-            $new_char = $ord & 255;
-
-            if (isset($UTF8_TO_TRANSLIT[$bank][$new_char])) {
-                // keep for debugging
-                /*
-                echo "file: " . sprintf('x%02x', $bank) . "\n";
-                echo "char: " . $c . "\n";
-                echo "ord: " . $ord . "\n";
-                echo "new_char: " . $new_char . "\n";
-                echo "new_char: " . mb_chr($new_char) . "\n";
-                echo "ascii: " . $UTF8_TO_TRANSLIT[$bank][$new_char] . "\n";
-                echo "bank:" . $bank . "\n\n";
-                 */
-
-                $new_char = $UTF8_TO_TRANSLIT[$bank][$new_char];
-
-                /* @noinspection PhpStatementHasEmptyBodyInspection */
-                if ($unknown === null && $new_char === '') {
-                    // nothing
-                } elseif (
-                    $new_char === '[?]'
-                    ||
-                    $new_char === '[?] '
-                ) {
-                    $c = $unknown ?? $c;
+                if ($cached === false) {
+                    if ($unknown !== null) {
+                        $charMap[$c] = $unknown;
+                    }
+                } elseif ($cached === '' && $unknown === null) {
+                    // keep original char
                 } else {
-                    $c = $new_char;
+                    $charMap[$c] = $cached;
                 }
-            } else {
-                // keep for debugging missing chars
-                /*
-                echo "file: " . sprintf('x%02x', $bank) . "\n";
-                echo "char: " . $c . "\n";
-                echo "ord: " . $ord . "\n";
-                echo "new_char: " . $new_char . "\n";
-                echo "new_char: " . mb_chr($new_char) . "\n";
-                echo "bank:" . $bank . "\n\n";
-                 */
-
-                $c = $unknown ?? $c;
             }
 
-            $str_tmp .= $c;
+            // merge new entries into the warm map for future calls
+            if ($charMap !== []) {
+                if (isset($WARM_MAPS[$unknownKey])) {
+                    foreach ($charMap as $k => $v) {
+                        $WARM_MAPS[$unknownKey][$k] = $v;
+                    }
+                } else {
+                    $WARM_MAPS[$unknownKey] = $charMap;
+                }
+
+                return \strtr($str, $WARM_MAPS[$unknownKey]);
+            }
         }
 
-        return $str_tmp;
+        return $str;
     }
 
     /**
@@ -1237,19 +1262,24 @@ final class ASCII
             return '';
         }
 
+        static $LANGUAGE_CACHE = [];
+        if (isset($LANGUAGE_CACHE[$language])) {
+            return $LANGUAGE_CACHE[$language];
+        }
+
         if (
             \strpos($language, '_') === false
             &&
             \strpos($language, '-') === false
         ) {
-            return \strtolower($language);
+            return $LANGUAGE_CACHE[$language] = \strtolower($language);
         }
 
-        $language = \str_replace('-', '_', \strtolower($language));
+        $language_tmp = \str_replace('-', '_', \strtolower($language));
 
         $regex = '/(?<first>[a-z]+)_\g{first}/';
 
-        return (string) \preg_replace($regex, '$1', $language);
+        return $LANGUAGE_CACHE[$language] = (string) \preg_replace($regex, '$1', $language_tmp);
     }
 
     /**
@@ -1313,13 +1343,4 @@ final class ASCII
         }
     }
 
-    /**
-     * Validate that the string can be matched as UTF-8.
-     *
-     * @psalm-pure
-     */
-    private static function is_valid_utf8(string $str): bool
-    {
-        return \preg_match('//u', $str) === 1;
-    }
 }
