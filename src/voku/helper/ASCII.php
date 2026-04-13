@@ -1150,7 +1150,7 @@ final class ASCII
                         ($ordC0 === 224 && $ordC1 < 160)
                         || ($ordC0 === 237 && $ordC1 > 159)
                         || ($ordC0 === 240 && $ordC1 < 144)
-                        || ($ordC0 === 0xF4 && $ordC1 > 143)
+                        || ($ordC0 === 244 && $ordC1 > 143)
                     ) {
                         $INVALID_UTF8_SEQUENCE_CACHE[$c] = true;
                         $charMap[$c] = '';
