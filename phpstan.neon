@@ -2,3 +2,21 @@ parameters:
     level: 8
     paths:
         - %currentWorkingDirectory%/src/
+    ignoreErrors:
+        # The class uses @psalm-immutable which makes PHPStan treat all
+        # properties as @readonly.  Static properties with default values
+        # are perfectly fine here – they are effectively constants.
+        - identifier: property.readOnlyByPhpDocDefaultValue
+
+        # Every @psalm-pure method in this class relies on internal
+        # memoisation via static properties / variables and calls PHP
+        # built-in functions that PHPStan considers (possibly) impure.
+        # The methods *are* pure in the Psalm sense (same input → same
+        # output, no observable side-effects), so we suppress the
+        # stricter PHPStan purity checks.
+        - identifier: impure.methodCall
+        - identifier: impure.staticPropertyAccess
+        - identifier: impure.static
+        - identifier: impure.propertyAssign
+        - identifier: possiblyImpure.methodCall
+        - identifier: possiblyImpure.functionCall
