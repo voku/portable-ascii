@@ -331,6 +331,8 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
 
     public function testNullBytesInString(): void
     {
+        // Divergence: native ext-intl preserves null bytes ("a\x00b\x00c"),
+        // but the underlying ASCII::to_transliterate() strips them.
         $result = TransliteratorPolyfill::transliterate('Latin-ASCII', "a\x00b\x00c");
         static::assertSame('abc', $result);
     }

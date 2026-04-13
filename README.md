@@ -83,6 +83,37 @@ Example: ASCII::to_ascii()
   // Dusseldorf
 ```
 
+### `transliterator_transliterate()` polyfill
+
+This package provides a polyfill for PHP's [`transliterator_transliterate()`](https://php.net/transliterator_transliterate)
+function from `ext-intl`. It is automatically registered when `ext-intl` is not installed.
+
+```php
+// Works the same with or without ext-intl installed:
+echo transliterator_transliterate('Any-Latin; Latin-ASCII', 'déjà vu');
+// "deja vu"
+
+echo transliterator_transliterate('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII', 'Un été brûlant');
+// "Un ete brulant"
+
+// Language-specific rules are supported:
+echo transliterator_transliterate('de-ascii', 'öäü');
+// "oeaeue"
+```
+
+**Supported pipeline steps:**
+- `NFC`, `NFD`, `NFKC`, `NFKD` — Unicode normalization (requires `Normalizer` class)
+- `[:Nonspacing Mark:] Remove` — combining mark removal
+- `Any-Latin`, `Latin-ASCII`, `Any-ASCII` — script-to-ASCII transliteration
+- `Any-Upper`, `Any-Lower` — case transforms
+- Limited language-specific aliases: `de-ASCII`, `Turkmen-Latin/BGN`, and others backed by existing transliteration tables
+
+**Known limitations:**
+- The `Transliterator` object API is not polyfilled — only the `transliterator_transliterate()` function
+- Custom ICU rules (containing `>` or `<` operators) are not supported
+- Unsupported IDs trigger `E_USER_WARNING` and return `false`
+- Character mappings may differ slightly from ICU data for some scripts
+
 # Portable ASCII | API
 
 The API from the "ASCII"-Class is written as small static methods.
