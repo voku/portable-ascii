@@ -786,7 +786,7 @@ final class ASCII
             \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
         ) {
             if ($remove_unsupported_chars) {
-                return (string) \str_replace(["\n\r", "\n", "\r", "\t"], ' ', $str);
+                return (string) \str_replace(["\r\n", "\n", "\r", "\t"], ' ', $str);
             }
 
             return $str;
@@ -805,7 +805,7 @@ final class ASCII
             }
 
             if ($remove_unsupported_chars) {
-                $str = (string) \str_replace(["\n\r", "\n", "\r", "\t"], ' ', $str);
+                $str = (string) \str_replace(["\r\n", "\n", "\r", "\t"], ' ', $str);
                 $str = (string) \preg_replace('/' . self::$REGEX_ASCII . '/', '', $str);
             }
 
@@ -876,7 +876,7 @@ final class ASCII
         }
 
         if ($remove_unsupported_chars) {
-            $str = (string) \str_replace(["\n\r", "\n", "\r", "\t"], ' ', $str);
+            $str = (string) \str_replace(["\r\n", "\n", "\r", "\t"], ' ', $str);
             $str = (string) \preg_replace('/' . self::$REGEX_ASCII . '/', '', $str);
         }
 
@@ -1113,8 +1113,11 @@ final class ASCII
             }
         }
 
+        // strip overlong 2-byte sequences (\xC0 and \xC1 can never start valid UTF-8)
+        $str = (string) \preg_replace('/[\xC0-\xC1][\x80-\xBF]/', '', $str);
+
         // collect unique non-ASCII characters and build a strtr map
-        if (\preg_match_all('/[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF7][\x80-\xBF]{3}/', $str, $nonAsciiMatches)) {
+        if (\preg_match_all('/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF7][\x80-\xBF]{3}/', $str, $nonAsciiMatches)) {
             $charMap = [];
             $seen = [];
 
@@ -1199,7 +1202,7 @@ final class ASCII
                     $WARM_MAPS[$unknownCacheKey] = $charMap;
                 }
 
-                return \strtr($str, $WARM_MAPS[$unknownCacheKey]);
+                return \strtr($str, $charMap);
             }
         }
 
