@@ -1147,57 +1147,46 @@ final class ASCII
                 if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
                     $ordC0 = self::$ORD[$c[0]];
 
-                    if ($ordC0 === 254 || $ordC0 === 255) {
-                        $TRANSLIT_CHAR_CACHE[$c] = false;
+                    $ordC1 = self::$ORD[$c[1]];
+
+                    if (
+                        $ordC0 === 192
+                        || $ordC0 === 193
+                        || ($ordC0 === 224 && $ordC1 < 160)
+                        || ($ordC0 === 237 && $ordC1 > 159)
+                        || ($ordC0 === 240 && $ordC1 < 144)
+                        || ($ordC0 === 244 && $ordC1 > 143)
+                    ) {
+                        $INVALID_UTF8_SEQUENCE_CACHE[$c] = true;
+                        $charMap[$c] = '';
+
+                        continue;
+                    }
+
+                    if ($ordC0 <= 223) {
+                        $ord = ($ordC0 - 192) * 64 + ($ordC1 - 128);
+                    } elseif ($ordC0 <= 239) {
+                        $ord = ($ordC0 - 224) * 4096 + ($ordC1 - 128) * 64 + (self::$ORD[$c[2]] - 128);
                     } else {
-                        $ordC1 = self::$ORD[$c[1]];
+                        $ord = ($ordC0 - 240) * 262144 + ($ordC1 - 128) * 4096 + (self::$ORD[$c[2]] - 128) * 64 + (self::$ORD[$c[3]] - 128);
+                    }
 
-                        if (
-                            $ordC0 === 192
-                            || $ordC0 === 193
-                            || $ordC0 > 244
-                            || ($ordC0 === 224 && $ordC1 < 160)
-                            || ($ordC0 === 237 && $ordC1 > 159)
-                            || ($ordC0 === 240 && $ordC1 < 144)
-                            || ($ordC0 === 244 && $ordC1 > 143)
-                        ) {
-                            $INVALID_UTF8_SEQUENCE_CACHE[$c] = true;
-                            $charMap[$c] = '';
+                    $bank = $ord >> 8;
+                    if (!isset($UTF8_TO_TRANSLIT[$bank])) {
+                        $UTF8_TO_TRANSLIT[$bank] = self::getDataIfExists(\sprintf('x%03x', $bank));
+                    }
 
-                            continue;
-                        }
+                    $bankPos = $ord & 255;
 
-                        if ($ordC0 <= 223) {
-                            $ord = ($ordC0 - 192) * 64 + ($ordC1 - 128);
-                        } elseif ($ordC0 <= 239) {
-                            $ord = ($ordC0 - 224) * 4096 + ($ordC1 - 128) * 64 + (self::$ORD[$c[2]] - 128);
-                        } elseif ($ordC0 <= 247) {
-                            $ord = ($ordC0 - 240) * 262144 + ($ordC1 - 128) * 4096 + (self::$ORD[$c[2]] - 128) * 64 + (self::$ORD[$c[3]] - 128);
-                        } else {
-                            $ord = null;
-                        }
-
-                        if ($ord === null) {
+                    if (isset($UTF8_TO_TRANSLIT[$bank][$bankPos])) {
+                        $translit = $UTF8_TO_TRANSLIT[$bank][$bankPos];
+                        if ($translit === '[?]' || $translit === '[?] ') {
                             $TRANSLIT_CHAR_CACHE[$c] = false;
                         } else {
-                            $bank = $ord >> 8;
-                            if (!isset($UTF8_TO_TRANSLIT[$bank])) {
-                                $UTF8_TO_TRANSLIT[$bank] = self::getDataIfExists(\sprintf('x%03x', $bank));
-                            }
-
-                            $bankPos = $ord & 255;
-
-                            if (isset($UTF8_TO_TRANSLIT[$bank][$bankPos])) {
-                                $translit = $UTF8_TO_TRANSLIT[$bank][$bankPos];
-                                if ($translit === '[?]' || $translit === '[?] ') {
-                                    $TRANSLIT_CHAR_CACHE[$c] = false;
-                                } else {
-                                    $TRANSLIT_CHAR_CACHE[$c] = $translit;
-                                }
-                            } else {
-                                $TRANSLIT_CHAR_CACHE[$c] = false;
-                            }
+                            $TRANSLIT_CHAR_CACHE[$c] = $translit;
                         }
+                    } else {
+                        $TRANSLIT_CHAR_CACHE[$c] = false;
                     }
                 }
 

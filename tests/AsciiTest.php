@@ -203,6 +203,9 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         static::assertArrayHasKey('german', $languages, \print_r($languages, true));
         static::assertSame('de', $languages['german']);
+
+        $languages = ASCII::getAllLanguages();
+        static::assertSame('de', $languages['german']);
     }
 
     public function testInvalidCharToAscii()
