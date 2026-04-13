@@ -1314,6 +1314,8 @@ final class ASCII
     }
 
     /**
+     * Validate that the string can be matched as UTF-8.
+     *
      * @psalm-pure
      */
     private static function is_valid_utf8(string $str): bool
