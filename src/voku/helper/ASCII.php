@@ -1117,14 +1117,15 @@ final class ASCII
             }
         }
 
-        // Strip impossible overlong starters before scanning for UTF-8 sequences.
-        // We intentionally drop them here so malformed bytes do not leak through when
-        // the main regex below only matches structurally valid 2-byte prefixes.
-        $str = (string) \preg_replace('/[\xC0-\xC1][\x80-\xBF]/', '', $str);
+        // Strip impossible overlong starters and 4-byte starters beyond U+10FFFF
+        // before scanning for UTF-8 sequences. We intentionally drop them here so
+        // malformed bytes do not survive when the main regex only walks candidate
+        // sequences we still want to transliterate or validate further.
+        $str = (string) \preg_replace('/[\xC0-\xC1][\x80-\xBF]|[\xF5-\xF7][\x80-\xBF]{3}/', '', $str);
 
         // Collect unique non-ASCII sequences once and resolve each code point once;
         // this keeps the hot path linear for long strings with repeated characters.
-        if (\preg_match_all('/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF7][\x80-\xBF]{3}/', $str, $nonAsciiMatches)) {
+        if (\preg_match_all('/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3}/', $str, $nonAsciiMatches)) {
             $charMap = [];
             $seen = [];
 
@@ -1146,11 +1147,10 @@ final class ASCII
                     $ordC1 = self::$ORD[$c[1]];
 
                     if (
-                        $ordC0 > 244
-                        || ($ordC0 === 224 && $ordC1 < 160)
+                        ($ordC0 === 224 && $ordC1 < 160)
                         || ($ordC0 === 237 && $ordC1 > 159)
                         || ($ordC0 === 240 && $ordC1 < 144)
-                        || ($ordC0 === 244 && $ordC1 > 143)
+                        || ($ordC0 === 0xF4 && $ordC1 > 143)
                     ) {
                         $INVALID_UTF8_SEQUENCE_CACHE[$c] = true;
                         $charMap[$c] = '';
