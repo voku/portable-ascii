@@ -1371,5 +1371,4 @@ final class ASCII
             self::$ASCII_EXTRAS = self::getData('ascii_extras_by_languages');
         }
     }
-
 }
