@@ -54,10 +54,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if [[ "${{ matrix.php }}" == "8.0" ]]; then
-            composer require phpstan/phpstan --no-update
-          fi;
-
           if [[ "${{ matrix.composer }}" == "lowest" ]]; then
             composer update --prefer-dist --no-interaction --prefer-lowest --prefer-stable
           fi;
@@ -69,8 +65,6 @@ jobs:
           composer dump-autoload -o
 
       - name: Run tests
-        env:
-          COMPOSER_PROCESS_TIMEOUT: 0
         run: |
           mkdir -p build/logs
           PHPUNIT_MAJOR=$(php vendor/bin/phpunit --version | grep -o 'PHPUnit [0-9]*' | grep -o '[0-9]*')
@@ -79,12 +73,6 @@ jobs:
           else
             php vendor/bin/phpunit -c phpunit.xml --whitelist src/ --coverage-clover=build/logs/clover.xml
           fi
-
-      - name: Run phpstan
-        continue-on-error: true
-        if: ${{ matrix.php == '8.0' }}
-        run: |
-          php vendor/bin/phpstan analyse
 
       - name: Upload coverage results to Coveralls
         if: success()
@@ -111,3 +99,23 @@ jobs:
           name: logs_composer-${{ matrix.composer }}_php-${{ matrix.php }}
           path: |
             build/logs
+
+  phpstan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@2.37.0
+        with:
+          php-version: '8.3'
+          extensions: zip
+          tools: composer, phpstan
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction
+
+      - name: Run phpstan
+        run: phpstan analyse
