@@ -620,11 +620,12 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         static::assertSame('﻿„Abcdef  …” — 😃', ASCII::clean($dirtyTestString, true, false, false, false));
         static::assertSame('﻿„Abcdef  …” — 😃', ASCII::clean($dirtyTestString, true, false, false, true));
         static::assertSame('﻿"Abcdef  ..." - 😃', ASCII::clean($dirtyTestString, true, false, true, false));
-        static::assertSame('﻿"Abcdef  ..." - 😃', ASCII::clean($dirtyTestString, true, false, true, true));
+        static::assertSame('﻿"Abcdef  ..." - 😃', ASCII::clean($dirtyTestString, true, false, true, true));
         static::assertSame('﻿„Abcdef  …” — 😃', ASCII::clean($dirtyTestString, true, true, false, false));
         static::assertSame('﻿„Abcdef  …” — 😃', ASCII::clean($dirtyTestString, true, true, false, true));
         static::assertSame('﻿"Abcdef  ..." - 😃', ASCII::clean($dirtyTestString, true, true, true, false));
         static::assertSame('﻿"Abcdef  ..." - 😃', ASCII::clean($dirtyTestString, true, true, true, true));
+        static::assertSame('﻿„Abcdef  …” — 😃', ASCII::clean($dirtyTestString, false, true, false, false, false));
     }
 
     public function testLanguageFiles()

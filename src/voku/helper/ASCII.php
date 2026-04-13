@@ -478,23 +478,26 @@ final class ASCII
         bool $normalize_whitespace = true,
         bool $keep_non_breaking_space = false,
         bool $normalize_msword = true,
-        bool $remove_invisible_characters = true
+        bool $remove_invisible_characters = true,
+        bool $remove_invalid_utf8 = true
     ): string {
         // http://stackoverflow.com/questions/1401317/remove-non-utf8-characters-from-string
         // caused connection reset problem on larger strings
 
-        $regex = '/
-          (
-            (?: [\x00-\x7F]               # single-byte sequences   0xxxxxxx
-            |   [\xC0-\xDF][\x80-\xBF]    # double-byte sequences   110xxxxx 10xxxxxx
-            |   [\xE0-\xEF][\x80-\xBF]{2} # triple-byte sequences   1110xxxx 10xxxxxx * 2
-            |   [\xF0-\xF7][\x80-\xBF]{3} # quadruple-byte sequence 11110xxx 10xxxxxx * 3
-            ){1,100}                      # ...one or more times
-          )
-        | ( [\x80-\xBF] )                 # invalid byte in range 10000000 - 10111111
-        | ( [\xC0-\xFF] )                 # invalid byte in range 11000000 - 11111111
-        /x';
-        $str = (string) \preg_replace($regex, '$1', $str);
+        if ($remove_invalid_utf8) {
+            $regex = '/
+              (
+                (?: [\x00-\x7F]               # single-byte sequences   0xxxxxxx
+                |   [\xC0-\xDF][\x80-\xBF]    # double-byte sequences   110xxxxx 10xxxxxx
+                |   [\xE0-\xEF][\x80-\xBF]{2} # triple-byte sequences   1110xxxx 10xxxxxx * 2
+                |   [\xF0-\xF7][\x80-\xBF]{3} # quadruple-byte sequence 11110xxx 10xxxxxx * 3
+                ){1,100}                      # ...one or more times
+              )
+            | ( [\x80-\xBF] )                 # invalid byte in range 10000000 - 10111111
+            | ( [\xC0-\xFF] )                 # invalid byte in range 11000000 - 11111111
+            /x';
+            $str = (string) \preg_replace($regex, '$1', $str);
+        }
 
         if ($normalize_whitespace) {
             $str = self::normalize_whitespace($str, $keep_non_breaking_space);
@@ -874,9 +877,7 @@ final class ASCII
 
         if ($remove_unsupported_chars) {
             $str = (string) \str_replace(["\n\r", "\n", "\r", "\t"], ' ', $str);
-            if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 1) {
-                $str = (string) \preg_replace('/' . self::$REGEX_ASCII . '/', '', $str);
-            }
+            $str = (string) \preg_replace('/' . self::$REGEX_ASCII . '/', '', $str);
         }
 
         return $str;
@@ -1054,29 +1055,14 @@ final class ASCII
             return $str;
         }
 
-        // only run the heavy clean() regex when the string has invalid UTF-8
-        if (\preg_match('//u', $str) === 1) {
-            $str_before_clean = $str;
-            $str = self::normalize_whitespace($str);
-            $str = self::normalize_msword($str);
-            $str = self::remove_invisible_characters($str);
-            if (
-                $str !== $str_before_clean
-                &&
-                \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
-            ) {
-                return $str;
-            }
-        } else {
-            $str_before_clean = $str;
-            $str = self::clean($str);
-            if (
-                $str !== $str_before_clean
-                &&
-                \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
-            ) {
-                return $str;
-            }
+        $str_before_clean = $str;
+        $str = self::clean($str, true, false, true, true, \preg_match('//u', $str) !== 1);
+        if (
+            $str !== $str_before_clean
+            &&
+            \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
+        ) {
+            return $str;
         }
 
         if (
