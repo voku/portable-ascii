@@ -1146,8 +1146,7 @@ final class ASCII
                     $ordC1 = self::$ORD[$c[1]];
 
                     if (
-                        $ordC0 === 192
-                        || $ordC0 === 193
+                        $ordC0 > 244
                         || ($ordC0 === 224 && $ordC1 < 160)
                         || ($ordC0 === 237 && $ordC1 > 159)
                         || ($ordC0 === 240 && $ordC1 < 144)

@@ -35,6 +35,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
             "\xC0\xAF" => '',
             "\xE0\x80\xAF" => '',
             "\xF0\x80\x80\xAF" => '',
+            "\xF5\x80\x80\x80" => '',
             "\xED\xA0\x80" => '',
         ];
 
