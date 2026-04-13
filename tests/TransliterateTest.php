@@ -302,7 +302,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('ahbk 😀 ♥ 𐎁 𠾴 ᎈ y', \strtolower(ASCII::to_transliterate('أحبك 😀 ♥ 𐎁 𠾴 ᎈ ý', null, false)));
     }
 
-    public function specialCharacterProvider(): array
+    public static function specialCharacterProvider(): array
     {
         return [
             ['ⓐⓑⓒⓓⓔⓕⓖⓗⓘⓙⓚⓛⓜⓝⓞⓟⓠⓡⓢⓣⓤⓥⓦⓧⓨⓩ', 'abcdefghijklmnopqrstuvwxyz'],

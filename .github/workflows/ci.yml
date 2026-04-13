@@ -6,6 +6,9 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: bash
@@ -17,8 +20,6 @@ jobs:
       fail-fast: false
       matrix:
         php: [
-            7.0,
-            7.1,
             7.2,
             7.3,
             7.4,
@@ -26,16 +27,17 @@ jobs:
             8.1,
             8.2,
             8.3,
-            8.4
+            8.4,
+            8.5
         ]
         composer: [basic]
     timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@2.31.1
+        uses: shivammathur/setup-php@2.37.0
         with:
           php-version: ${{ matrix.php }}
           coverage: xdebug
@@ -44,10 +46,10 @@ jobs:
 
       - name: Determine composer cache directory
         id: composer-cache
-        run: echo "::set-output name=directory::$(composer config cache-dir)"
+        run: echo "directory=$(composer config cache-dir)" >> "$GITHUB_OUTPUT"
 
       - name: Cache composer dependencies
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v5
         with:
           path: ${{ steps.composer-cache.outputs.directory }}
           key: ${{ matrix.php }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -55,10 +57,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if [[ "${{ matrix.php }}" == "7.4" ]]; then
-            composer require phpstan/phpstan --no-update
-          fi;
-
           if [[ "${{ matrix.composer }}" == "lowest" ]]; then
             composer update --prefer-dist --no-interaction --prefer-lowest --prefer-stable
           fi;
@@ -72,30 +70,55 @@ jobs:
       - name: Run tests
         run: |
           mkdir -p build/logs
-          php vendor/bin/phpunit -c phpunit.xml --coverage-clover=build/logs/clover.xml
-
-      - name: Run phpstan
-        continue-on-error: true
-        if: ${{ matrix.php == '7.4' }}
-        run: |
-          php vendor/bin/phpstan analyse
+          PHPUNIT_MAJOR=$(php vendor/bin/phpunit --version | grep -o 'PHPUnit [0-9]*' | grep -o '[0-9]*')
+          if [ "$PHPUNIT_MAJOR" -ge 9 ]; then
+            php vendor/bin/phpunit -c phpunit.xml --coverage-filter src/ --coverage-clover=build/logs/clover.xml
+          else
+            php vendor/bin/phpunit -c phpunit.xml --whitelist src/ --coverage-clover=build/logs/clover.xml
+          fi
 
       - name: Upload coverage results to Coveralls
+        if: success()
+        continue-on-error: true
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          composer global require php-coveralls/php-coveralls
-          php-coveralls --coverage_clover=build/logs/clover.xml -v
+          if [ -f build/logs/clover.xml ]; then
+            composer global require php-coveralls/php-coveralls
+            php-coveralls --coverage_clover=build/logs/clover.xml -v
+          fi
 
       - name: Upload coverage results to Codecov
-        uses: codecov/codecov-action@v5
+        if: success()
+        continue-on-error: true
+        uses: codecov/codecov-action@v6
         with:
           files: build/logs/clover.xml
 
       - name: Archive logs artifacts
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: logs_composer-${{ matrix.composer }}_php-${{ matrix.php }}
           path: |
             build/logs
+
+  phpstan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@2.37.0
+        with:
+          php-version: '8.3'
+          extensions: zip
+          tools: composer, phpstan
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction
+
+      - name: Run phpstan
+        run: phpstan analyse
