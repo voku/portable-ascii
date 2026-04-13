@@ -113,7 +113,6 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
         static::assertSame('cafe', $result);
     }
 
-
     public function testCanonicalizesCompactNonspacingMarkSyntax(): void
     {
         $result = TransliteratorPolyfill::transliterate(
