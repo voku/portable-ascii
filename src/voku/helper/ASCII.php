@@ -770,7 +770,8 @@ final class ASCII
         /** @phpstan-var ASCII::*_LANGUAGE_CODE $language - hack for phpstan */
         $language = self::get_language($language);
 
-        // fast path: pure printable ASCII — single regex covers is_ascii + no-control-chars
+        // fast path: pure printable ASCII — keep this inline so the common case
+        // returns before we touch any transliteration maps or UTF-8 validation.
         if (
             !$replace_extra_symbols
             &&
@@ -779,7 +780,8 @@ final class ASCII
             return $str;
         }
 
-        // secondary fast path: has control chars like \n\r\t but otherwise ASCII
+        // secondary fast path: keep control-char cleanup separate so plain ASCII
+        // callers still avoid the heavier replacement-map setup.
         if (
             !$replace_extra_symbols
             &&
@@ -842,7 +844,8 @@ final class ASCII
                 }
             }
 
-            // pre-index by first byte for fast filtering
+            // Pre-index by first byte so each call can cheaply skip most of the
+            // replacement table instead of feeding the full language map to strtr().
             $MAP_BY_FIRST_BYTE[$cacheKey] = [];
             foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $key => $val) {
                 $MAP_BY_FIRST_BYTE[$cacheKey][$key[0]][$key] = $val;
@@ -850,8 +853,8 @@ final class ASCII
         }
 
         if ($REPLACE_HELPER_CACHE[$cacheKey] !== []) {
-            // use count_chars to find which byte values are present in the string
-            // and only include map entries whose first byte actually appears
+            // count_chars() is cheaper than a full strtr() over every candidate, so
+            // we only keep replacements whose leading byte is present in this input.
             $filteredMap = [];
             foreach (\count_chars($str, 1) as $byte => $count) {
                 $fb = \chr($byte);
@@ -1104,7 +1107,8 @@ final class ASCII
             ? "\x00null"
             : "\x01" . $unknown;
 
-        // warm path: if we already built a map for this $unknown value, try it first
+        // warm path: reuse per-$unknown replacements first, because repeated calls
+        // often hit the same scripts and can avoid rebuilding the transliteration map.
         if (isset($WARM_MAPS[$unknownCacheKey])) {
             $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
 
@@ -1113,10 +1117,13 @@ final class ASCII
             }
         }
 
-        // strip overlong 2-byte sequences (\xC0 and \xC1 can never start valid UTF-8)
+        // Strip impossible overlong starters before scanning for UTF-8 sequences.
+        // We intentionally drop them here so malformed bytes do not leak through when
+        // the main regex below only matches structurally valid 2-byte prefixes.
         $str = (string) \preg_replace('/[\xC0-\xC1][\x80-\xBF]/', '', $str);
 
-        // collect unique non-ASCII characters and build a strtr map
+        // Collect unique non-ASCII sequences once and resolve each code point once;
+        // this keeps the hot path linear for long strings with repeated characters.
         if (\preg_match_all('/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF7][\x80-\xBF]{3}/', $str, $nonAsciiMatches)) {
             $charMap = [];
             $seen = [];
@@ -1192,7 +1199,8 @@ final class ASCII
                 }
             }
 
-            // merge new entries into the warm map for future calls
+            // Merge new entries into the warm cache for future calls, but only apply
+            // the delta on this call because the warm map was already strtr()'d above.
             if ($charMap !== []) {
                 if (isset($WARM_MAPS[$unknownCacheKey])) {
                     foreach ($charMap as $k => $v) {
