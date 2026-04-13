@@ -789,7 +789,7 @@ final class ASCII
             return $str;
         }
 
-        if (\preg_match('//u', $str) !== 1) {
+        if (!self::is_valid_utf8($str)) {
             self::prepareAsciiMaps();
 
             if (!isset(self::$ASCII_MAPS[$language])) {
@@ -1311,5 +1311,13 @@ final class ASCII
         if (self::$ASCII_EXTRAS === null) {
             self::$ASCII_EXTRAS = self::getData('ascii_extras_by_languages');
         }
+    }
+
+    /**
+     * @psalm-pure
+     */
+    private static function is_valid_utf8(string $str): bool
+    {
+        return \preg_match('//u', $str) === 1;
     }
 }
