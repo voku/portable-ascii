@@ -1,19 +1,16 @@
 build: false
 shallow_clone: false
+image: Visual Studio 2022
+platform: x64
 clone_folder: C:\projects\ascii
+
 branches:
   except:
     - gh-pages
 
 install:
-  - cinst -y vcredist140
-  - ps: >-
-      [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
-      $phpZip = 'https://windows.php.net/downloads/releases/php-8.3.30-nts-Win32-vs16-x64.zip';
-      $phpArchive = 'C:\projects\php.zip';
-      New-Item -ItemType Directory -Force -Path 'C:\tools\php83' | Out-Null;
-      (New-Object Net.WebClient).DownloadFile($phpZip, $phpArchive);
-      Expand-Archive -Path $phpArchive -DestinationPath 'C:\tools\php83' -Force
+  - ps: Set-Service wuauserv -StartupType Manual
+  - choco install -y php --version "8.3.30"
   - cd C:\tools\php83
   - copy php.ini-production php.ini
   - echo date.timezone="UTC" >> php.ini
@@ -24,9 +21,12 @@ install:
   - echo extension=php_fileinfo.dll >> php.ini
   - SET PATH=C:\tools\php83;%PATH%
   - cd C:\projects\ascii
-  - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+  - ps: >-
+      [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+      Invoke-WebRequest https://getcomposer.org/installer -OutFile composer-setup.php
   - php composer-setup.php
-  - php -r "unlink('composer-setup.php');"
+  - del composer-setup.php
+  - php composer.phar clear-cache
   - php composer.phar install --prefer-dist --no-interaction
   - php composer.phar dump-autoload -o
 
