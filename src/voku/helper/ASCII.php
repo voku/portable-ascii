@@ -172,11 +172,6 @@ final class ASCII
     private static $ORD;
 
     /**
-     * @var array<string, int>|null
-     */
-    private static $LANGUAGE_MAX_KEY;
-
-    /**
      * url: https://en.wikipedia.org/wiki/Wikipedia:ASCII#ASCII_printable_characters
      *
      * @var string
@@ -1120,7 +1115,7 @@ final class ASCII
         if (isset($WARM_MAPS[$unknownKey])) {
             $str = \strtr($str, $WARM_MAPS[$unknownKey]);
 
-            if (!\preg_match('/[\xC0-\xFF]/', $str)) {
+            if (!\preg_match('/[\x80-\xFF]/', $str)) {
                 return $str;
             }
         }
@@ -1143,6 +1138,20 @@ final class ASCII
                         $TRANSLIT_CHAR_CACHE[$c] = false;
                     } else {
                         $ordC1 = self::$ORD[$c[1]];
+
+                        if (
+                            $ordC0 === 192
+                            || $ordC0 === 193
+                            || $ordC0 > 244
+                            || ($ordC0 === 224 && $ordC1 < 160)
+                            || ($ordC0 === 237 && $ordC1 > 159)
+                            || ($ordC0 === 240 && $ordC1 < 144)
+                            || ($ordC0 === 244 && $ordC1 > 143)
+                        ) {
+                            $charMap[$c] = '';
+
+                            continue;
+                        }
 
                         if ($ordC0 <= 223) {
                             $ord = ($ordC0 - 192) * 64 + ($ordC1 - 128);

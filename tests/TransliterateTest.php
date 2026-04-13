@@ -29,6 +29,21 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('testing', ASCII::to_transliterate($str));
     }
 
+    public function testMalformedUtf8SequencesAreRemoved()
+    {
+        $tests = [
+            "\xC0\xAF" => '',
+            "\xE0\x80\xAF" => '',
+            "\xF0\x80\x80\xAF" => '',
+            "\xED\xA0\x80" => '',
+        ];
+
+        foreach ($tests as $before => $after) {
+            static::assertSame($after, ASCII::to_transliterate($before), 'first pass: ' . \bin2hex($before));
+            static::assertSame($after, ASCII::to_transliterate($before), 'warm pass: ' . \bin2hex($before));
+        }
+    }
+
     public function testEmptyStr()
     {
         $str = '';

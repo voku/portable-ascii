@@ -216,6 +216,12 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame('testing', ASCII::to_ascii($str));
     }
 
+    public function testMalformedUtf8ToAsciiViaTransliteration()
+    {
+        static::assertSame('', ASCII::to_ascii("\xC0\xAF", 'en', true, false, true));
+        static::assertSame('', ASCII::to_ascii("\xED\xA0\x80", 'en', true, false, true));
+    }
+
     public function testEmptyStrToAscii()
     {
         $str = '';
@@ -274,5 +280,11 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         $str = "a\tb\tc";
         static::assertSame('a b c', ASCII::to_ascii($str, 'en', true));
+    }
+
+    public function testToAsciiSingleCharOnlyUsesExpectedMappings()
+    {
+        static::assertSame('Aiti einai mia dokimi ', ASCII::to_ascii('Αυτή είναι μια δοκιμή ', 'el', true, false, false, true));
+        static::assertSame('ttyaniungyath ', ASCII::to_ascii('တတျနိုငျသ ', 'my', true, false, false, true));
     }
 }
