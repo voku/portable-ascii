@@ -1112,11 +1112,13 @@ final class ASCII
         /** @var array<string, array<string, string>> */
         static $WARM_MAPS = [];
 
-        $unknownKey = $unknown ?? "\x00";
+        $unknownCacheKey = $unknown === null
+            ? "\x00null"
+            : "\x01" . $unknown;
 
         // warm path: if we already built a map for this $unknown value, try it first
-        if (isset($WARM_MAPS[$unknownKey])) {
-            $str = \strtr($str, $WARM_MAPS[$unknownKey]);
+        if (isset($WARM_MAPS[$unknownCacheKey])) {
+            $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
 
             if (!\preg_match('/[\x80-\xFF]/', $str)) {
                 return $str;
@@ -1212,15 +1214,15 @@ final class ASCII
 
             // merge new entries into the warm map for future calls
             if ($charMap !== []) {
-                if (isset($WARM_MAPS[$unknownKey])) {
+                if (isset($WARM_MAPS[$unknownCacheKey])) {
                     foreach ($charMap as $k => $v) {
-                        $WARM_MAPS[$unknownKey][$k] = $v;
+                        $WARM_MAPS[$unknownCacheKey][$k] = $v;
                     }
                 } else {
-                    $WARM_MAPS[$unknownKey] = $charMap;
+                    $WARM_MAPS[$unknownCacheKey] = $charMap;
                 }
 
-                return \strtr($str, $WARM_MAPS[$unknownKey]);
+                return \strtr($str, $WARM_MAPS[$unknownCacheKey]);
             }
         }
 

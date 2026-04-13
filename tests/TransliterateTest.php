@@ -44,6 +44,13 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         }
     }
 
+    public function testNullUnknownAndNullByteUnknownUseDifferentWarmMaps()
+    {
+        static::assertSame('😀', ASCII::to_transliterate('😀', null, false));
+        static::assertSame("\x00", ASCII::to_transliterate('😀', "\x00", false));
+        static::assertSame('😀', ASCII::to_transliterate('😀', null, false));
+    }
+
     public function testEmptyStr()
     {
         $str = '';
