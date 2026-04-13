@@ -20,6 +20,25 @@ use voku\helper\TransliteratorPolyfill;
  */
 final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
 {
+    /**
+     * Call TransliteratorPolyfill::transliterate() and capture any E_USER_WARNING.
+     *
+     * @return array{result: string|false, warning: string|null}
+     */
+    private static function transliterateCapturingWarning($transliterator, string $string, int $start = 0, int $end = -1): array
+    {
+        $warning = null;
+        \set_error_handler(static function (int $errno, string $errstr) use (&$warning): bool {
+            $warning = $errstr;
+
+            return true;
+        }, \E_USER_WARNING);
+
+        $result = TransliteratorPolyfill::transliterate($transliterator, $string, $start, $end);
+        \restore_error_handler();
+
+        return ['result' => $result, 'warning' => $warning];
+    }
     // ─── Happy-path transliteration tests ───────────────────────────────
 
     public function testLatinAsciiBasic(): void
@@ -194,18 +213,11 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
 
     public function testUnsupportedIdTriggersWarning(): void
     {
-        $warning = null;
-        \set_error_handler(static function (int $errno, string $errstr) use (&$warning): bool {
-            $warning = $errstr;
+        $captured = self::transliterateCapturingWarning('Katakana-Hiragana', 'テスト');
 
-            return true;
-        }, \E_USER_WARNING);
-
-        TransliteratorPolyfill::transliterate('Katakana-Hiragana', 'テスト');
-        \restore_error_handler();
-
-        static::assertNotNull($warning);
-        static::assertStringContainsString('Katakana-Hiragana', $warning);
+        static::assertFalse($captured['result']);
+        static::assertNotNull($captured['warning']);
+        static::assertStringContainsString('Katakana-Hiragana', $captured['warning']);
     }
 
     public function testCustomIcuRulesReturnFalse(): void
@@ -216,18 +228,11 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
 
     public function testCustomIcuRulesTriggersWarning(): void
     {
-        $warning = null;
-        \set_error_handler(static function (int $errno, string $errstr) use (&$warning): bool {
-            $warning = $errstr;
+        $captured = self::transliterateCapturingWarning('a > b; b > c;', 'abc');
 
-            return true;
-        }, \E_USER_WARNING);
-
-        TransliteratorPolyfill::transliterate('a > b; b > c;', 'abc');
-        \restore_error_handler();
-
-        static::assertNotNull($warning);
-        static::assertStringContainsString('custom ICU rules', $warning);
+        static::assertFalse($captured['result']);
+        static::assertNotNull($captured['warning']);
+        static::assertStringContainsString('custom ICU rules', $captured['warning']);
     }
 
     public function testEmptyIdReturnsFalse(): void
@@ -238,18 +243,11 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
 
     public function testEmptyIdTriggersWarning(): void
     {
-        $warning = null;
-        \set_error_handler(static function (int $errno, string $errstr) use (&$warning): bool {
-            $warning = $errstr;
+        $captured = self::transliterateCapturingWarning('', 'test');
 
-            return true;
-        }, \E_USER_WARNING);
-
-        TransliteratorPolyfill::transliterate('', 'test');
-        \restore_error_handler();
-
-        static::assertNotNull($warning);
-        static::assertStringContainsString('empty transliterator ID', $warning);
+        static::assertFalse($captured['result']);
+        static::assertNotNull($captured['warning']);
+        static::assertStringContainsString('empty transliterator ID', $captured['warning']);
     }
 
     public function testMixedSupportedAndUnsupportedStepsReturnsFalse(): void
@@ -281,18 +279,11 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
 
     public function testNonStringTransliteratorTriggersWarning(): void
     {
-        $warning = null;
-        \set_error_handler(static function (int $errno, string $errstr) use (&$warning): bool {
-            $warning = $errstr;
+        $captured = self::transliterateCapturingWarning(42, 'test');
 
-            return true;
-        }, \E_USER_WARNING);
-
-        TransliteratorPolyfill::transliterate(42, 'test');
-        \restore_error_handler();
-
-        static::assertNotNull($warning);
-        static::assertStringContainsString('integer', $warning);
+        static::assertFalse($captured['result']);
+        static::assertNotNull($captured['warning']);
+        static::assertStringContainsString('integer', $captured['warning']);
     }
 
     public function testNullBytesInString(): void
