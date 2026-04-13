@@ -39,6 +39,26 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
 
         return ['result' => $result, 'warning' => $warning];
     }
+
+    private static function assertInvalidOffsets(int $start, int $end): void
+    {
+        if (\PHP_VERSION_ID >= 80000) {
+            try {
+                TransliteratorPolyfill::transliterate('Latin-ASCII', 'café', $start, $end);
+                static::fail('Expected ValueError for invalid start/end offsets.');
+            } catch (\ValueError $exception) {
+                static::assertStringContainsString('transliterator_transliterate()', $exception->getMessage());
+            }
+
+            return;
+        }
+
+        $captured = self::transliterateCapturingWarning('Latin-ASCII', 'café', $start, $end);
+
+        static::assertFalse($captured['result']);
+        static::assertNotNull($captured['warning']);
+    }
+
     // ─── Happy-path transliteration tests ───────────────────────────────
 
     public function testLatinAsciiBasic(): void
@@ -125,6 +145,24 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
             'ŤÉŚŢ - öäü - 123 - abc - …'
         );
         static::assertSame('test - oeaeue - 123 - abc - ...', $result);
+    }
+
+    public function testGermanAsciiRulePreservesUppercaseExpansions(): void
+    {
+        $result = TransliteratorPolyfill::transliterate('de-ASCII', 'Ä Ö Ü ä ö ü ß');
+        static::assertSame('AE OE UE ae oe ue ss', $result);
+    }
+
+    public function testGermanAustrianAsciiRuleMatchesNativeAlias(): void
+    {
+        $result = TransliteratorPolyfill::transliterate('de_AT-ascii', 'Ä Ö Ü ä ö ü ß');
+        static::assertSame('A O U a o u ss', $result);
+    }
+
+    public function testGermanSwissAsciiRuleMatchesNativeAlias(): void
+    {
+        $result = TransliteratorPolyfill::transliterate('de_CH-ascii', 'Ä Ö Ü ä ö ü ß');
+        static::assertSame('A O U a o u ss', $result);
     }
 
     public function testTurkmenLatinBgnRule(): void
@@ -244,6 +282,21 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
     {
         $result = TransliteratorPolyfill::transliterate('Latin-ASCII', 'café', 2, 2);
         static::assertSame('café', $result);
+    }
+
+    public function testNegativeStartOffsetIsRejected(): void
+    {
+        self::assertInvalidOffsets(-1, -1);
+    }
+
+    public function testEndLessThanMinusOneIsRejected(): void
+    {
+        self::assertInvalidOffsets(0, -2);
+    }
+
+    public function testStartGreaterThanEndIsRejected(): void
+    {
+        self::assertInvalidOffsets(3, 1);
     }
 
     // ─── Unsupported-ID tests ───────────────────────────────────────────
@@ -418,12 +471,10 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
         }
     }
 
-    // ─── Bootstrap registration test ────────────────────────────────────
+    // ─── Class availability test ────────────────────────────────────────
 
-    public function testGlobalFunctionMatchesPolyfillClass(): void
+    public function testPolyfillClassExposesTransliterateMethod(): void
     {
-        // Whether the global function is native (ext-intl) or our polyfill,
-        // verify the polyfill class method is callable
         static::assertTrue(\method_exists(TransliteratorPolyfill::class, 'transliterate'));
     }
 
