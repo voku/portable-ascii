@@ -73,7 +73,7 @@ jobs:
           COMPOSER_PROCESS_TIMEOUT: 0
         run: |
           mkdir -p build/logs
-          PHPUNIT_MAJOR=$(php vendor/bin/phpunit --version | grep -oP 'PHPUnit \K\d+')
+          PHPUNIT_MAJOR=$(php vendor/bin/phpunit --version | grep -o 'PHPUnit [0-9]*' | grep -o '[0-9]*')
           if [ "$PHPUNIT_MAJOR" -ge 9 ]; then
             php vendor/bin/phpunit -c phpunit.xml --coverage-filter src/ --coverage-clover=build/logs/clover.xml
           else
