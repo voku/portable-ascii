@@ -82,6 +82,36 @@ Example: ASCII::to_ascii()
   // Dusseldorf
 ```
 
+### `TransliteratorPolyfill`
+
+This package includes `voku\helper\TransliteratorPolyfill`, a helper that can be
+reused by a dedicated `transliterator_transliterate()` polyfill.
+
+```php
+use voku\helper\TransliteratorPolyfill;
+
+echo TransliteratorPolyfill::transliterate('Any-Latin; Latin-ASCII', 'déjà vu');
+// "deja vu"
+
+echo TransliteratorPolyfill::transliterate('de-ASCII', 'Ä Ö Ü ä ö ü ß');
+// "AE OE UE ae oe ue ss"
+```
+
+Supported pipeline steps:
+
+- `NFC`, `NFD`, `NFKC`, `NFKD`
+- `[:Nonspacing Mark:] Remove`
+- `Any-Latin`, `Latin-ASCII`, `Any-ASCII`
+- `Any-Upper`, `Any-Lower`
+- Limited language aliases such as `de-ASCII`, `de_AT-ASCII`, `de_CH-ASCII`, and `Turkmen-Latin/BGN`
+
+Known limitations:
+
+- This package does not register a global `transliterator_transliterate()` function
+- Custom ICU rules using `>` / `<` operators are not supported
+- Some mappings still differ from ICU data for selected scripts
+- Null bytes are stripped by the underlying ASCII transliteration logic
+
 # Portable ASCII | API
 
 The API from the "ASCII"-Class is written as small static methods.

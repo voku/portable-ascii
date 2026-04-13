@@ -109,6 +109,10 @@ final class TransliteratorPolyfill
             return false;
         }
 
+        if (!self::validateOffsets($start, $end)) {
+            return false;
+        }
+
         $transliterator = self::cleanId($transliterator);
 
         // Reject custom ICU rules (contain transformation operators)
@@ -218,7 +222,7 @@ final class TransliteratorPolyfill
         foreach ($steps as $step) {
             switch ($step['type']) {
                 case 'language':
-                    $result = ASCII::to_ascii($result, $step['value']);
+                    $result = self::applyLanguageStep($result, $step['value']);
 
                     break;
 
@@ -322,6 +326,77 @@ final class TransliteratorPolyfill
         $result = \preg_replace('/\p{Mn}/u', '', $string);
 
         return ($result !== null) ? $result : $string;
+    }
+
+    private static function validateOffsets(int $start, int $end): bool
+    {
+        if ($start < 0) {
+            return self::failForInvalidOffsets('Argument #3 ($start) must be greater than or equal to 0');
+        }
+
+        if ($end < -1) {
+            return self::failForInvalidOffsets('Argument #4 ($end) must be greater than or equal to -1');
+        }
+
+        if ($end !== -1 && $start > $end) {
+            return self::failForInvalidOffsets('Argument #3 ($start) must be less than or equal to argument #4 ($end)');
+        }
+
+        return true;
+    }
+
+    private static function failForInvalidOffsets(string $message): bool
+    {
+        $message = 'transliterator_transliterate(): ' . $message;
+
+        if (\PHP_VERSION_ID >= 80000) {
+            throw new \ValueError($message);
+        }
+
+        \trigger_error($message, \E_USER_WARNING);
+
+        return false;
+    }
+
+    private static function applyLanguageStep(string $string, string $language): string
+    {
+        switch ($language) {
+            case 'de':
+                return self::applyGermanAsciiAlias($string, true);
+
+            case 'de_at':
+            case 'de_ch':
+                return self::applyGermanAsciiAlias($string, false);
+        }
+
+        return ASCII::to_ascii($string, $language);
+    }
+
+    private static function applyGermanAsciiAlias(string $string, bool $expandUmlauts): string
+    {
+        if ($expandUmlauts) {
+            $string = \strtr($string, [
+                'Ä' => 'AE',
+                'Ö' => 'OE',
+                'Ü' => 'UE',
+                'ä' => 'ae',
+                'ö' => 'oe',
+                'ü' => 'ue',
+                'ß' => 'ss',
+            ]);
+        } else {
+            $string = \strtr($string, [
+                'Ä' => 'A',
+                'Ö' => 'O',
+                'Ü' => 'U',
+                'ä' => 'a',
+                'ö' => 'o',
+                'ü' => 'u',
+                'ß' => 'ss',
+            ]);
+        }
+
+        return ASCII::to_transliterate($string, null, false);
     }
 
     private static function cleanId(string $id): string

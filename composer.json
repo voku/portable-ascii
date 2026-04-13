@@ -27,10 +27,7 @@
     "autoload": {
         "psr-4": {
             "voku\\": "src/voku/"
-        },
-        "files": [
-            "src/voku/helper/transliterator_polyfill_bootstrap.php"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {
