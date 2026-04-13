@@ -25,7 +25,7 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
      *
      * @return array{result: string|false, warning: string|null}
      */
-    private static function transliterateCapturingWarning($transliterator, string $string, int $start = 0, int $end = -1): array
+    private static function transliterateCapturingWarning(mixed $transliterator, string $string, int $start = 0, int $end = -1): array
     {
         $warning = null;
         \set_error_handler(static function (int $errno, string $errstr) use (&$warning): bool {
@@ -91,6 +91,49 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
         // Trailing semicolons should be handled gracefully (empty steps filtered out)
         $result = TransliteratorPolyfill::transliterate('Latin-ASCII;', 'café');
         static::assertSame('cafe', $result);
+    }
+
+
+    public function testCanonicalizesCompactNonspacingMarkSyntax(): void
+    {
+        $result = TransliteratorPolyfill::transliterate(
+            'NFKC;[:NonspacingMark:]Remove;NFKC;Any-Latin;Latin-ASCII;',
+            'déjà vu'
+        );
+        static::assertSame('deja vu', $result);
+    }
+
+    public function testMatchesStepsCaseInsensitively(): void
+    {
+        $result = TransliteratorPolyfill::transliterate('latin-ascii', 'café');
+        static::assertSame('cafe', $result);
+    }
+
+    public function testAnyUpperThenAsciiPipeline(): void
+    {
+        $result = TransliteratorPolyfill::transliterate(
+            'NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Upper; Any-Latin; Latin-ASCII',
+            'ŤÉŚŢ - öäü - 123 - abc - …'
+        );
+        static::assertSame('TEST - OAU - 123 - ABC - ...', $result);
+    }
+
+    public function testGermanAsciiRule(): void
+    {
+        $result = TransliteratorPolyfill::transliterate(
+            'NFC; [:Nonspacing Mark:] Remove; NFC; Any-Lower; de-ascii',
+            'ŤÉŚŢ - öäü - 123 - abc - …'
+        );
+        static::assertSame('test - oeaeue - 123 - abc - ...', $result);
+    }
+
+    public function testTurkmenLatinBgnRule(): void
+    {
+        $result = TransliteratorPolyfill::transliterate(
+            'Turkmen-Latin/BGN; Latin-ASCII',
+            'ŤÉŚŢ - öäü - 123 - abc - …'
+        );
+        static::assertSame('TEST - oau - 123 - abc - ...', $result);
     }
 
     // ─── Mixed-language / accented character tests ──────────────────────

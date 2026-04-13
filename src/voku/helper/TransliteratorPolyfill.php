@@ -13,16 +13,16 @@ namespace voku\helper;
  * Supported transliterator pipeline steps:
  * - NFC, NFD, NFKC, NFKD (Unicode normalization; requires Normalizer class from ext-intl or a polyfill)
  * - [:Nonspacing Mark:] Remove (combining mark removal via \p{Mn} regex)
- * - Any-Latin (any script to Latin; uses package transliteration tables)
- * - Latin-ASCII (Latin with diacritics to ASCII)
- * - Any-ASCII (any script directly to ASCII)
+ * - Any-Latin, Latin-ASCII, Any-ASCII
+ * - Any-Upper, Any-Lower
+ * - limited language aliases backed by existing package rules, e.g. de-ASCII and Turkmen-Latin/BGN
  *
  * Unsupported IDs trigger E_USER_WARNING and return false.
  * Custom ICU rules (containing '>' or '<' operators) are not supported and return false.
  *
  * Known divergences from ext-intl / ICU:
- * - Any-Latin produces ASCII output (not Latin-with-diacritics) because the
- *   underlying transliteration tables map directly to ASCII.
+ * - Any-Latin and language-specific *-Latin aliases produce ASCII output
+ *   because the underlying package rules map directly to ASCII.
  * - Normalization steps (NFC, NFD, NFKC, NFKD) are silently skipped if the
  *   Normalizer class is not available.
  * - Character mappings may differ from ICU data (e.g., Cyrillic, CJK, currency symbols).
@@ -31,7 +31,7 @@ namespace voku\helper;
 final class TransliteratorPolyfill
 {
     /**
-     * Supported transliterator pipeline steps.
+     * Supported canonical transliterator pipeline steps.
      *
      * @var list<string>
      */
@@ -44,6 +44,44 @@ final class TransliteratorPolyfill
         'Any-Latin',
         'Latin-ASCII',
         'Any-ASCII',
+        'Any-Upper',
+        'Any-Lower',
+    ];
+
+    /**
+     * Limited language aliases adapted from the referenced Symfony polyfill work.
+     *
+     * @var array<string, string>
+     */
+    private const LANGUAGE_STEP_ALIASES = [
+        'amharic' => 'am',
+        'arabic' => 'ar',
+        'azerbaijani' => 'az',
+        'belarusian' => 'be',
+        'bulgarian' => 'bg',
+        'bengali' => 'bn',
+        'greek' => 'el',
+        'persian' => 'fa',
+        'hebrew' => 'he',
+        'armenian' => 'hy',
+        'georgian' => 'ka',
+        'kazakh' => 'kk',
+        'kirghiz' => 'ky',
+        'korean' => 'ko',
+        'macedonian' => 'mk',
+        'mongolian' => 'mn',
+        'oriya' => 'or',
+        'pashto' => 'ps',
+        'russian' => 'ru',
+        'serbian' => 'sr',
+        'thai' => 'th',
+        'turkmen' => 'tk',
+        'ukrainian' => 'uk',
+        'uzbek' => 'uz',
+        'han' => 'zh',
+        'de' => 'de',
+        'de_at' => 'de_at',
+        'de_ch' => 'de_ch',
     ];
 
     /**
@@ -71,6 +109,8 @@ final class TransliteratorPolyfill
             return false;
         }
 
+        $transliterator = self::cleanId($transliterator);
+
         // Reject custom ICU rules (contain transformation operators)
         if (\strpos($transliterator, '>') !== false || \strpos($transliterator, '<') !== false) {
             \trigger_error(
@@ -82,14 +122,14 @@ final class TransliteratorPolyfill
         }
 
         // Parse pipeline steps (semicolon-separated, trim whitespace, filter empty)
-        $steps = \array_values(\array_filter(
+        $rawSteps = \array_values(\array_filter(
             \array_map('trim', \explode(';', $transliterator)),
             static function (string $s): bool {
                 return $s !== '';
             }
         ));
 
-        if (\count($steps) === 0) {
+        if (\count($rawSteps) === 0) {
             \trigger_error(
                 'transliterator_transliterate(): polyfill received empty transliterator ID',
                 \E_USER_WARNING
@@ -99,19 +139,24 @@ final class TransliteratorPolyfill
         }
 
         // Validate all steps before executing any
-        foreach ($steps as $step) {
-            if (!\in_array($step, self::SUPPORTED_STEPS, true)) {
+        $steps = [];
+        foreach ($rawSteps as $step) {
+            $normalizedStep = self::normalizeStep($step);
+            if ($normalizedStep === null) {
                 \trigger_error(
                     \sprintf(
                         'transliterator_transliterate(): polyfill does not support transliterator step "%s". Supported: %s',
                         $step,
                         \implode(', ', self::SUPPORTED_STEPS)
+                        . ', Any-Upper, Any-Lower, limited <language>-ASCII and <language>-Latin[/BGN] aliases'
                     ),
                     \E_USER_WARNING
                 );
 
                 return false;
             }
+
+            $steps[] = $normalizedStep;
         }
 
         // Handle start/end slicing (codepoint offsets, not byte offsets)
@@ -127,7 +172,7 @@ final class TransliteratorPolyfill
      *
      * Characters outside the [start, end) range are preserved unchanged.
      *
-     * @param list<string> $steps  validated pipeline steps
+     * @param list<array{type: string, value: string}> $steps validated pipeline steps
      * @param string       $string input string
      * @param int          $start  start codepoint offset
      * @param int          $end    end codepoint offset (-1 = end of string)
@@ -161,7 +206,7 @@ final class TransliteratorPolyfill
     /**
      * Apply the validated pipeline steps to the string sequentially.
      *
-     * @param list<string> $steps  validated pipeline steps
+     * @param list<array{type: string, value: string}> $steps validated pipeline steps
      * @param string       $string input string
      *
      * @return string the transliterated string
@@ -171,24 +216,44 @@ final class TransliteratorPolyfill
         $result = $string;
 
         foreach ($steps as $step) {
-            switch ($step) {
-                case 'NFC':
-                case 'NFD':
-                case 'NFKC':
-                case 'NFKD':
-                    $result = self::applyNormalization($result, $step);
+            switch ($step['type']) {
+                case 'language':
+                    $result = ASCII::to_ascii($result, $step['value']);
 
                     break;
 
-                case '[:Nonspacing Mark:] Remove':
-                    $result = self::removeNonspacingMarks($result);
+                case 'step':
+                    switch ($step['value']) {
+                        case 'NFC':
+                        case 'NFD':
+                        case 'NFKC':
+                        case 'NFKD':
+                            $result = self::applyNormalization($result, $step['value']);
 
-                    break;
+                            break;
 
-                case 'Any-Latin':
-                case 'Latin-ASCII':
-                case 'Any-ASCII':
-                    $result = ASCII::to_transliterate($result, null, false);
+                        case '[:Nonspacing Mark:] Remove':
+                            $result = self::removeNonspacingMarks($result);
+
+                            break;
+
+                        case 'Any-Latin':
+                        case 'Latin-ASCII':
+                        case 'Any-ASCII':
+                            $result = ASCII::to_transliterate($result, null, false);
+
+                            break;
+
+                        case 'Any-Upper':
+                            $result = self::toUpper($result);
+
+                            break;
+
+                        case 'Any-Lower':
+                            $result = self::toLower($result);
+
+                            break;
+                    }
 
                     break;
             }
@@ -257,5 +322,72 @@ final class TransliteratorPolyfill
         $result = \preg_replace('/\p{Mn}/u', '', $string);
 
         return ($result !== null) ? $result : $string;
+    }
+
+    private static function cleanId(string $id): string
+    {
+        $id = \trim($id);
+        $id = \preg_replace('/\s*;\s*/', ';', $id) ?? $id;
+        $id = \rtrim($id, ';');
+        $id = \preg_replace(
+            '/\[\s*:?\s*Nonspacing\s*Mark\s*:?\s*\]\s*Remove/i',
+            '[:Nonspacing Mark:] Remove',
+            $id
+        ) ?? $id;
+
+        return $id;
+    }
+
+    /**
+     * @return array{type: string, value: string}|null
+     */
+    private static function normalizeStep(string $step): ?array
+    {
+        foreach (self::SUPPORTED_STEPS as $supportedStep) {
+            if (\strcasecmp($step, $supportedStep) === 0) {
+                return ['type' => 'step', 'value' => $supportedStep];
+            }
+        }
+
+        if (\preg_match('/^([a-z_]+)-ascii$/i', $step, $matches) === 1) {
+            $language = self::resolveLanguageAlias($matches[1]);
+            if ($language !== null) {
+                return ['type' => 'language', 'value' => $language];
+            }
+        }
+
+        if (\preg_match('/^([a-z_]+)-latin(?:\/bgn)?$/i', $step, $matches) === 1) {
+            $language = self::resolveLanguageAlias($matches[1]);
+            if ($language !== null) {
+                return ['type' => 'language', 'value' => $language];
+            }
+        }
+
+        return null;
+    }
+
+    private static function resolveLanguageAlias(string $language): ?string
+    {
+        $language = \strtolower($language);
+
+        return self::LANGUAGE_STEP_ALIASES[$language] ?? null;
+    }
+
+    private static function toUpper(string $string): string
+    {
+        if (\function_exists('mb_strtoupper')) {
+            return \mb_strtoupper($string, 'UTF-8');
+        }
+
+        return \strtoupper($string);
+    }
+
+    private static function toLower(string $string): string
+    {
+        if (\function_exists('mb_strtolower')) {
+            return \mb_strtolower($string, 'UTF-8');
+        }
+
+        return \strtolower($string);
     }
 }
