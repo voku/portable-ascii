@@ -1038,6 +1038,9 @@ final class ASCII
         /** @var array<string, string|false> */
         static $TRANSLIT_CHAR_CACHE = [];
 
+        /** @var array<string, true> */
+        static $INVALID_UTF8_SEQUENCE_CACHE = [];
+
         if ($str === '') {
             return '';
         }
@@ -1131,6 +1134,12 @@ final class ASCII
                 }
                 $seen[$c] = true;
 
+                if (isset($INVALID_UTF8_SEQUENCE_CACHE[$c])) {
+                    $charMap[$c] = '';
+
+                    continue;
+                }
+
                 if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
                     $ordC0 = self::$ORD[$c[0]];
 
@@ -1148,6 +1157,7 @@ final class ASCII
                             || ($ordC0 === 240 && $ordC1 < 144)
                             || ($ordC0 === 244 && $ordC1 > 143)
                         ) {
+                            $INVALID_UTF8_SEQUENCE_CACHE[$c] = true;
                             $charMap[$c] = '';
 
                             continue;
