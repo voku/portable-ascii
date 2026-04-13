@@ -832,7 +832,11 @@ final class ASCII
 
             if ($replace_single_chars_only) {
                 foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $char => $replacement) {
-                    if (\preg_match('/^.$/us', $char) !== 1) {
+                    if (
+                        isset($char[4])
+                        ||
+                        \preg_match('/^.$/us', $char) !== 1
+                    ) {
                         unset($REPLACE_HELPER_CACHE[$cacheKey][$char]);
                     }
                 }
