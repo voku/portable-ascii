@@ -6,7 +6,14 @@ branches:
     - gh-pages
 
 install:
-  - cinst -y php --version "8.3.30" --params "/InstallDir:C:\tools\php83"
+  - cinst -y vcredist140
+  - ps: >-
+      [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
+      $phpZip = 'https://windows.php.net/downloads/releases/php-8.3.30-nts-Win32-vs16-x64.zip';
+      $phpArchive = 'C:\projects\php.zip';
+      New-Item -ItemType Directory -Force -Path 'C:\tools\php83' | Out-Null;
+      (New-Object Net.WebClient).DownloadFile($phpZip, $phpArchive);
+      Expand-Archive -Path $phpArchive -DestinationPath 'C:\tools\php83' -Force
   - cd C:\tools\php83
   - copy php.ini-production php.ini
   - echo date.timezone="UTC" >> php.ini
