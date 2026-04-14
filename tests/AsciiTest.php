@@ -225,6 +225,48 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame('', ASCII::to_ascii("\xED\xA0\x80", 'en', true, false, true));
     }
 
+    /**
+     * Overlong sequences and UTF-16 surrogate halves must never be decoded into
+     * ASCII characters by to_transliterate() (or to_ascii() when transliteration
+     * is used). The raw-byte regex UTF8_MULTIBYTE_SEQUENCE_RX now uses the same
+     * strict grammar as clean(), so these sequences are never matched and therefore
+     * cannot be fed to the ordinal arithmetic that would otherwise convert them into
+     * their ASCII equivalents (e.g. "\xC0\xAF" → "/").
+     */
+    public function testOverlongAndSurrogateSequencesAreNotDecodedToAscii()
+    {
+        // --- 2-byte overlong sequences (C0/C1 lead bytes) ---
+        // "\xC0\xAF" would decode to U+002F = "/" via (0xC0-0xC0)*64+(0xAF-0x80) without the fix
+        static::assertSame('', ASCII::to_transliterate("\xC0\xAF", null, false));
+        static::assertSame('', ASCII::to_transliterate("\xC1\x81", null, false));
+        // must not silently become "/" with an unknown fallback either
+        static::assertNotSame('/', ASCII::to_transliterate("\xC0\xAF", '?', false));
+
+        // --- 3-byte overlong sequences (E0 + 80–9F …) ---
+        static::assertSame('', ASCII::to_transliterate("\xE0\x80\xAF", null, false));
+        static::assertSame('', ASCII::to_transliterate("\xE0\x9F\xBF", null, false));
+        static::assertNotSame('/', ASCII::to_transliterate("\xE0\x80\xAF", '?', false));
+
+        // --- 4-byte overlong sequences (F0 + 80–8F …) ---
+        static::assertSame('', ASCII::to_transliterate("\xF0\x80\x80\x80", null, false));
+        static::assertSame('', ASCII::to_transliterate("\xF0\x8F\xBF\xBF", null, false));
+
+        // --- UTF-16 surrogate halves (ED A0–BF …) ---
+        static::assertSame('', ASCII::to_transliterate("\xED\xA0\x80", null, false)); // U+D800
+        static::assertSame('', ASCII::to_transliterate("\xED\xBF\xBF", null, false)); // U+DFFF
+
+        // --- Code points above U+10FFFF ---
+        static::assertSame('', ASCII::to_transliterate("\xF4\x90\x80\x80", null, false));
+
+        // --- Mixed: invalid bytes embedded in otherwise valid ASCII ---
+        static::assertSame('hello world', ASCII::to_transliterate("hello\xC0\xAF world", null, false));
+        static::assertSame('hello world', ASCII::to_transliterate("hello\xE0\x80\xAF world", null, false));
+
+        // --- Sanity: valid sequences still transliterate correctly ---
+        static::assertSame('deja vu', ASCII::to_transliterate('déjà vu', null, false));
+        static::assertSame('/', ASCII::to_transliterate('/', null, false));
+    }
+
     public function testEmptyStrToAscii()
     {
         $str = '';

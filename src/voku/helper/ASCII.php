@@ -222,11 +222,22 @@ final class ASCII
     ];
 
     /**
-     * Match structurally valid multibyte UTF-8 sequences after clean() removed malformed bytes.
+     * Match exactly the structurally valid multibyte UTF-8 sequences defined by RFC 3629.
+     *
+     * The ranges mirror those used in clean() and deliberately exclude:
+     *   - 0xC0/0xC1 lead bytes (overlong 2-byte sequences such as "\xC0\xAF" for "/")
+     *   - \xE0 followed by \x80–\x9F (overlong 3-byte sequences)
+     *   - \xED followed by \xA0–\xBF (UTF-16 surrogate halves U+D800–U+DFFF)
+     *   - \xF0 followed by \x80–\x8F (overlong 4-byte sequences)
+     *   - \xF4 followed by \x90–\xBF, and \xF5–\xFF (code points above U+10FFFF)
+     *
+     * Without this strictness the later ordinal arithmetic (ord – 192/224/240) would
+     * silently decode overlong sequences into their ASCII equivalents (e.g. "\xC0\xAF" → "/"),
+     * introducing an input-sanitization bypass even though clean() already strips them.
      *
      * @var string
      */
-    private const UTF8_MULTIBYTE_SEQUENCE_RX = '/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3}/';
+    private const UTF8_MULTIBYTE_SEQUENCE_RX = '/[\xC2-\xDF][\x80-\xBF]|\xE0[\xA0-\xBF][\x80-\xBF]|[\xE1-\xEC\xEE-\xEF][\x80-\xBF]{2}|\xED[\x80-\x9F][\x80-\xBF]|\xF0[\x90-\xBF][\x80-\xBF]{2}|[\xF1-\xF3][\x80-\xBF]{3}|\xF4[\x80-\x8F][\x80-\xBF]{2}/';
 
     /**
      * @var int
