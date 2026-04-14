@@ -852,66 +852,7 @@ final class ASCII
         if ($strLength <= self::TO_ASCII_SHORT_STRING_THRESHOLD) {
             $str = self::to_ascii_short($str, $language, $replace_extra_symbols, $replace_single_chars_only);
         } else {
-            static $REPLACE_HELPER_CACHE = [];
-            static $FILTERED_MAP_CACHE = [];
-            $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
-
-            static $MAP_BY_FIRST_BYTE = [];
-
-            if (!isset($REPLACE_HELPER_CACHE[$cacheKey])) {
-                $langAll = self::getAsciiAllReplacementMap($replace_extra_symbols, $replace_single_chars_only);
-
-                $langSpecific = self::getAsciiLanguageReplacementMap($language, $replace_extra_symbols, $replace_single_chars_only);
-
-                if ($langSpecific === []) {
-                    $REPLACE_HELPER_CACHE[$cacheKey] = $langAll;
-                } else {
-                    $REPLACE_HELPER_CACHE[$cacheKey] = \array_merge([], $langAll, $langSpecific);
-                }
-
-                // Pre-index by first byte so each call can cheaply skip most of the
-                // replacement table instead of feeding the full language map to strtr().
-                $MAP_BY_FIRST_BYTE[$cacheKey] = [];
-                foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $key => $val) {
-                    // Some generated or merged lookup tables can retain an empty-string
-                    // key from the source data, which cannot participate in a first-byte
-                    // index and is therefore skipped defensively here.
-                    if ($key === '') {
-                        continue;
-                    }
-
-                    $MAP_BY_FIRST_BYTE[$cacheKey][$key[0]][$key] = $val;
-                }
-            }
-
-            $replaceMap = &$REPLACE_HELPER_CACHE[$cacheKey];
-            if ($replaceMap !== []) {
-                $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
-                $byteKey = \count_chars($str, 3);
-
-                if (!isset($FILTERED_MAP_CACHE[$cacheKey][$byteKey])) {
-                    $byteHistogram = \count_chars($str, 1);
-
-                    // count_chars() is cheaper than a full strtr() over every candidate, so
-                    // we only keep replacements whose leading byte is present in this input.
-                    $filteredMap = [];
-                    foreach ($byteHistogram as $byte => $count) {
-                        $fb = \chr($byte);
-                        if (isset($indexedMap[$fb])) {
-                            foreach ($indexedMap[$fb] as $k => $v) {
-                                $filteredMap[$k] = $v;
-                            }
-                        }
-                    }
-
-                    $FILTERED_MAP_CACHE[$cacheKey][$byteKey] = $filteredMap;
-                }
-
-                $filteredMap = $FILTERED_MAP_CACHE[$cacheKey][$byteKey];
-                if ($filteredMap !== []) {
-                    $str = \strtr($str, $filteredMap);
-                }
-            }
+            $str = self::to_ascii_long($str, $language, $replace_extra_symbols, $replace_single_chars_only);
         }
 
         if (!isset(self::$ASCII_MAPS[$language])) {
@@ -1476,6 +1417,79 @@ final class ASCII
                     $charDone[$char] = true;
                     $str = \str_replace($char, $replaceMap[$char], $str);
                 }
+            }
+        }
+
+        return $str;
+    }
+
+    /**
+     * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
+     */
+    private static function to_ascii_long(
+        string $str,
+        string $language,
+        bool $replace_extra_symbols,
+        bool $replace_single_chars_only
+    ): string {
+        static $REPLACE_HELPER_CACHE = [];
+        static $FILTERED_MAP_CACHE = [];
+        $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
+
+        static $MAP_BY_FIRST_BYTE = [];
+
+        if (!isset($REPLACE_HELPER_CACHE[$cacheKey])) {
+            $langAll = self::getAsciiAllReplacementMap($replace_extra_symbols, $replace_single_chars_only);
+
+            $langSpecific = self::getAsciiLanguageReplacementMap($language, $replace_extra_symbols, $replace_single_chars_only);
+
+            if ($langSpecific === []) {
+                $REPLACE_HELPER_CACHE[$cacheKey] = $langAll;
+            } else {
+                $REPLACE_HELPER_CACHE[$cacheKey] = \array_merge([], $langAll, $langSpecific);
+            }
+
+            // Pre-index by first byte so each call can cheaply skip most of the
+            // replacement table instead of feeding the full language map to strtr().
+            $MAP_BY_FIRST_BYTE[$cacheKey] = [];
+            foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $key => $val) {
+                // Some generated or merged lookup tables can retain an empty-string
+                // key from the source data, which cannot participate in a first-byte
+                // index and is therefore skipped defensively here.
+                if ($key === '') {
+                    continue;
+                }
+
+                $MAP_BY_FIRST_BYTE[$cacheKey][$key[0]][$key] = $val;
+            }
+        }
+
+        $replaceMap = &$REPLACE_HELPER_CACHE[$cacheKey];
+        if ($replaceMap !== []) {
+            $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
+            $byteKey = \count_chars($str, 3);
+
+            if (!isset($FILTERED_MAP_CACHE[$cacheKey][$byteKey])) {
+                $byteHistogram = \count_chars($str, 1);
+
+                // count_chars() is cheaper than a full strtr() over every candidate, so
+                // we only keep replacements whose leading byte is present in this input.
+                $filteredMap = [];
+                foreach ($byteHistogram as $byte => $count) {
+                    $fb = \chr($byte);
+                    if (isset($indexedMap[$fb])) {
+                        foreach ($indexedMap[$fb] as $k => $v) {
+                            $filteredMap[$k] = $v;
+                        }
+                    }
+                }
+
+                $FILTERED_MAP_CACHE[$cacheKey][$byteKey] = $filteredMap;
+            }
+
+            $filteredMap = $FILTERED_MAP_CACHE[$cacheKey][$byteKey];
+            if ($filteredMap !== []) {
+                $str = \strtr($str, $filteredMap);
             }
         }
 
