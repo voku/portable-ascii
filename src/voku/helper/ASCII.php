@@ -1058,6 +1058,21 @@ final class ASCII
             return $str;
         }
 
+        // Replace overlong 2-byte starters (C0-C1) and 4-byte starters beyond
+        // U+10FFFF (F5-F7) with $unknown BEFORE clean(), because clean() would
+        // strip them silently. When $unknown is null, leave them for clean() to
+        // handle (they are truly malformed bytes).
+        if ($unknown !== null) {
+            $unknownSafe = $unknown;
+            $str = (string) \preg_replace_callback(
+                '/[\xC0-\xC1][\x80-\xBF]|[\xF5-\xF7][\x80-\xBF]{3}/',
+                static function () use ($unknownSafe) {
+                    return $unknownSafe;
+                },
+                $str
+            );
+        }
+
         $str_before_clean = $str;
         $str = self::clean($str, true, false, true, true, \preg_match('//u', $str) !== 1);
         if (
@@ -1115,15 +1130,6 @@ final class ASCII
             if (!\preg_match('/[\x80-\xFF]/', $str)) {
                 return $str;
             }
-        }
-
-        // Strip overlong 2-byte starters (C0-C1) and 4-byte starters beyond
-        // U+10FFFF (F5-F7) before scanning for UTF-8 sequences. When a fallback
-        // is provided, replace them with $unknown; when $unknown is null, leave
-        // them in place (consistent with how valid-but-untranslatable chars are
-        // preserved).
-        if ($unknown !== null) {
-            $str = (string) \preg_replace('/[\xC0-\xC1][\x80-\xBF]|[\xF5-\xF7][\x80-\xBF]{3}/', $unknown, $str);
         }
 
         // Collect unique non-ASCII sequences once and resolve each code point once;
