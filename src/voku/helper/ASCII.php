@@ -352,7 +352,7 @@ final class ASCII
      *
      * @return ($asOrigReplaceArray is true ? array{orig: list<string>, replace: list<string>} : array<string, string>)
      *
-     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
+     * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
      */
     public static function charsArrayWithOneLanguage(
         string $language = self::ENGLISH_LANGUAGE_CODE,
@@ -785,8 +785,6 @@ final class ASCII
      *
      * @return string
      *                <p>A string that contains only ASCII characters.</p>
-     *
-     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
      */
     public static function to_ascii(
         string $str,
@@ -800,8 +798,8 @@ final class ASCII
             return '';
         }
 
-        /** @phpstan-var ASCII::*_LANGUAGE_CODE $language - hack for phpstan */
         $language = self::get_language($language);
+        /** @var ''|ASCII::*_LANGUAGE_CODE $language */
 
         $strLength = \strlen($str);
 
@@ -988,7 +986,7 @@ final class ASCII
      * @return string
      *                <p>The URL-friendly slug.</p>
      *
-     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
+     * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
      */
     public static function to_slugify(
         string $str,
@@ -1278,7 +1276,7 @@ final class ASCII
     }
 
     /**
-     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
+     * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
      */
     private static function to_ascii_short(
         string $str,
@@ -1339,7 +1337,18 @@ final class ASCII
                     $maxKeyLength = 2;
                 }
                 if (
-                    $language === self::ENGLISH_LANGUAGE_CODE
+                    $language === ''
+                    &&
+                    $maxKeyLength < 2
+                ) {
+                    $maxKeyLength = 2;
+                }
+                if (
+                    (
+                        $language === ''
+                        ||
+                        $language === self::ENGLISH_LANGUAGE_CODE
+                    )
                     &&
                     $maxKeyLength < 2
                     &&
@@ -1513,7 +1522,7 @@ final class ASCII
     }
 
     /**
-     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
+     * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
      *
      * @return array<string, string>
      */
