@@ -1126,6 +1126,9 @@ final class ASCII
             self::$ORD = self::getData('ascii_ord');
         }
 
+        /** @var array<string, int> $ordMap */
+        $ordMap = self::$ORD;
+
         /** @var array<string, array<string, string>> */
         static $WARM_MAPS = [];
 
@@ -1153,7 +1156,7 @@ final class ASCII
         // the remaining structurally valid multibyte sequences here.
         $str = (string) \preg_replace_callback(
             self::UTF8_MULTIBYTE_SEQUENCE_RX,
-            static function (array $matches) use (&$charMap, &$TRANSLIT_CHAR_CACHE, &$UTF8_TO_TRANSLIT, $unknown): string {
+            static function (array $matches) use (&$charMap, &$TRANSLIT_CHAR_CACHE, &$UTF8_TO_TRANSLIT, $ordMap, $unknown): string {
                 $c = $matches[0];
 
                 if (\array_key_exists($c, $charMap)) {
@@ -1161,15 +1164,15 @@ final class ASCII
                 }
 
                 if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
-                    $ordC0 = self::$ORD[$c[0]];
-                    $ordC1 = self::$ORD[$c[1]];
+                    $ordC0 = $ordMap[$c[0]];
+                    $ordC1 = $ordMap[$c[1]];
 
                     if ($ordC0 <= 223) {
                         $ord = ($ordC0 - 192) * 64 + ($ordC1 - 128);
                     } elseif ($ordC0 <= 239) {
-                        $ord = ($ordC0 - 224) * 4096 + ($ordC1 - 128) * 64 + (self::$ORD[$c[2]] - 128);
+                        $ord = ($ordC0 - 224) * 4096 + ($ordC1 - 128) * 64 + ($ordMap[$c[2]] - 128);
                     } else {
-                        $ord = ($ordC0 - 240) * 262144 + ($ordC1 - 128) * 4096 + (self::$ORD[$c[2]] - 128) * 64 + (self::$ORD[$c[3]] - 128);
+                        $ord = ($ordC0 - 240) * 262144 + ($ordC1 - 128) * 4096 + ($ordMap[$c[2]] - 128) * 64 + ($ordMap[$c[3]] - 128);
                     }
 
                     $bank = $ord >> 8;
