@@ -1099,14 +1099,29 @@ final class ASCII
             return $str;
         }
 
-        $str_before_clean = $str;
-        $str = self::clean($str, true, false, true, true, \preg_match('//u', $str) !== 1);
-        if (
-            $str !== $str_before_clean
-            &&
-            \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
-        ) {
-            return $str;
+        // only run the heavy clean() regex when the string has invalid UTF-8
+        if (\preg_match('//u', $str) === 1) {
+            $str_before_clean = $str;
+            $str = self::normalize_whitespace($str);
+            $str = self::normalize_msword($str);
+            $str = self::remove_invisible_characters($str);
+            if (
+                $str !== $str_before_clean
+                &&
+                \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
+            ) {
+                return $str;
+            }
+        } else {
+            $str_before_clean = $str;
+            $str = self::clean($str);
+            if (
+                $str !== $str_before_clean
+                &&
+                \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
+            ) {
+                return $str;
+            }
         }
 
         if (
@@ -1157,22 +1172,21 @@ final class ASCII
         if (isset($WARM_MAPS[$unknownCacheKey])) {
             $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
 
-            if (\preg_match(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str) !== 1) {
+            if (!\preg_match('/[\x80-\xFF]/', $str)) {
                 return $str;
             }
         }
 
-        $charMap = [];
-        // clean() already discarded malformed UTF-8, so we only need to resolve
-        // the remaining structurally valid multibyte sequences here.
-        $str = (string) \preg_replace_callback(
-            self::UTF8_MULTIBYTE_SEQUENCE_RX,
-            static function (array $matches) use (&$charMap, &$TRANSLIT_CHAR_CACHE, &$UTF8_TO_TRANSLIT, $ordMap, $unknown): string {
-                $c = $matches[0];
+        // collect unique non-ASCII characters and build a strtr map
+        if (\preg_match_all(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str, $nonAsciiMatches)) {
+            $charMap = [];
+            $seen = [];
 
-                if (\array_key_exists($c, $charMap)) {
-                    return $charMap[$c];
+            foreach ($nonAsciiMatches[0] as $c) {
+                if (isset($seen[$c])) {
+                    continue;
                 }
+                $seen[$c] = true;
 
                 if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
                     $ordC0 = $ordMap[$c[0]];
@@ -1204,34 +1218,30 @@ final class ASCII
                     }
                 }
 
-                if ($TRANSLIT_CHAR_CACHE[$c] === false) {
-                    $replacement = $unknown ?? $c;
+                $cached = $TRANSLIT_CHAR_CACHE[$c];
 
+                if ($cached === false) {
                     if ($unknown !== null) {
-                        $charMap[$c] = $replacement;
+                        $charMap[$c] = $unknown;
                     }
+                } elseif ($cached === '' && $unknown === null) {
+                    // keep original char
+                } else {
+                    $charMap[$c] = $cached;
+                }
+            }
 
-                    return $replacement;
+            // merge new entries into the warm map for future calls
+            if ($charMap !== []) {
+                if (isset($WARM_MAPS[$unknownCacheKey])) {
+                    foreach ($charMap as $k => $v) {
+                        $WARM_MAPS[$unknownCacheKey][$k] = $v;
+                    }
+                } else {
+                    $WARM_MAPS[$unknownCacheKey] = $charMap;
                 }
 
-                if ($TRANSLIT_CHAR_CACHE[$c] === '' && $unknown === null) {
-                    return $c;
-                }
-
-                $charMap[$c] = $TRANSLIT_CHAR_CACHE[$c];
-
-                return $TRANSLIT_CHAR_CACHE[$c];
-            },
-            $str
-        );
-
-        if ($charMap !== []) {
-            if (isset($WARM_MAPS[$unknownCacheKey])) {
-                foreach ($charMap as $k => $v) {
-                    $WARM_MAPS[$unknownCacheKey][$k] = $v;
-                }
-            } else {
-                $WARM_MAPS[$unknownCacheKey] = $charMap;
+                return \strtr($str, $WARM_MAPS[$unknownCacheKey]);
             }
         }
 
