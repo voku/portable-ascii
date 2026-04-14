@@ -887,13 +887,11 @@ final class ASCII
             $replaceMap = &$REPLACE_HELPER_CACHE[$cacheKey];
             if ($replaceMap !== []) {
                 $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
-                $byteHistogram = \count_chars($str, 1);
-                $byteKey = '';
-                foreach ($byteHistogram as $byte => $count) {
-                    $byteKey .= \chr($byte);
-                }
+                $byteKey = \count_chars($str, 3);
 
                 if (!isset($FILTERED_MAP_CACHE[$cacheKey][$byteKey])) {
+                    $byteHistogram = \count_chars($str, 1);
+
                     // count_chars() is cheaper than a full strtr() over every candidate, so
                     // we only keep replacements whose leading byte is present in this input.
                     $filteredMap = [];
