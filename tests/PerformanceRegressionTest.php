@@ -41,6 +41,11 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
         }
 
         $asciiShort = 'Plain ASCII text 123 test';
+        $latinShort = 'déjà vu';
+        $germanShort = 'Düsseldorf';
+        $mixedShort = 'déjà σσς iıii';
+        $slugAsciiShort = 'Using strings like foo bar';
+        $slugLatinShort = 'Using strings like fòô bàř';
         $asciiLong = \str_repeat('Plain ASCII text 123 test ', 128);
         $greekLong = \str_repeat('Αυτή είναι μια δοκιμή ', 128);
         $myanmarLong = \str_repeat('တတျနိုငျသ ', 128);
@@ -59,6 +64,42 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
                     return ASCII::to_transliterate($asciiShort, '?', false);
                 },
                 25000
+            ),
+            'to_ascii_latin_short' => $this->benchmarkScenario(
+                function () use ($latinShort): string {
+                    return ASCII::to_ascii($latinShort, 'en', true);
+                },
+                25000
+            ),
+            'to_transliterate_latin_short' => $this->benchmarkScenario(
+                function () use ($latinShort): string {
+                    return ASCII::to_transliterate($latinShort, '?', false);
+                },
+                25000
+            ),
+            'to_ascii_german_short' => $this->benchmarkScenario(
+                function () use ($germanShort): string {
+                    return ASCII::to_ascii($germanShort, 'de', true);
+                },
+                25000
+            ),
+            'to_ascii_mixed_short' => $this->benchmarkScenario(
+                function () use ($mixedShort): string {
+                    return ASCII::to_ascii($mixedShort, 'en', true);
+                },
+                20000
+            ),
+            'to_slugify_ascii_short' => $this->benchmarkScenario(
+                function () use ($slugAsciiShort): string {
+                    return ASCII::to_slugify($slugAsciiShort);
+                },
+                20000
+            ),
+            'to_slugify_latin_short' => $this->benchmarkScenario(
+                function () use ($slugLatinShort): string {
+                    return ASCII::to_slugify($slugLatinShort);
+                },
+                20000
             ),
             'to_ascii_ascii_long' => $this->benchmarkScenario(
                 function () use ($asciiLong): string {
@@ -133,6 +174,21 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
             'ASCII-only to_ascii() became disproportionately slower than the ASCII fast path in to_transliterate().'
         );
         static::assertLessThan(
+            1.25,
+            $benchmarks['to_ascii_latin_short'] / $benchmarks['to_transliterate_latin_short'],
+            'Short Latin/accented to_ascii() inputs regressed relative to direct transliteration.'
+        );
+        static::assertLessThan(
+            1.25,
+            $benchmarks['to_ascii_german_short'] / $benchmarks['to_ascii_latin_short'],
+            'Short language-specific Latin replacements became disproportionately expensive.'
+        );
+        static::assertLessThan(
+            4.0,
+            $benchmarks['to_slugify_latin_short'] / $benchmarks['to_slugify_ascii_short'],
+            'Short slugify() inputs with accents regressed relative to ASCII-only slugification.'
+        );
+        static::assertLessThan(
             1.5,
             $benchmarks['to_ascii_ascii_long'] / $benchmarks['to_transliterate_ascii_long'],
             'Long ASCII-only to_ascii() inputs regressed relative to to_transliterate().'
@@ -171,6 +227,54 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
                 ],
                 'expected' => \str_repeat('Plain ASCII text 123 test ', 64),
                 'iterations' => 150,
+            ],
+            'to_ascii latin short' => [
+                'method' => 'to_ascii',
+                'arguments' => [
+                    'déjà vu',
+                    'en',
+                    true,
+                ],
+                'expected' => 'deja vu',
+                'iterations' => 300,
+            ],
+            'to_ascii german short' => [
+                'method' => 'to_ascii',
+                'arguments' => [
+                    'Düsseldorf',
+                    'de',
+                    true,
+                ],
+                'expected' => 'Duesseldorf',
+                'iterations' => 300,
+            ],
+            'to_ascii street short' => [
+                'method' => 'to_ascii',
+                'arguments' => [
+                    'Straße',
+                    'de',
+                    true,
+                ],
+                'expected' => 'Strasse',
+                'iterations' => 300,
+            ],
+            'to_ascii mixed short' => [
+                'method' => 'to_ascii',
+                'arguments' => [
+                    'déjà σσς iıii',
+                    'en',
+                    true,
+                ],
+                'expected' => 'deja sss iiii',
+                'iterations' => 250,
+            ],
+            'to_slugify latin short' => [
+                'method' => 'to_slugify',
+                'arguments' => [
+                    'Using strings like fòô bàř',
+                ],
+                'expected' => 'using-strings-like-foo-bar',
+                'iterations' => 250,
             ],
             'to_ascii latin long' => [
                 'method' => 'to_ascii',

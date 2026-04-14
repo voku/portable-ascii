@@ -1282,6 +1282,18 @@ final class ASCII
             $str = \strtr($str, $langSpecific);
         }
 
+        if ($language !== self::EXTRA_LATIN_CHARS_LANGUAGE_CODE) {
+            $latin = self::getAsciiLanguageReplacementMap(
+                self::EXTRA_LATIN_CHARS_LANGUAGE_CODE,
+                $replace_extra_symbols,
+                $replace_single_chars_only
+            );
+
+            if ($latin !== []) {
+                $str = \strtr($str, $latin);
+            }
+        }
+
         if (
             $replace_extra_symbols === false
             &&
