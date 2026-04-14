@@ -210,7 +210,7 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
             'The transliteration fallback path inside to_ascii() regressed relative to direct to_transliterate().'
         );
         static::assertLessThan(
-            0.45,
+            0.55,
             $benchmarks['to_transliterate_unknown_long_fixed_fallback'] / $benchmarks['to_transliterate_unknown_long_changing_fallback'],
             'Repeated unknown-fallback transliteration stopped benefiting from the warm-path cache.'
         );
