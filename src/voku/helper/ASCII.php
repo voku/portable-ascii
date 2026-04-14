@@ -481,7 +481,7 @@ final class ASCII
     }
 
     /**
-     * Accepts a string and removes malformed UTF-8 from it + extras if needed.
+     * Accepts a string and removes all non-UTF-8 characters from it + extras if needed.
      *
      * @param string $str                         <p>The string to be sanitized.</p>
      * @param bool   $normalize_whitespace        [optional] <p>Set to true, if you need to normalize the
@@ -500,7 +500,7 @@ final class ASCII
      * @psalm-pure
      *
      * @return string
-     *                <p>A clean UTF-8 string with malformed byte sequences removed.</p>
+     *                <p>A clean UTF-8 string.</p>
      */
     public static function clean(
         string $str,
@@ -785,6 +785,8 @@ final class ASCII
      *
      * @return string
      *                <p>A string that contains only ASCII characters.</p>
+     *
+     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
      */
     public static function to_ascii(
         string $str,
@@ -798,8 +800,7 @@ final class ASCII
             return '';
         }
 
-        // Fast path for the common case: printable ASCII is already the final
-        // output, so we can skip language normalisation and map setup entirely.
+        // fast path: pure printable ASCII — single regex covers is_ascii + no-control-chars
         if (
             !$replace_extra_symbols
             &&
@@ -809,12 +810,11 @@ final class ASCII
         }
 
         $language = self::get_language($language);
-        /** @var ''|ASCII::*_LANGUAGE_CODE $language */
+        /** @phpstan-var ASCII::*_LANGUAGE_CODE $language - hack for phpstan */
 
         $strLength = \strlen($str);
 
-        // secondary fast path: keep control-char cleanup separate so plain ASCII
-        // callers still avoid the heavier replacement-map setup.
+        // secondary fast path: has control chars like \n\r\t but otherwise ASCII
         if (
             !$replace_extra_symbols
             &&
@@ -998,7 +998,7 @@ final class ASCII
      * @return string
      *                <p>The URL-friendly slug.</p>
      *
-     * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
+     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
      */
     public static function to_slugify(
         string $str,
@@ -1063,9 +1063,8 @@ final class ASCII
      * </code>
      *
      * @param string      $str     <p>The input string.</p>
-     * @param string|null $unknown [optional] <p>Character used for valid characters without a transliteration
-     *                             mapping. (default is '?') But you can also use NULL to keep those unknown chars.
-     *                             Malformed UTF-8 is discarded during cleaning.</p>
+     * @param string|null $unknown [optional] <p>Character use if character unknown. (default is '?')
+     *                             But you can also use NULL to keep the unknown chars.</p>
      * @param bool        $strict  [optional] <p>Use "transliterator_transliterate()" from PHP-Intl
      *
      * @psalm-pure
@@ -1148,17 +1147,13 @@ final class ASCII
         /** @var array<string, array<string, string>> */
         static $WARM_MAPS = [];
 
-        // Prefix the cache key with impossible sentinel bytes so unknown=null
-        // does not collide with explicit fallback strings such as "\x00" or
-        // "\x01..." that callers may pass in intentionally; every non-null
-        // fallback keeps the "\x01" prefix plus its full payload, while the
-        // "null" suffix is only a readable label because null has no string form.
+        // Prefix the cache key so unknown=null does not collide with an
+        // explicit fallback string such as "\x00".
         $unknownCacheKey = $unknown === null
-            ? "\x00null" // distinguish null from a literal fallback string
+            ? "\x00null"
             : "\x01" . $unknown;
 
-        // warm path: reuse per-$unknown replacements first, because repeated calls
-        // often hit the same scripts and can avoid rebuilding the transliteration map.
+        // warm path: if we already built a map for this $unknown value, try it first
         if (isset($WARM_MAPS[$unknownCacheKey])) {
             $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
 
@@ -1506,11 +1501,11 @@ final class ASCII
             return $LANGUAGE_CACHE[$language] = \strtolower($language);
         }
 
-        $normalizedLanguage = \str_replace('-', '_', \strtolower($language));
+        $language_tmp = \str_replace('-', '_', \strtolower($language));
 
         $regex = '/(?<first>[a-z]+)_\g{first}/';
 
-        return $LANGUAGE_CACHE[$language] = (string) \preg_replace($regex, '$1', $normalizedLanguage);
+        return $LANGUAGE_CACHE[$language] = (string) \preg_replace($regex, '$1', $language_tmp);
     }
 
     /**
