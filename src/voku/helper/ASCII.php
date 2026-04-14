@@ -798,13 +798,8 @@ final class ASCII
             return '';
         }
 
-        $language = self::get_language($language);
-        /** @var ''|ASCII::*_LANGUAGE_CODE $language */
-
-        $strLength = \strlen($str);
-
-        // fast path: pure printable ASCII — keep this inline so the common case
-        // returns before we touch any transliteration maps or UTF-8 validation.
+        // Fast path for the common case: printable ASCII is already the final
+        // output, so we can skip language normalisation and map setup entirely.
         if (
             !$replace_extra_symbols
             &&
@@ -812,6 +807,11 @@ final class ASCII
         ) {
             return $str;
         }
+
+        $language = self::get_language($language);
+        /** @var ''|ASCII::*_LANGUAGE_CODE $language */
+
+        $strLength = \strlen($str);
 
         // secondary fast path: keep control-char cleanup separate so plain ASCII
         // callers still avoid the heavier replacement-map setup.
@@ -853,6 +853,7 @@ final class ASCII
             $str = self::to_ascii_short($str, $language, $replace_extra_symbols, $replace_single_chars_only);
         } else {
             static $REPLACE_HELPER_CACHE = [];
+            static $FILTERED_MAP_CACHE = [];
             $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
 
             static $MAP_BY_FIRST_BYTE = [];
@@ -883,19 +884,32 @@ final class ASCII
                 }
             }
 
-            if ($REPLACE_HELPER_CACHE[$cacheKey] !== []) {
-                // count_chars() is cheaper than a full strtr() over every candidate, so
-                // we only keep replacements whose leading byte is present in this input.
-                $filteredMap = [];
-                foreach (\count_chars($str, 1) as $byte => $count) {
-                    $fb = \chr($byte);
-                    if (isset($MAP_BY_FIRST_BYTE[$cacheKey][$fb])) {
-                        foreach ($MAP_BY_FIRST_BYTE[$cacheKey][$fb] as $k => $v) {
-                            $filteredMap[$k] = $v;
-                        }
-                    }
+            $replaceMap = $REPLACE_HELPER_CACHE[$cacheKey];
+            if ($replaceMap !== []) {
+                $indexedMap = $MAP_BY_FIRST_BYTE[$cacheKey];
+                $byteHistogram = \count_chars($str, 1);
+                $byteKey = '';
+                foreach ($byteHistogram as $byte => $count) {
+                    $byteKey .= \chr($byte);
                 }
 
+                if (!isset($FILTERED_MAP_CACHE[$cacheKey][$byteKey])) {
+                    // count_chars() is cheaper than a full strtr() over every candidate, so
+                    // we only keep replacements whose leading byte is present in this input.
+                    $filteredMap = [];
+                    foreach ($byteHistogram as $byte => $count) {
+                        $fb = \chr($byte);
+                        if (isset($indexedMap[$fb])) {
+                            foreach ($indexedMap[$fb] as $k => $v) {
+                                $filteredMap[$k] = $v;
+                            }
+                        }
+                    }
+
+                    $FILTERED_MAP_CACHE[$cacheKey][$byteKey] = $filteredMap;
+                }
+
+                $filteredMap = $FILTERED_MAP_CACHE[$cacheKey][$byteKey];
                 if ($filteredMap !== []) {
                     $str = \strtr($str, $filteredMap);
                 }
@@ -1305,6 +1319,8 @@ final class ASCII
             return $str;
         }
 
+        $replaceMap = $REPLACE_HELPER_CACHE[$cacheKey];
+
         if (
             $replace_extra_symbols
             &&
@@ -1369,12 +1385,12 @@ final class ASCII
                             &&
                             !isset($charDone[$fiveChars])
                             &&
-                            isset($REPLACE_HELPER_CACHE[$cacheKey][$fiveChars])
+                            isset($replaceMap[$fiveChars])
                             &&
                             \strpos($str, $fiveChars) !== false
                         ) {
                             $charDone[$fiveChars] = true;
-                            $str = \str_replace($fiveChars, $REPLACE_HELPER_CACHE[$cacheKey][$fiveChars], $str);
+                            $str = \str_replace($fiveChars, $replaceMap[$fiveChars], $str);
                         }
                     }
                 }
@@ -1391,12 +1407,12 @@ final class ASCII
                             &&
                             !isset($charDone[$fourChars])
                             &&
-                            isset($REPLACE_HELPER_CACHE[$cacheKey][$fourChars])
+                            isset($replaceMap[$fourChars])
                             &&
                             \strpos($str, $fourChars) !== false
                         ) {
                             $charDone[$fourChars] = true;
-                            $str = \str_replace($fourChars, $REPLACE_HELPER_CACHE[$cacheKey][$fourChars], $str);
+                            $str = \str_replace($fourChars, $replaceMap[$fourChars], $str);
                         }
                     }
                 }
@@ -1413,12 +1429,12 @@ final class ASCII
                             &&
                             !isset($charDone[$threeChars])
                             &&
-                            isset($REPLACE_HELPER_CACHE[$cacheKey][$threeChars])
+                            isset($replaceMap[$threeChars])
                             &&
                             \strpos($str, $threeChars) !== false
                         ) {
                             $charDone[$threeChars] = true;
-                            $str = \str_replace($threeChars, $REPLACE_HELPER_CACHE[$cacheKey][$threeChars], $str);
+                            $str = \str_replace($threeChars, $replaceMap[$threeChars], $str);
                         }
                     }
                 }
@@ -1435,12 +1451,12 @@ final class ASCII
                             &&
                             !isset($charDone[$twoChars])
                             &&
-                            isset($REPLACE_HELPER_CACHE[$cacheKey][$twoChars])
+                            isset($replaceMap[$twoChars])
                             &&
                             \strpos($str, $twoChars) !== false
                         ) {
                             $charDone[$twoChars] = true;
-                            $str = \str_replace($twoChars, $REPLACE_HELPER_CACHE[$cacheKey][$twoChars], $str);
+                            $str = \str_replace($twoChars, $replaceMap[$twoChars], $str);
                         }
                     }
                 }
@@ -1450,12 +1466,12 @@ final class ASCII
                 if (
                     !isset($charDone[$char])
                     &&
-                    isset($REPLACE_HELPER_CACHE[$cacheKey][$char])
+                    isset($replaceMap[$char])
                     &&
                     \strpos($str, $char) !== false
                 ) {
                     $charDone[$char] = true;
-                    $str = \str_replace($char, $REPLACE_HELPER_CACHE[$cacheKey][$char], $str);
+                    $str = \str_replace($char, $replaceMap[$char], $str);
                 }
             }
         }
