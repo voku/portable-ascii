@@ -1128,11 +1128,12 @@ final class ASCII
 
         // Copy the memoized ORD table into a local non-null alias so the hot
         // callback can read it without repeated nullable static-property checks.
-        $ordMap = self::$ORD ?? self::getData('ascii_ord');
-        self::$ORD = $ordMap;
+        /** @var array<string, int> $ordMap */
+        $ordMap = self::$ORD;
 
         /** @var array<string, array<string, string>> */
         static $WARM_MAPS = [];
+        static $UTF8_TO_TRANSLIT = [];
 
         // Prefix the cache key with impossible sentinel bytes so unknown=null
         // does not collide with explicit fallback strings such as "\x00" or
@@ -1196,7 +1197,13 @@ final class ASCII
                 }
 
                 if ($TRANSLIT_CHAR_CACHE[$c] === false) {
-                    return $unknown ?? $c;
+                    $replacement = $unknown ?? $c;
+
+                    if ($unknown !== null) {
+                        $charMap[$c] = $replacement;
+                    }
+
+                    return $replacement;
                 }
 
                 if ($TRANSLIT_CHAR_CACHE[$c] === '' && $unknown === null) {

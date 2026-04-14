@@ -45,6 +45,7 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
         $greekLong = \str_repeat('Αυτή είναι μια δοκιμή ', 128);
         $myanmarLong = \str_repeat('တတျနိုငျသ ', 128);
         $chineseLong = \str_repeat('中文空白測試 ', 128);
+        $unknownLong = \str_repeat('😀🚀🛸✨', 128);
 
         $benchmarks = [
             'to_ascii_ascii_short' => $this->benchmarkScenario(
@@ -107,6 +108,21 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
                 },
                 1000
             ),
+            'to_transliterate_unknown_long_fixed_fallback' => $this->benchmarkScenario(
+                function () use ($unknownLong): string {
+                    return ASCII::to_transliterate($unknownLong, 'u0000', false);
+                },
+                1000
+            ),
+            'to_transliterate_unknown_long_changing_fallback' => $this->benchmarkScenario(
+                function () use ($unknownLong): string {
+                    static $i = 0;
+                    ++$i;
+
+                    return ASCII::to_transliterate($unknownLong, \sprintf('u%04d', $i), false);
+                },
+                1000
+            ),
         ];
 
         $this->writeBenchmarks($benchmarks);
@@ -135,6 +151,11 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
             1.75,
             $benchmarks['to_ascii_chinese_long_transliterate'] / $benchmarks['to_transliterate_chinese_long'],
             'The transliteration fallback path inside to_ascii() regressed relative to direct to_transliterate().'
+        );
+        static::assertLessThan(
+            0.45,
+            $benchmarks['to_transliterate_unknown_long_fixed_fallback'] / $benchmarks['to_transliterate_unknown_long_changing_fallback'],
+            'Repeated unknown-fallback transliteration stopped benefiting from the warm-path cache.'
         );
     }
 
@@ -190,6 +211,16 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
                 ],
                 'expected' => \str_repeat('Zhong Wen Kong Bai  ', 32),
                 'iterations' => 50,
+            ],
+            'to_transliterate unknown long with fallback' => [
+                'method' => 'to_transliterate',
+                'arguments' => [
+                    \str_repeat('😀🚀', 32),
+                    '??',
+                    false,
+                ],
+                'expected' => \str_repeat('????', 32),
+                'iterations' => 75,
             ],
         ];
     }

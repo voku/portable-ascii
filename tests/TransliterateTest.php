@@ -96,6 +96,15 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('?', ASCII::to_transliterate('😀', '?', false));
     }
 
+    public function testUnknownFallbackWarmCacheStoresUnmappedCharacters()
+    {
+        $input = \str_repeat('😀🚀', 32);
+
+        static::assertSame(\str_repeat('????', 32), ASCII::to_transliterate($input, '??', false));
+        static::assertSame(\str_repeat('ZZZZ', 32), ASCII::to_transliterate($input, 'ZZ', false));
+        static::assertSame(\str_repeat('????', 32), ASCII::to_transliterate($input, '??', false));
+    }
+
     public function testRepeatedNonAsciiInputStaysCorrect()
     {
         $input = \str_repeat('中文😀', 64);
