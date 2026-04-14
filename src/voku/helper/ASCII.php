@@ -207,6 +207,16 @@ final class ASCII
     ];
 
     /**
+     * Transliteration placeholders used by the generated data tables.
+     *
+     * @var array<string, true>
+     */
+    private const UNKNOWN_TRANSLITERATION_MARKERS = [
+        '[?]' => true,
+        '[?] ' => true,
+    ];
+
+    /**
      * Get all languages from the constants "ASCII::.*LANGUAGE_CODE".
      *
      * @return array<string, string>
@@ -454,7 +464,7 @@ final class ASCII
     }
 
     /**
-     * Accepts a string and removes all non-UTF-8 characters from it + extras if needed.
+     * Accepts a string and removes malformed UTF-8 from it + extras if needed.
      *
      * @param string $str                         <p>The string to be sanitized.</p>
      * @param bool   $normalize_whitespace        [optional] <p>Set to true, if you need to normalize the
@@ -471,7 +481,7 @@ final class ASCII
      * @psalm-pure
      *
      * @return string
-     *                <p>A clean UTF-8 string.</p>
+     *                <p>A clean UTF-8 string with malformed byte sequences removed.</p>
      */
     public static function clean(
         string $str,
@@ -488,9 +498,13 @@ final class ASCII
             $regex = '/
               (
                 (?: [\x00-\x7F]               # single-byte sequences   0xxxxxxx
-                |   [\xC2-\xDF][\x80-\xBF]    # double-byte sequences   110xxxxx 10xxxxxx
-                |   [\xE0-\xEF][\x80-\xBF]{2} # triple-byte sequences   1110xxxx 10xxxxxx * 2
-                |   [\xF0-\xF4][\x80-\xBF]{3} # quadruple-byte sequence 11110xxx 10xxxxxx * 3
+                |   [\xC2-\xDF][\x80-\xBF]                # double-byte sequences   110xxxxx 10xxxxxx
+                |   \xE0[\xA0-\xBF][\x80-\xBF]            # triple-byte sequences   excluding overlongs
+                |   [\xE1-\xEC\xEE-\xEF][\x80-\xBF]{2}    # triple-byte sequences   excluding surrogates
+                |   \xED[\x80-\x9F][\x80-\xBF]            # triple-byte sequences   excluding surrogates
+                |   \xF0[\x90-\xBF][\x80-\xBF]{2}         # quadruple-byte sequences excluding overlongs
+                |   [\xF1-\xF3][\x80-\xBF]{3}             # quadruple-byte sequences
+                |   \xF4[\x80-\x8F][\x80-\xBF]{2}         # quadruple-byte sequences up to U+10FFFF
                 ){1,100}                      # ...one or more times
               )
             | ( [\x80-\xBF] )                 # invalid byte in range 10000000 - 10111111
@@ -848,6 +862,10 @@ final class ASCII
             // replacement table instead of feeding the full language map to strtr().
             $MAP_BY_FIRST_BYTE[$cacheKey] = [];
             foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $key => $val) {
+                if ($key === '') {
+                    continue;
+                }
+
                 $MAP_BY_FIRST_BYTE[$cacheKey][$key[0]][$key] = $val;
             }
         }
@@ -1019,8 +1037,9 @@ final class ASCII
      * </code>
      *
      * @param string      $str     <p>The input string.</p>
-     * @param string|null $unknown [optional] <p>Character use if character unknown. (default is '?')
-     *                             But you can also use NULL to keep the unknown chars.</p>
+     * @param string|null $unknown [optional] <p>Character used for valid characters without a transliteration
+     *                             mapping. (default is '?') But you can also use NULL to keep those unknown chars.
+     *                             Malformed UTF-8 is discarded during cleaning.</p>
      * @param bool        $strict  [optional] <p>Use "transliterator_transliterate()" from PHP-Intl
      *
      * @psalm-pure
@@ -1042,9 +1061,6 @@ final class ASCII
         /** @var array<string, string|false> */
         static $TRANSLIT_CHAR_CACHE = [];
 
-        /** @var array<string, true> */
-        static $INVALID_UTF8_SEQUENCE_CACHE = [];
-
         if ($str === '') {
             return '';
         }
@@ -1056,21 +1072,6 @@ final class ASCII
         // check if we only have ASCII, first (better performance)
         if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0) {
             return $str;
-        }
-
-        // Replace overlong 2-byte starters (C0-C1) and 4-byte starters beyond
-        // U+10FFFF (F5-F7) with $unknown BEFORE clean(), because clean() would
-        // strip them silently. When $unknown is null, leave them for clean() to
-        // handle (they are truly malformed bytes).
-        if ($unknown !== null) {
-            $unknownSafe = $unknown;
-            $str = (string) \preg_replace_callback(
-                '/[\xC0-\xC1][\x80-\xBF]|[\xF5-\xF7][\x80-\xBF]{3}/',
-                static function () use ($unknownSafe) {
-                    return $unknownSafe;
-                },
-                $str
-            );
         }
 
         $str_before_clean = $str;
@@ -1132,44 +1133,19 @@ final class ASCII
             }
         }
 
-        // Collect unique non-ASCII sequences once and resolve each code point once;
-        // this keeps the hot path linear for long strings with repeated characters.
-        if (\preg_match_all('/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3}/', $str, $nonAsciiMatches)) {
-            $charMap = [];
-            $seen = [];
+        $charMap = [];
+        $str = (string) \preg_replace_callback(
+            '/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3}/',
+            static function (array $matches) use (&$charMap, &$TRANSLIT_CHAR_CACHE, &$UTF8_TO_TRANSLIT, $unknown): string {
+                $c = $matches[0];
 
-            foreach ($nonAsciiMatches[0] as $c) {
-                if (isset($seen[$c])) {
-                    continue;
-                }
-                $seen[$c] = true;
-
-                if (isset($INVALID_UTF8_SEQUENCE_CACHE[$c])) {
-                    if ($unknown !== null) {
-                        $charMap[$c] = $unknown;
-                    }
-
-                    continue;
+                if (isset($charMap[$c])) {
+                    return $charMap[$c];
                 }
 
                 if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
                     $ordC0 = self::$ORD[$c[0]];
-
                     $ordC1 = self::$ORD[$c[1]];
-
-                    if (
-                        ($ordC0 === 224 && $ordC1 < 160)
-                        || ($ordC0 === 237 && $ordC1 > 159)
-                        || ($ordC0 === 240 && $ordC1 < 144)
-                        || ($ordC0 === 244 && $ordC1 > 143)
-                    ) {
-                        $INVALID_UTF8_SEQUENCE_CACHE[$c] = true;
-                        if ($unknown !== null) {
-                            $charMap[$c] = $unknown;
-                        }
-
-                        continue;
-                    }
 
                     if ($ordC0 <= 223) {
                         $ord = ($ordC0 - 192) * 64 + ($ordC1 - 128);
@@ -1186,43 +1162,35 @@ final class ASCII
 
                     $bankPos = $ord & 255;
 
-                    if (isset($UTF8_TO_TRANSLIT[$bank][$bankPos])) {
-                        $translit = $UTF8_TO_TRANSLIT[$bank][$bankPos];
-                        if ($translit === '[?]' || $translit === '[?] ') {
-                            $TRANSLIT_CHAR_CACHE[$c] = false;
-                        } else {
-                            $TRANSLIT_CHAR_CACHE[$c] = $translit;
-                        }
+                    if (
+                        isset($UTF8_TO_TRANSLIT[$bank][$bankPos])
+                        &&
+                        !isset(self::UNKNOWN_TRANSLITERATION_MARKERS[$UTF8_TO_TRANSLIT[$bank][$bankPos]])
+                    ) {
+                        $TRANSLIT_CHAR_CACHE[$c] = $UTF8_TO_TRANSLIT[$bank][$bankPos];
                     } else {
                         $TRANSLIT_CHAR_CACHE[$c] = false;
                     }
                 }
 
-                $cached = $TRANSLIT_CHAR_CACHE[$c];
-
-                if ($cached === false) {
-                    if ($unknown !== null) {
-                        $charMap[$c] = $unknown;
-                    }
-                } elseif ($cached === '' && $unknown === null) {
-                    // keep original char
-                } else {
-                    $charMap[$c] = $cached;
-                }
-            }
-
-            // Merge new entries into the warm cache for future calls, but only apply
-            // the delta on this call because the warm map was already strtr()'d above.
-            if ($charMap !== []) {
-                if (isset($WARM_MAPS[$unknownCacheKey])) {
-                    foreach ($charMap as $k => $v) {
-                        $WARM_MAPS[$unknownCacheKey][$k] = $v;
-                    }
-                } else {
-                    $WARM_MAPS[$unknownCacheKey] = $charMap;
+                if ($TRANSLIT_CHAR_CACHE[$c] === false) {
+                    return $unknown ?? $c;
                 }
 
-                return \strtr($str, $charMap);
+                $charMap[$c] = $TRANSLIT_CHAR_CACHE[$c];
+
+                return $TRANSLIT_CHAR_CACHE[$c];
+            },
+            $str
+        );
+
+        if ($charMap !== []) {
+            if (isset($WARM_MAPS[$unknownCacheKey])) {
+                foreach ($charMap as $k => $v) {
+                    $WARM_MAPS[$unknownCacheKey][$k] = $v;
+                }
+            } else {
+                $WARM_MAPS[$unknownCacheKey] = $charMap;
             }
         }
 
