@@ -367,7 +367,7 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
             return;
         }
 
-        \fwrite(\STDERR, "\nportable-ascii performance profile (median us/op)\n");
+        \fwrite(\STDERR, "\nportable-ascii performance profile (median µs/op)\n");
 
         foreach ($benchmarks as $label => $microsecondsPerOp) {
             \fwrite(\STDERR, \sprintf("- %-42s %9.3f\n", $label, $microsecondsPerOp));
