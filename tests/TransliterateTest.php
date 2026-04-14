@@ -29,20 +29,76 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('testing', ASCII::to_transliterate($str));
     }
 
-    public function testMalformedUtf8SequencesAreRemoved()
+    public function testMalformedUtf8SequencesHandledWithDefaultUnknown()
     {
+        // With default $unknown='?', invalid sequences that survive clean() should
+        // be replaced with '?' (the fallback). Sequences stripped by clean() itself
+        // (C0/C1 overlongs, F5-F7 beyond Unicode) produce '' because clean()
+        // removes them before transliteration runs.
         $tests = [
-            "\xC0\xAF" => '',
-            "\xE0\x80\xAF" => '',
-            "\xF0\x80\x80\xAF" => '',
-            "\xF5\x80\x80\x80" => '',
-            "\xED\xA0\x80" => '',
+            "\xC0\xAF"         => '',   // overlong 2-byte: removed by clean()
+            "\xE0\x80\xAF"     => '?',  // overlong 3-byte: survives clean(), fallback applied
+            "\xF0\x80\x80\xAF" => '?',  // overlong 4-byte: survives clean(), fallback applied
+            "\xF5\x80\x80\x80" => '',   // beyond-Unicode 4-byte: removed by clean()
+            "\xED\xA0\x80"     => '?',  // surrogate: survives clean(), fallback applied
         ];
 
         foreach ($tests as $before => $after) {
             static::assertSame($after, ASCII::to_transliterate($before), 'first pass: ' . \bin2hex($before));
             static::assertSame($after, ASCII::to_transliterate($before), 'warm pass: ' . \bin2hex($before));
         }
+    }
+
+    public function testCleanRemovesOverlongTwoByteSequences()
+    {
+        // C0 and C1 are invalid UTF-8 starters (overlong encodings of ASCII chars).
+        // clean() should strip them instead of treating them as valid 2-byte sequences.
+        static::assertSame('ab', ASCII::clean("a\xC0\xAFb"));
+        static::assertSame('ab', ASCII::clean("a\xC1\xBFb"));
+        // C2 is a valid 2-byte starter and should be preserved
+        static::assertSame("a\xC2\xA3b", ASCII::clean("a\xC2\xA3b")); // £ sign
+    }
+
+    public function testInvalidUtf8SequencesUseUnknownFallback()
+    {
+        // When $unknown is provided, invalid UTF-8 sequences that survive clean()
+        // should be replaced with the $unknown value, not silently removed.
+
+        // Surrogates (U+D800 = ED A0 80)
+        static::assertSame('?', ASCII::to_transliterate("\xED\xA0\x80", '?', false));
+        static::assertSame('X', ASCII::to_transliterate("\xED\xA0\x80", 'X', false));
+
+        // Overlong 3-byte (E0 80 AF)
+        static::assertSame('?', ASCII::to_transliterate("\xE0\x80\xAF", '?', false));
+
+        // Overlong 4-byte (F0 80 80 AF)
+        static::assertSame('?', ASCII::to_transliterate("\xF0\x80\x80\xAF", '?', false));
+
+        // Beyond U+10FFFF (F4 90 80 80)
+        static::assertSame('?', ASCII::to_transliterate("\xF4\x90\x80\x80", '?', false));
+
+        // Mixed: valid ASCII + invalid surrogate + valid ASCII
+        static::assertSame('a?b', ASCII::to_transliterate("a\xED\xA0\x80b", '?', false));
+        static::assertSame('aXb', ASCII::to_transliterate("a\xED\xA0\x80b", 'X', false));
+    }
+
+    public function testInvalidUtf8SequencesPreservedWhenUnknownNull()
+    {
+        // When $unknown is null, invalid sequences should be preserved (not replaced),
+        // consistent with how valid-but-untranslatable chars are preserved.
+        static::assertSame("\xED\xA0\x80", ASCII::to_transliterate("\xED\xA0\x80", null, false));
+        static::assertSame("a\xE0\x80\xAFb", ASCII::to_transliterate("a\xE0\x80\xAFb", null, false));
+    }
+
+    public function testInvalidSequenceWarmCacheRespectsUnknown()
+    {
+        // Different $unknown values should produce different results even on warm
+        // cache paths, because the warm map is keyed per-$unknown.
+        static::assertSame('?', ASCII::to_transliterate("\xF4\x90\x80\x80", '?', false));
+        static::assertSame('X', ASCII::to_transliterate("\xF4\x90\x80\x80", 'X', false));
+        static::assertSame("\xF4\x90\x80\x80", ASCII::to_transliterate("\xF4\x90\x80\x80", null, false));
+        // Verify warm path still works correctly
+        static::assertSame('?', ASCII::to_transliterate("\xF4\x90\x80\x80", '?', false));
     }
 
     public function testNullUnknownAndNullByteUnknownUseDifferentWarmMaps()
