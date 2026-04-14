@@ -1433,10 +1433,8 @@ final class ASCII
         bool $replace_single_chars_only
     ): string {
         static $REPLACE_HELPER_CACHE = [];
-        static $FILTERED_MAP_CACHE = [];
-        $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
-
         static $MAP_BY_FIRST_BYTE = [];
+        $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
 
         if (!isset($REPLACE_HELPER_CACHE[$cacheKey])) {
             $langAll = self::getAsciiAllReplacementMap($replace_extra_symbols, $replace_single_chars_only);
@@ -1464,30 +1462,23 @@ final class ASCII
             }
         }
 
-        $replaceMap = &$REPLACE_HELPER_CACHE[$cacheKey];
-        if ($replaceMap !== []) {
+        if ($REPLACE_HELPER_CACHE[$cacheKey] !== []) {
             $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
-            $byteKey = \count_chars($str, 3);
 
-            if (!isset($FILTERED_MAP_CACHE[$cacheKey][$byteKey])) {
-                $byteHistogram = \count_chars($str, 1);
-
-                // count_chars() is cheaper than a full strtr() over every candidate, so
-                // we only keep replacements whose leading byte is present in this input.
-                $filteredMap = [];
-                foreach ($byteHistogram as $byte => $count) {
-                    $fb = \chr($byte);
-                    if (isset($indexedMap[$fb])) {
-                        foreach ($indexedMap[$fb] as $k => $v) {
-                            $filteredMap[$k] = $v;
-                        }
+            // Build a filtered map containing only entries whose leading byte is
+            // present in this specific input string.  The $MAP_BY_FIRST_BYTE index
+            // (cached per language/options) keeps this loop cheap regardless of how
+            // many different strings are processed.
+            $filteredMap = [];
+            foreach (\count_chars($str, 1) as $byte => $count) {
+                $fb = \chr($byte);
+                if (isset($indexedMap[$fb])) {
+                    foreach ($indexedMap[$fb] as $k => $v) {
+                        $filteredMap[$k] = $v;
                     }
                 }
-
-                $FILTERED_MAP_CACHE[$cacheKey][$byteKey] = $filteredMap;
             }
 
-            $filteredMap = $FILTERED_MAP_CACHE[$cacheKey][$byteKey];
             if ($filteredMap !== []) {
                 $str = \strtr($str, $filteredMap);
             }
