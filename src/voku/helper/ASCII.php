@@ -1126,6 +1126,8 @@ final class ASCII
             self::$ORD = self::getData('ascii_ord');
         }
 
+        // Copy the memoized ORD table into a local non-null alias so the hot
+        // callback can read it without repeated nullable static-property checks.
         /** @var array<string, int> $ordMap */
         $ordMap = self::$ORD;
 
@@ -1138,7 +1140,7 @@ final class ASCII
         // fallback keeps the "\x01" prefix plus its full payload, while the
         // "null" suffix is only a readable label because null has no string form.
         $unknownCacheKey = $unknown === null
-            ? "\x00null"
+            ? "\x00null" // distinguish null from a literal fallback string
             : "\x01" . $unknown;
 
         // warm path: reuse per-$unknown replacements first, because repeated calls
