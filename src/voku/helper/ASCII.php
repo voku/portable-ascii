@@ -862,6 +862,8 @@ final class ASCII
             // replacement table instead of feeding the full language map to strtr().
             $MAP_BY_FIRST_BYTE[$cacheKey] = [];
             foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $key => $val) {
+                // Some generated lookup tables contain an empty-string key, which
+                // cannot participate in a first-byte index.
                 if ($key === '') {
                     continue;
                 }
@@ -1134,6 +1136,9 @@ final class ASCII
         }
 
         $charMap = [];
+        // Match only structurally valid UTF-8 sequences here; malformed input was
+        // already discarded by clean(), so we do not need to keep a second invalid
+        // sequence cache or scan the whole string into an intermediate match array.
         $str = (string) \preg_replace_callback(
             '/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3}/',
             static function (array $matches) use (&$charMap, &$TRANSLIT_CHAR_CACHE, &$UTF8_TO_TRANSLIT, $unknown): string {

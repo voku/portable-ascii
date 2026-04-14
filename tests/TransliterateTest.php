@@ -98,9 +98,11 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
     public function testRepeatedNonAsciiInputStaysCorrect()
     {
         $input = \str_repeat('中文😀', 64);
+        $withMalformedUtf8 = ASCII::to_transliterate(\str_repeat("中文\xED\xA0\x80", 64), '?', false);
 
         static::assertSame(\str_repeat('Zhong Wen ?', 64), ASCII::to_transliterate($input, '?', false));
-        static::assertSame(\str_repeat('Zhong Wen ', 64), ASCII::to_transliterate(\str_repeat("中文\xED\xA0\x80", 64), '?', false));
+        static::assertSame(\str_repeat('Zhong Wen ', 64), $withMalformedUtf8);
+        static::assertStringNotContainsString('?', $withMalformedUtf8);
     }
 
     public function testNullUnknownAndNullByteUnknownUseDifferentWarmMaps()

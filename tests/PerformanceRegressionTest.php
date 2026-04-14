@@ -12,6 +12,7 @@ use voku\helper\ASCII;
 final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
 {
     private const PERFORMANCE_ENV = 'PORTABLE_ASCII_RUN_PERFORMANCE_TESTS';
+    private const MICROSECONDS_PER_SECOND = 1000000;
 
     public function testRepresentativeInputsStayCorrectUnderRepeatedCalls(): void
     {
@@ -211,7 +212,7 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
                 $callback();
             }
 
-            $samples[] = (\microtime(true) - $start) * 1000000 / $iterations;
+            $samples[] = (\microtime(true) - $start) * self::MICROSECONDS_PER_SECOND / $iterations;
         }
 
         \sort($samples);
