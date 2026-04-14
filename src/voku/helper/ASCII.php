@@ -477,6 +477,8 @@ final class ASCII
      *                                            $normalize_whitespace</p>
      * @param bool   $remove_invisible_characters [optional] <p>Set to false, if you not want to remove invisible
      *                                            characters e.g.: "\0"</p>
+     * @param bool   $remove_invalid_utf8         [optional] <p>Set to true to discard malformed UTF-8 byte
+     *                                            sequences before other normalization steps.</p>
      *
      * @psalm-pure
      *
@@ -1119,8 +1121,9 @@ final class ASCII
         /** @var array<string, array<string, string>> */
         static $WARM_MAPS = [];
 
-        // Prefix the cache key so unknown=null does not collide with an
-        // explicit fallback string such as "\x00".
+        // Prefix the cache key with impossible sentinel bytes so unknown=null
+        // does not collide with explicit fallback strings such as "\x00" or
+        // "\x01..." that callers may pass in intentionally.
         $unknownCacheKey = $unknown === null
             ? "\x00null"
             : "\x01" . $unknown;
