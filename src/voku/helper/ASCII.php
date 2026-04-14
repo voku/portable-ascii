@@ -217,6 +217,13 @@ final class ASCII
     ];
 
     /**
+     * Match structurally valid multibyte UTF-8 sequences after clean() removed malformed bytes.
+     *
+     * @var string
+     */
+    private const UTF8_MULTIBYTE_SEQUENCE_RX = '/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3}/';
+
+    /**
      * Get all languages from the constants "ASCII::.*LANGUAGE_CODE".
      *
      * @return array<string, string>
@@ -1123,7 +1130,8 @@ final class ASCII
 
         // Prefix the cache key with impossible sentinel bytes so unknown=null
         // does not collide with explicit fallback strings such as "\x00" or
-        // "\x01..." that callers may pass in intentionally.
+        // "\x01..." that callers may pass in intentionally; the "null" suffix
+        // is only a readable label because null itself has no string form.
         $unknownCacheKey = $unknown === null
             ? "\x00null"
             : "\x01" . $unknown;
@@ -1133,17 +1141,16 @@ final class ASCII
         if (isset($WARM_MAPS[$unknownCacheKey])) {
             $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
 
-            if (!\preg_match('/[\x80-\xFF]/', $str)) {
+            if (\preg_match(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str) !== 1) {
                 return $str;
             }
         }
 
         $charMap = [];
-        // Match only structurally valid UTF-8 sequences here; malformed input was
-        // already discarded by clean(), so we do not need to keep a second invalid
-        // sequence cache or scan the whole string into an intermediate match array.
+        // clean() already discarded malformed UTF-8, so we only need to resolve
+        // the remaining structurally valid multibyte sequences here.
         $str = (string) \preg_replace_callback(
-            '/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3}/',
+            self::UTF8_MULTIBYTE_SEQUENCE_RX,
             static function (array $matches) use (&$charMap, &$TRANSLIT_CHAR_CACHE, &$UTF8_TO_TRANSLIT, $unknown): string {
                 $c = $matches[0];
 
