@@ -1133,7 +1133,6 @@ final class ASCII
 
         /** @var array<string, array<string, string>> */
         static $WARM_MAPS = [];
-        static $UTF8_TO_TRANSLIT = [];
 
         // Prefix the cache key with impossible sentinel bytes so unknown=null
         // does not collide with explicit fallback strings such as "\x00" or
