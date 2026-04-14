@@ -884,9 +884,9 @@ final class ASCII
                 }
             }
 
-            $replaceMap = $REPLACE_HELPER_CACHE[$cacheKey];
+            $replaceMap = &$REPLACE_HELPER_CACHE[$cacheKey];
             if ($replaceMap !== []) {
-                $indexedMap = $MAP_BY_FIRST_BYTE[$cacheKey];
+                $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
                 $byteHistogram = \count_chars($str, 1);
                 $byteKey = '';
                 foreach ($byteHistogram as $byte => $count) {
@@ -1319,7 +1319,7 @@ final class ASCII
             return $str;
         }
 
-        $replaceMap = $REPLACE_HELPER_CACHE[$cacheKey];
+        $replaceMap = &$REPLACE_HELPER_CACHE[$cacheKey];
 
         if (
             $replace_extra_symbols
