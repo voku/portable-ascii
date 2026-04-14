@@ -224,6 +224,11 @@ final class ASCII
     private const UTF8_MULTIBYTE_SEQUENCE_RX = '/[\xC2-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF4][\x80-\xBF]{3}/';
 
     /**
+     * @var int
+     */
+    private const TO_ASCII_SHORT_STRING_THRESHOLD = 48;
+
+    /**
      * Get all languages from the constants "ASCII::.*LANGUAGE_CODE".
      *
      * @return array<string, string>
@@ -837,66 +842,56 @@ final class ASCII
             return $str;
         }
 
-        static $REPLACE_HELPER_CACHE = [];
-        $cacheKey = $language . '-' . $replace_extra_symbols . '-' . $replace_single_chars_only;
+        if (\strlen($str) <= self::TO_ASCII_SHORT_STRING_THRESHOLD) {
+            $str = self::to_ascii_short($str, $language, $replace_extra_symbols, $replace_single_chars_only);
+        } else {
+            static $REPLACE_HELPER_CACHE = [];
+            $cacheKey = $language . '-' . $replace_extra_symbols . '-' . $replace_single_chars_only;
 
-        static $MAP_BY_FIRST_BYTE = [];
+            static $MAP_BY_FIRST_BYTE = [];
 
-        if (!isset($REPLACE_HELPER_CACHE[$cacheKey])) {
-            $langAll = self::charsArrayWithSingleLanguageValues($replace_extra_symbols, false);
+            if (!isset($REPLACE_HELPER_CACHE[$cacheKey])) {
+                $langAll = self::getAsciiAllReplacementMap($replace_extra_symbols, $replace_single_chars_only);
 
-            $langSpecific = self::charsArrayWithOneLanguage($language, $replace_extra_symbols, false);
+                $langSpecific = self::getAsciiLanguageReplacementMap($language, $replace_extra_symbols, $replace_single_chars_only);
 
-            if ($langSpecific === []) {
-                $REPLACE_HELPER_CACHE[$cacheKey] = $langAll;
-            } else {
-                $REPLACE_HELPER_CACHE[$cacheKey] = \array_merge([], $langAll, $langSpecific);
+                if ($langSpecific === []) {
+                    $REPLACE_HELPER_CACHE[$cacheKey] = $langAll;
+                } else {
+                    $REPLACE_HELPER_CACHE[$cacheKey] = \array_merge([], $langAll, $langSpecific);
+                }
+
+                // Pre-index by first byte so each call can cheaply skip most of the
+                // replacement table instead of feeding the full language map to strtr().
+                $MAP_BY_FIRST_BYTE[$cacheKey] = [];
+                foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $key => $val) {
+                    // Some generated or merged lookup tables can retain an empty-string
+                    // key from the source data, which cannot participate in a first-byte
+                    // index and is therefore skipped defensively here.
+                    if ($key === '') {
+                        continue;
+                    }
+
+                    $MAP_BY_FIRST_BYTE[$cacheKey][$key[0]][$key] = $val;
+                }
             }
 
-            if ($replace_single_chars_only) {
-                foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $char => $replacement) {
-                    // Single UTF-8 code points are at most 4 bytes, so 5+ bytes
-                    // can be rejected without the regex check.
-                    if (
-                        isset($char[4])
-                        ||
-                        \preg_match('/^.$/us', $char) !== 1
-                    ) {
-                        unset($REPLACE_HELPER_CACHE[$cacheKey][$char]);
+            if ($REPLACE_HELPER_CACHE[$cacheKey] !== []) {
+                // count_chars() is cheaper than a full strtr() over every candidate, so
+                // we only keep replacements whose leading byte is present in this input.
+                $filteredMap = [];
+                foreach (\count_chars($str, 1) as $byte => $count) {
+                    $fb = \chr($byte);
+                    if (isset($MAP_BY_FIRST_BYTE[$cacheKey][$fb])) {
+                        foreach ($MAP_BY_FIRST_BYTE[$cacheKey][$fb] as $k => $v) {
+                            $filteredMap[$k] = $v;
+                        }
                     }
                 }
-            }
 
-            // Pre-index by first byte so each call can cheaply skip most of the
-            // replacement table instead of feeding the full language map to strtr().
-            $MAP_BY_FIRST_BYTE[$cacheKey] = [];
-            foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $key => $val) {
-                // Some generated or merged lookup tables can retain an empty-string
-                // key from the source data, which cannot participate in a first-byte
-                // index and is therefore skipped defensively here.
-                if ($key === '') {
-                    continue;
+                if ($filteredMap !== []) {
+                    $str = \strtr($str, $filteredMap);
                 }
-
-                $MAP_BY_FIRST_BYTE[$cacheKey][$key[0]][$key] = $val;
-            }
-        }
-
-        if ($REPLACE_HELPER_CACHE[$cacheKey] !== []) {
-            // count_chars() is cheaper than a full strtr() over every candidate, so
-            // we only keep replacements whose leading byte is present in this input.
-            $filteredMap = [];
-            foreach (\count_chars($str, 1) as $byte => $count) {
-                $fb = \chr($byte);
-                if (isset($MAP_BY_FIRST_BYTE[$cacheKey][$fb])) {
-                    foreach ($MAP_BY_FIRST_BYTE[$cacheKey][$fb] as $k => $v) {
-                        $filteredMap[$k] = $v;
-                    }
-                }
-            }
-
-            if ($filteredMap !== []) {
-                $str = \strtr($str, $filteredMap);
             }
         }
 
@@ -1274,6 +1269,36 @@ final class ASCII
     }
 
     /**
+     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
+     */
+    private static function to_ascii_short(
+        string $str,
+        string $language,
+        bool $replace_extra_symbols,
+        bool $replace_single_chars_only
+    ): string {
+        $langSpecific = self::getAsciiLanguageReplacementMap($language, $replace_extra_symbols, $replace_single_chars_only);
+        if ($langSpecific !== []) {
+            $str = \strtr($str, $langSpecific);
+        }
+
+        if (
+            $replace_extra_symbols === false
+            &&
+            \preg_match(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str) !== 1
+        ) {
+            return $str;
+        }
+
+        $langAll = self::getAsciiAllReplacementMap($replace_extra_symbols, $replace_single_chars_only);
+        if ($langAll === []) {
+            return $str;
+        }
+
+        return \strtr($str, $langAll);
+    }
+
+    /**
      * Get the language from a string.
      *
      * e.g.: de_at -> de_at
@@ -1310,6 +1335,53 @@ final class ASCII
     }
 
     /**
+     * @return array<string, string>
+     */
+    private static function getAsciiAllReplacementMap(
+        bool $replace_extra_symbols,
+        bool $replace_single_chars_only
+    ): array {
+        static $CACHE = [];
+        $cacheKey = (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
+
+        if (isset($CACHE[$cacheKey])) {
+            return $CACHE[$cacheKey];
+        }
+
+        $CACHE[$cacheKey] = self::filterAsciiReplacementMap(
+            self::charsArrayWithSingleLanguageValues($replace_extra_symbols, false),
+            $replace_single_chars_only
+        );
+
+        return $CACHE[$cacheKey];
+    }
+
+    /**
+     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
+     *
+     * @return array<string, string>
+     */
+    private static function getAsciiLanguageReplacementMap(
+        string $language,
+        bool $replace_extra_symbols,
+        bool $replace_single_chars_only
+    ): array {
+        static $CACHE = [];
+        $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
+
+        if (isset($CACHE[$cacheKey])) {
+            return $CACHE[$cacheKey];
+        }
+
+        $CACHE[$cacheKey] = self::filterAsciiReplacementMap(
+            self::charsArrayWithOneLanguage($language, $replace_extra_symbols, false),
+            $replace_single_chars_only
+        );
+
+        return $CACHE[$cacheKey];
+    }
+
+    /**
      * Get data from "/data/*.php".
      *
      * @return array<array-key,mixed>
@@ -1332,6 +1404,32 @@ final class ASCII
         }
 
         return [];
+    }
+
+    /**
+     * @param array<string, string> $map
+     *
+     * @return array<string, string>
+     */
+    private static function filterAsciiReplacementMap(array $map, bool $replace_single_chars_only): array
+    {
+        if ($replace_single_chars_only === false) {
+            return $map;
+        }
+
+        foreach ($map as $char => $replacement) {
+            // Single UTF-8 code points are at most 4 bytes, so 5+ bytes
+            // can be rejected without the regex check.
+            if (
+                isset($char[4])
+                ||
+                \preg_match('/^.$/us', $char) !== 1
+            ) {
+                unset($map[$char]);
+            }
+        }
+
+        return $map;
     }
 
     /**
