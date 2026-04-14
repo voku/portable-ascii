@@ -1128,8 +1128,8 @@ final class ASCII
 
         // Copy the memoized ORD table into a local non-null alias so the hot
         // callback can read it without repeated nullable static-property checks.
-        /** @var array<string, int> $ordMap */
-        $ordMap = self::$ORD;
+        $ordMap = self::$ORD ?? self::getData('ascii_ord');
+        self::$ORD = $ordMap;
 
         /** @var array<string, array<string, string>> */
         static $WARM_MAPS = [];
