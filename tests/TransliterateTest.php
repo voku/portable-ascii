@@ -31,16 +31,14 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
 
     public function testMalformedUtf8SequencesHandledWithDefaultUnknown()
     {
-        // With default $unknown='?', invalid sequences that survive clean() should
-        // be replaced with '?' (the fallback). Sequences stripped by clean() itself
-        // (C0/C1 overlongs, F5-F7 beyond Unicode) produce '' because clean()
-        // removes them before transliteration runs.
+        // With default $unknown='?', ALL invalid sequences should be replaced
+        // with '?' — including C0/C1 overlongs and F5-F7 beyond-Unicode.
         $tests = [
-            "\xC0\xAF"         => '',   // overlong 2-byte: removed by clean()
-            "\xE0\x80\xAF"     => '?',  // overlong 3-byte: survives clean(), fallback applied
-            "\xF0\x80\x80\xAF" => '?',  // overlong 4-byte: survives clean(), fallback applied
-            "\xF5\x80\x80\x80" => '',   // beyond-Unicode 4-byte: removed by clean()
-            "\xED\xA0\x80"     => '?',  // surrogate: survives clean(), fallback applied
+            "\xC0\xAF"         => '?',  // overlong 2-byte: replaced with fallback
+            "\xE0\x80\xAF"     => '?',  // overlong 3-byte: replaced with fallback
+            "\xF0\x80\x80\xAF" => '?',  // overlong 4-byte: replaced with fallback
+            "\xF5\x80\x80\x80" => '?',  // beyond-Unicode 4-byte: replaced with fallback
+            "\xED\xA0\x80"     => '?',  // surrogate: replaced with fallback
         ];
 
         foreach ($tests as $before => $after) {
@@ -61,8 +59,8 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
 
     public function testInvalidUtf8SequencesUseUnknownFallback()
     {
-        // When $unknown is provided, invalid UTF-8 sequences that survive clean()
-        // should be replaced with the $unknown value, not silently removed.
+        // When $unknown is provided, ALL invalid UTF-8 sequences should be
+        // replaced with the $unknown value, not silently removed.
 
         // Surrogates (U+D800 = ED A0 80)
         static::assertSame('?', ASCII::to_transliterate("\xED\xA0\x80", '?', false));
@@ -77,9 +75,32 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         // Beyond U+10FFFF (F4 90 80 80)
         static::assertSame('?', ASCII::to_transliterate("\xF4\x90\x80\x80", '?', false));
 
+        // C0/C1 overlongs should also use fallback
+        static::assertSame('?', ASCII::to_transliterate("\xC0\xAF", '?', false));
+        static::assertSame('X', ASCII::to_transliterate("\xC0\xAF", 'X', false));
+        static::assertSame('?', ASCII::to_transliterate("\xC1\xBF", '?', false));
+
+        // F5-F7 beyond Unicode should also use fallback
+        static::assertSame('?', ASCII::to_transliterate("\xF5\x80\x80\x80", '?', false));
+        static::assertSame('X', ASCII::to_transliterate("\xF5\x80\x80\x80", 'X', false));
+
         // Mixed: valid ASCII + invalid surrogate + valid ASCII
         static::assertSame('a?b', ASCII::to_transliterate("a\xED\xA0\x80b", '?', false));
         static::assertSame('aXb', ASCII::to_transliterate("a\xED\xA0\x80b", 'X', false));
+
+        // Mixed: valid ASCII + C0 overlong + valid ASCII
+        static::assertSame('a?b', ASCII::to_transliterate("a\xC0\xAFb", '?', false));
+        static::assertSame('aXb', ASCII::to_transliterate("a\xC0\xAFb", 'X', false));
+    }
+
+    public function testUnknownWithPregSpecialCharsIsLiteral()
+    {
+        // $unknown containing preg_replace backreference characters ($0, \1, etc.)
+        // must be treated literally, not interpreted as backreferences.
+        static::assertSame('$0', ASCII::to_transliterate("\xED\xA0\x80", '$0', false));
+        static::assertSame('$0', ASCII::to_transliterate("\xC0\xAF", '$0', false));
+        static::assertSame('\\1', ASCII::to_transliterate("\xED\xA0\x80", '\\1', false));
+        static::assertSame('${1}', ASCII::to_transliterate("\xC0\xAF", '${1}', false));
     }
 
     public function testInvalidUtf8SequencesPreservedWhenUnknownNull()
