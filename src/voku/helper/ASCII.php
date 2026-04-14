@@ -871,8 +871,9 @@ final class ASCII
             // replacement table instead of feeding the full language map to strtr().
             $MAP_BY_FIRST_BYTE[$cacheKey] = [];
             foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $key => $val) {
-                // Some generated lookup tables contain an empty-string key, which
-                // cannot participate in a first-byte index.
+                // Some generated or merged lookup tables can retain an empty-string
+                // key from the source data, which cannot participate in a first-byte
+                // index and is therefore skipped defensively here.
                 if ($key === '') {
                     continue;
                 }
@@ -1130,8 +1131,9 @@ final class ASCII
 
         // Prefix the cache key with impossible sentinel bytes so unknown=null
         // does not collide with explicit fallback strings such as "\x00" or
-        // "\x01..." that callers may pass in intentionally; the "null" suffix
-        // is only a readable label because null itself has no string form.
+        // "\x01..." that callers may pass in intentionally; every non-null
+        // fallback keeps the "\x01" prefix plus its full payload, while the
+        // "null" suffix is only a readable label because null has no string form.
         $unknownCacheKey = $unknown === null
             ? "\x00null"
             : "\x01" . $unknown;

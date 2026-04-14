@@ -42,6 +42,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
 
         foreach ($tests as $before => $after) {
             static::assertSame($after, ASCII::to_transliterate($before), 'first pass: ' . \bin2hex($before));
+            // Re-run the same input to exercise the warm-cache path implicitly.
             static::assertSame($after, ASCII::to_transliterate($before), 'warm pass: ' . \bin2hex($before));
         }
     }

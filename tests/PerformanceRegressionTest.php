@@ -202,7 +202,7 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
         $samples = [];
 
         for ($round = 0; $round < $rounds; ++$round) {
-            for ($_ = 0; $_ < 3; ++$_) {
+            for ($i = 0; $i < 3; ++$i) {
                 $callback();
             }
 
