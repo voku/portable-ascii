@@ -29,16 +29,15 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('testing', ASCII::to_transliterate($str));
     }
 
-    public function testMalformedUtf8SequencesHandledWithDefaultUnknown()
+    public function testMalformedUtf8SequencesAreDiscarded()
     {
-        // With default $unknown='?', ALL invalid sequences should be replaced
-        // with '?' — including C0/C1 overlongs and F5-F7 beyond-Unicode.
+        // Malformed UTF-8 is removed during cleaning, regardless of $unknown.
         $tests = [
-            "\xC0\xAF"         => '?',  // overlong 2-byte: replaced with fallback
-            "\xE0\x80\xAF"     => '?',  // overlong 3-byte: replaced with fallback
-            "\xF0\x80\x80\xAF" => '?',  // overlong 4-byte: replaced with fallback
-            "\xF5\x80\x80\x80" => '?',  // beyond-Unicode 4-byte: replaced with fallback
-            "\xED\xA0\x80"     => '?',  // surrogate: replaced with fallback
+            "\xC0\xAF"         => '',  // overlong 2-byte
+            "\xE0\x80\xAF"     => '',  // overlong 3-byte
+            "\xF0\x80\x80\xAF" => '',  // overlong 4-byte
+            "\xF5\x80\x80\x80" => '',  // beyond-Unicode 4-byte
+            "\xED\xA0\x80"     => '',  // surrogate
         ];
 
         foreach ($tests as $before => $after) {
@@ -57,69 +56,51 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame("a\xC2\xA3b", ASCII::clean("a\xC2\xA3b")); // £ sign
     }
 
-    public function testInvalidUtf8SequencesUseUnknownFallback()
+    public function testInvalidUtf8SequencesAreDiscardedRegardlessOfUnknown()
     {
-        // When $unknown is provided, ALL invalid UTF-8 sequences should be
-        // replaced with the $unknown value, not silently removed.
-
-        // Surrogates (U+D800 = ED A0 80)
-        static::assertSame('?', ASCII::to_transliterate("\xED\xA0\x80", '?', false));
-        static::assertSame('X', ASCII::to_transliterate("\xED\xA0\x80", 'X', false));
-
-        // Overlong 3-byte (E0 80 AF)
-        static::assertSame('?', ASCII::to_transliterate("\xE0\x80\xAF", '?', false));
-
-        // Overlong 4-byte (F0 80 80 AF)
-        static::assertSame('?', ASCII::to_transliterate("\xF0\x80\x80\xAF", '?', false));
-
-        // Beyond U+10FFFF (F4 90 80 80)
-        static::assertSame('?', ASCII::to_transliterate("\xF4\x90\x80\x80", '?', false));
-
-        // C0/C1 overlongs should also use fallback
-        static::assertSame('?', ASCII::to_transliterate("\xC0\xAF", '?', false));
-        static::assertSame('X', ASCII::to_transliterate("\xC0\xAF", 'X', false));
-        static::assertSame('?', ASCII::to_transliterate("\xC1\xBF", '?', false));
-
-        // F5-F7 beyond Unicode should also use fallback
-        static::assertSame('?', ASCII::to_transliterate("\xF5\x80\x80\x80", '?', false));
-        static::assertSame('X', ASCII::to_transliterate("\xF5\x80\x80\x80", 'X', false));
-
-        // Mixed: valid ASCII + invalid surrogate + valid ASCII
-        static::assertSame('a?b', ASCII::to_transliterate("a\xED\xA0\x80b", '?', false));
-        static::assertSame('aXb', ASCII::to_transliterate("a\xED\xA0\x80b", 'X', false));
-
-        // Mixed: valid ASCII + C0 overlong + valid ASCII
-        static::assertSame('a?b', ASCII::to_transliterate("a\xC0\xAFb", '?', false));
-        static::assertSame('aXb', ASCII::to_transliterate("a\xC0\xAFb", 'X', false));
+        static::assertSame('', ASCII::to_transliterate("\xED\xA0\x80", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xED\xA0\x80", 'X', false));
+        static::assertSame('', ASCII::to_transliterate("\xE0\x80\xAF", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xF0\x80\x80\xAF", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xF4\x90\x80\x80", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xC0\xAF", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xC0\xAF", 'X', false));
+        static::assertSame('', ASCII::to_transliterate("\xC1\xBF", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xF5\x80\x80\x80", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xF5\x80\x80\x80", 'X', false));
+        static::assertSame('ab', ASCII::to_transliterate("a\xED\xA0\x80b", '?', false));
+        static::assertSame('ab', ASCII::to_transliterate("a\xED\xA0\x80b", 'X', false));
+        static::assertSame('ab', ASCII::to_transliterate("a\xC0\xAFb", '?', false));
+        static::assertSame('ab', ASCII::to_transliterate("a\xC0\xAFb", 'X', false));
     }
 
     public function testUnknownWithPregSpecialCharsIsLiteral()
     {
-        // $unknown containing preg_replace backreference characters ($0, \1, etc.)
-        // must be treated literally, not interpreted as backreferences.
-        static::assertSame('$0', ASCII::to_transliterate("\xED\xA0\x80", '$0', false));
-        static::assertSame('$0', ASCII::to_transliterate("\xC0\xAF", '$0', false));
-        static::assertSame('\\1', ASCII::to_transliterate("\xED\xA0\x80", '\\1', false));
-        static::assertSame('${1}', ASCII::to_transliterate("\xC0\xAF", '${1}', false));
+        static::assertSame('$0', ASCII::to_transliterate('😀', '$0', false));
+        static::assertSame('\\1', ASCII::to_transliterate('😀', '\\1', false));
+        static::assertSame('${1}', ASCII::to_transliterate('😀', '${1}', false));
     }
 
-    public function testInvalidUtf8SequencesPreservedWhenUnknownNull()
+    public function testInvalidUtf8SequencesAreDiscardedWhenUnknownNull()
     {
-        // When $unknown is null, invalid sequences should be preserved (not replaced),
-        // consistent with how valid-but-untranslatable chars are preserved.
-        static::assertSame("\xED\xA0\x80", ASCII::to_transliterate("\xED\xA0\x80", null, false));
-        static::assertSame("a\xE0\x80\xAFb", ASCII::to_transliterate("a\xE0\x80\xAFb", null, false));
+        static::assertSame('', ASCII::to_transliterate("\xED\xA0\x80", null, false));
+        static::assertSame('ab', ASCII::to_transliterate("a\xE0\x80\xAFb", null, false));
     }
 
-    public function testInvalidSequenceWarmCacheRespectsUnknown()
+    public function testUnknownFallbackWarmCacheRespectsUnknown()
     {
-        // Different $unknown values should produce different results even on warm
-        // cache paths, because the warm map is keyed per-$unknown.
-        static::assertSame('?', ASCII::to_transliterate("\xF4\x90\x80\x80", '?', false));
-        static::assertSame('X', ASCII::to_transliterate("\xF4\x90\x80\x80", 'X', false));
-        static::assertSame("\xF4\x90\x80\x80", ASCII::to_transliterate("\xF4\x90\x80\x80", null, false));
-        // Verify warm path still works correctly
-        static::assertSame('?', ASCII::to_transliterate("\xF4\x90\x80\x80", '?', false));
+        static::assertSame('?', ASCII::to_transliterate('😀', '?', false));
+        static::assertSame('X', ASCII::to_transliterate('😀', 'X', false));
+        static::assertSame('😀', ASCII::to_transliterate('😀', null, false));
+        static::assertSame('?', ASCII::to_transliterate('😀', '?', false));
+    }
+
+    public function testRepeatedNonAsciiInputStaysCorrect()
+    {
+        $input = \str_repeat('中文😀', 64);
+
+        static::assertSame(\str_repeat('Zhong Wen ?', 64), ASCII::to_transliterate($input, '?', false));
+        static::assertSame(\str_repeat('Zhong Wen ', 64), ASCII::to_transliterate(\str_repeat("中文\xED\xA0\x80", 64), '?', false));
     }
 
     public function testNullUnknownAndNullByteUnknownUseDifferentWarmMaps()
