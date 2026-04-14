@@ -488,7 +488,7 @@ final class ASCII
             $regex = '/
               (
                 (?: [\x00-\x7F]               # single-byte sequences   0xxxxxxx
-                |   [\xC0-\xDF][\x80-\xBF]    # double-byte sequences   110xxxxx 10xxxxxx
+                |   [\xC2-\xDF][\x80-\xBF]    # double-byte sequences   110xxxxx 10xxxxxx
                 |   [\xE0-\xEF][\x80-\xBF]{2} # triple-byte sequences   1110xxxx 10xxxxxx * 2
                 |   [\xF0-\xF4][\x80-\xBF]{3} # quadruple-byte sequence 11110xxx 10xxxxxx * 3
                 ){1,100}                      # ...one or more times
@@ -1118,11 +1118,13 @@ final class ASCII
         }
 
         // Strip overlong 2-byte starters (C0-C1) and 4-byte starters beyond
-        // U+10FFFF (F5-F7) before scanning for UTF-8 sequences. We intentionally
-        // drop them here so malformed bytes do not survive when the main regex
-        // only walks candidate sequences we still want to transliterate or
-        // validate further.
-        $str = (string) \preg_replace('/[\xC0-\xC1][\x80-\xBF]|[\xF5-\xF7][\x80-\xBF]{3}/', '', $str);
+        // U+10FFFF (F5-F7) before scanning for UTF-8 sequences. When a fallback
+        // is provided, replace them with $unknown; when $unknown is null, leave
+        // them in place (consistent with how valid-but-untranslatable chars are
+        // preserved).
+        if ($unknown !== null) {
+            $str = (string) \preg_replace('/[\xC0-\xC1][\x80-\xBF]|[\xF5-\xF7][\x80-\xBF]{3}/', $unknown, $str);
+        }
 
         // Collect unique non-ASCII sequences once and resolve each code point once;
         // this keeps the hot path linear for long strings with repeated characters.
@@ -1137,7 +1139,9 @@ final class ASCII
                 $seen[$c] = true;
 
                 if (isset($INVALID_UTF8_SEQUENCE_CACHE[$c])) {
-                    $charMap[$c] = '';
+                    if ($unknown !== null) {
+                        $charMap[$c] = $unknown;
+                    }
 
                     continue;
                 }
@@ -1154,7 +1158,9 @@ final class ASCII
                         || ($ordC0 === 244 && $ordC1 > 143)
                     ) {
                         $INVALID_UTF8_SEQUENCE_CACHE[$c] = true;
-                        $charMap[$c] = '';
+                        if ($unknown !== null) {
+                            $charMap[$c] = $unknown;
+                        }
 
                         continue;
                     }
