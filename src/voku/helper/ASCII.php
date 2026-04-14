@@ -1139,7 +1139,7 @@ final class ASCII
             static function (array $matches) use (&$charMap, &$TRANSLIT_CHAR_CACHE, &$UTF8_TO_TRANSLIT, $unknown): string {
                 $c = $matches[0];
 
-                if (isset($charMap[$c])) {
+                if (\array_key_exists($c, $charMap)) {
                     return $charMap[$c];
                 }
 
@@ -1175,6 +1175,10 @@ final class ASCII
 
                 if ($TRANSLIT_CHAR_CACHE[$c] === false) {
                     return $unknown ?? $c;
+                }
+
+                if ($TRANSLIT_CHAR_CACHE[$c] === '' && $unknown === null) {
+                    return $c;
                 }
 
                 $charMap[$c] = $TRANSLIT_CHAR_CACHE[$c];
