@@ -1339,18 +1339,7 @@ final class ASCII
                     $maxKeyLength = 2;
                 }
                 if (
-                    $language === ''
-                    &&
-                    $maxKeyLength < 2
-                ) {
-                    $maxKeyLength = 2;
-                }
-                if (
-                    (
-                        $language === ''
-                        ||
-                        $language === self::ENGLISH_LANGUAGE_CODE
-                    )
+                    $language === self::ENGLISH_LANGUAGE_CODE
                     &&
                     $maxKeyLength < 2
                     &&
