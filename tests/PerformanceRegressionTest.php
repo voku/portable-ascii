@@ -331,6 +331,8 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @param callable():string $callback
+     *
+     * @return float Median microseconds per operation across the sampled rounds.
      */
     private function benchmarkScenario(callable $callback, int $iterations, int $rounds = 5): float
     {
@@ -366,8 +368,8 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
 
         \fwrite(\STDERR, "\nportable-ascii performance profile (median us/op)\n");
 
-        foreach ($benchmarks as $label => $microseconds) {
-            \fwrite(\STDERR, \sprintf("- %-42s %9.3f\n", $label, $microseconds));
+        foreach ($benchmarks as $label => $microsecondsPerOp) {
+            \fwrite(\STDERR, \sprintf("- %-42s %9.3f\n", $label, $microsecondsPerOp));
         }
 
         \fwrite(\STDERR, "\n");

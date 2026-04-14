@@ -846,7 +846,7 @@ final class ASCII
             $str = self::to_ascii_short($str, $language, $replace_extra_symbols, $replace_single_chars_only);
         } else {
             static $REPLACE_HELPER_CACHE = [];
-            $cacheKey = $language . '-' . $replace_extra_symbols . '-' . $replace_single_chars_only;
+            $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
 
             static $MAP_BY_FIRST_BYTE = [];
 
@@ -1339,11 +1339,11 @@ final class ASCII
             return $LANGUAGE_CACHE[$language] = \strtolower($language);
         }
 
-        $language_tmp = \str_replace('-', '_', \strtolower($language));
+        $normalizedLanguage = \str_replace('-', '_', \strtolower($language));
 
         $regex = '/(?<first>[a-z]+)_\g{first}/';
 
-        return $LANGUAGE_CACHE[$language] = (string) \preg_replace($regex, '$1', $language_tmp);
+        return $LANGUAGE_CACHE[$language] = (string) \preg_replace($regex, '$1', $normalizedLanguage);
     }
 
     /**
