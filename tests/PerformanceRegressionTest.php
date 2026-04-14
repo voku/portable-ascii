@@ -51,6 +51,8 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
         $myanmarLong = \str_repeat('တတျနိုငျသ ', 128);
         $chineseLong = \str_repeat('中文空白測試 ', 128);
         $unknownLong = \str_repeat('😀🚀🛸✨', 128);
+        $fixedUnknownFallback = 'u0000';
+        $changingUnknownFallbackCounter = 0;
 
         $benchmarks = [
             'to_ascii_ascii_short' => $this->benchmarkScenario(
@@ -150,17 +152,16 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
                 1000
             ),
             'to_transliterate_unknown_long_fixed_fallback' => $this->benchmarkScenario(
-                function () use ($unknownLong): string {
-                    return ASCII::to_transliterate($unknownLong, 'u0000', false);
+                function () use ($unknownLong, $fixedUnknownFallback): string {
+                    return ASCII::to_transliterate($unknownLong, $fixedUnknownFallback, false);
                 },
                 1000
             ),
             'to_transliterate_unknown_long_changing_fallback' => $this->benchmarkScenario(
-                function () use ($unknownLong): string {
-                    static $i = 0;
-                    ++$i;
+                function () use ($unknownLong, &$changingUnknownFallbackCounter): string {
+                    ++$changingUnknownFallbackCounter;
 
-                    return ASCII::to_transliterate($unknownLong, \sprintf('u%04d', $i), false);
+                    return ASCII::to_transliterate($unknownLong, \sprintf('u%04d', $changingUnknownFallbackCounter), false);
                 },
                 1000
             ),
