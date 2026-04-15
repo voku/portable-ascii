@@ -1302,8 +1302,6 @@ final class ASCII
             &&
             \strlen($str) <= 200
             &&
-            \preg_match('/[\xC2\xC3][\x80-\xBF]/', $str) === 1
-            &&
             \preg_match_all(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str, $matches)
         ) {
             $cache = $REPLACE_HELPER_CACHE[$cacheKey];

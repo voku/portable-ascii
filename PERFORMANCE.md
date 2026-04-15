@@ -204,21 +204,24 @@ Latin Extended characters (ä, ö, ü, ß, é, ê, à, etc.) almost all share th
 
 **Planned fix:** Cache the flattened per-language `strtr()` map in a static array (keyed by language string + options bitmask). After the first call for language `de`, every subsequent call is a single pre-built `strtr()` — exactly as fast or faster than master's approach, while still benefiting from the MAP_BY_FIRST_BYTE cache for the initial build.
 
-### Follow-up spot-check after the single-character fast path
+### Follow-up spot-check after removing the redundant C2/C3 gate
 
 > Same machine, same PHP version, same isolated-process benchmark style as above, but re-run only for the affected scenarios plus two representative non-Latin controls.
 
 | Scenario | Master µs | Branch µs | Δ |
 |---|---:|---:|---:|
-| German slug — *"Düsseldorf"* | 4.01 | 4.29 | +7% |
-| German sports headline | 6.10 | 4.90 | **−20%** |
-| French headline with accents | 11.76 | 5.54 | **−53%** |
-| French tourism paragraph | 5.79 | 5.03 | **−13%** |
-| Russian headline | 27.73 | 9.59 | **−65%** |
-| Chinese sentence | 20.34 | 15.40 | **−24%** |
-| Long German text | 62.87 | 27.58 | **−56%** |
+| German slug — *"Düsseldorf"* | 4.18 | 4.32 | +3% |
+| German sports headline | 6.38 | 4.93 | **−23%** |
+| French headline with accents | 12.14 | 5.55 | **−54%** |
+| French tourism paragraph | 6.00 | 5.03 | **−16%** |
+| Russian headline | 29.08 | 6.64 | **−77%** |
+| Chinese sentence | 12.11 | 6.29 | **−48%** |
+| Long German text | 61.94 | 28.35 | **−54%** |
 
-The follow-up adds a direct single-character replacement fast path for short Latin inputs, which cuts the remaining German slug gap from `+14%` to `+7%` without giving back the French, Cyrillic, CJK, or long-string gains. The short German slug is still slightly slower than master, but it is now much closer to parity than the previous spot-check.
+The previous iteration added a single-character `str_replace()` fast path and a `$charCount === 1` shortcut to halve the work for simple German slugs, reducing the regression from `+14%` to `+7%`. This final follow-up removes the now-redundant first `preg_match('/[\xC2\xC3][\x80-\xBF]/')` guard that was gating the filtered-map path to Latin-only scripts — the `preg_match_all()` that follows it already returns `0` (falsy) when there are no multibyte sequences, making the guard superfluous. Dropping it:
+
+- Removes one regex call for every Western-Latin string (German, French, …), closing the German slug gap to `+3%` (within measurement noise).
+- Extends the filtered-map optimisation to Cyrillic and CJK short strings, which previously fell through to `strtr()` with the full 1 496-entry merged map; Russian headlines now win by **−77%** and Chinese sentences by **−48%**.
 
 ### Security hardening (not reflected in timing)
 
