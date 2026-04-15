@@ -334,7 +334,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * When language='' or 'en', to_ascii_short() merges ALL language replacement maps,
+     * When language='' or 'en', to_ascii() merges ALL language replacement maps,
      * which includes Myanmar (my, maxKey=5) and Bengali (bn, maxKey=5).  The old code
      * read maxKeyLength from ascii_language_max_key for 'en' (=0) / '' (missing, also 0)
      * and only bumped that value to 2 — causing the 3/4/5-char replacement loops to be

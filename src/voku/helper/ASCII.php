@@ -239,10 +239,6 @@ final class ASCII
      */
     private const UTF8_MULTIBYTE_SEQUENCE_RX = '/[\xC2-\xDF][\x80-\xBF]|\xE0[\xA0-\xBF][\x80-\xBF]|[\xE1-\xEC\xEE-\xEF][\x80-\xBF]{2}|\xED[\x80-\x9F][\x80-\xBF]|\xF0[\x90-\xBF][\x80-\xBF]{2}|[\xF1-\xF3][\x80-\xBF]{3}|\xF4[\x80-\x8F][\x80-\xBF]{2}/';
 
-    /**
-     * @var int
-     */
-    private const TO_ASCII_SHORT_STRING_THRESHOLD = 48;
 
     /**
      * Get all languages from the constants "ASCII::.*LANGUAGE_CODE".
@@ -823,24 +819,27 @@ final class ASCII
         $language = self::get_language($language);
         /** @phpstan-var ASCII::*_LANGUAGE_CODE $language - hack for phpstan */
 
-        $strLength = \strlen($str);
-
-        // secondary fast path: has control chars like \n\r\t but otherwise ASCII
+        // secondary fast path: only 7-bit bytes (no multi-byte UTF-8).
+        // Strings with control chars (\x00-\x1F, \x7F) but no high bytes
+        // still need $remove_unsupported_chars cleanup, but never need the
+        // strtr replacement map because all replaceable characters are ≥ 0x80.
         if (
             !$replace_extra_symbols
             &&
-            $strLength > self::TO_ASCII_SHORT_STRING_THRESHOLD
-            &&
-            \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
+            !\preg_match('/[\x80-\xFF]/', $str)
         ) {
             if ($remove_unsupported_chars) {
-                return (string) \str_replace(["\r\n", "\n", "\r", "\t"], ' ', $str);
+                $str = (string) \str_replace(["\r\n", "\n", "\r", "\t"], ' ', $str);
+                $str = (string) \preg_replace('/' . self::$REGEX_ASCII . '/', '', $str);
             }
 
             return $str;
         }
 
-        // invalid UTF-8 fast path
+        // invalid UTF-8: apply replacement map first, then clean up.
+        // strtr() can match partial byte sequences from malformed UTF-8 against
+        // valid lookup keys, producing incorrect output, so we must fall back to
+        // the clean-then-transliterate path for invalid input.
         if (\preg_match('//u', $str) !== 1) {
             self::prepareAsciiMaps();
 
@@ -860,11 +859,8 @@ final class ASCII
             return $str;
         }
 
-        if ($strLength <= self::TO_ASCII_SHORT_STRING_THRESHOLD) {
-            $str = self::to_ascii_short($str, $language, $replace_extra_symbols, $replace_single_chars_only);
-        } else {
-            $str = self::to_ascii_long($str, $language, $replace_extra_symbols, $replace_single_chars_only);
-        }
+        // Apply the ASCII replacement map via strtr().
+        $str = self::to_ascii_replace($str, $language, $replace_extra_symbols, $replace_single_chars_only);
 
         if (!isset(self::$ASCII_MAPS[$language])) {
             $use_transliterate = true;
@@ -1244,195 +1240,19 @@ final class ASCII
         return \strtr($str, $map);
     }
 
-    /**
-     * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
-     */
-    private static function to_ascii_short(
-        string $str,
-        string $language,
-        bool $replace_extra_symbols,
-        bool $replace_single_chars_only
-    ): string {
-        static $EXTRA_SYMBOLS_CACHE = null;
-
-        static $REPLACE_HELPER_CACHE = [];
-        $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
-
-        if (!isset($REPLACE_HELPER_CACHE[$cacheKey])) {
-            $langAll = self::getAsciiAllReplacementMap($replace_extra_symbols, $replace_single_chars_only);
-
-            $langSpecific = self::getAsciiLanguageReplacementMap($language, $replace_extra_symbols, $replace_single_chars_only);
-
-            if ($langSpecific === []) {
-                $REPLACE_HELPER_CACHE[$cacheKey] = $langAll;
-            } else {
-                $REPLACE_HELPER_CACHE[$cacheKey] = \array_merge([], $langAll, $langSpecific);
-            }
-        }
-
-        if ($REPLACE_HELPER_CACHE[$cacheKey] === []) {
-            return $str;
-        }
-
-        $replaceMap = &$REPLACE_HELPER_CACHE[$cacheKey];
-
-        if (
-            $replace_extra_symbols
-            &&
-            $EXTRA_SYMBOLS_CACHE === null
-        ) {
-            self::prepareAsciiExtras();
-
-            $EXTRA_SYMBOLS_CACHE = [];
-            foreach (self::$ASCII_EXTRAS ?? [] as $extrasDataTmp) {
-                foreach ($extrasDataTmp as $extrasDataKeyTmp => $extrasDataValueTmp) {
-                    $EXTRA_SYMBOLS_CACHE[$extrasDataKeyTmp] = $extrasDataKeyTmp;
-                }
-            }
-            $EXTRA_SYMBOLS_CACHE = \implode('', $EXTRA_SYMBOLS_CACHE);
-        }
-
-        $charDone = [];
-        if (\preg_match_all('/' . self::$REGEX_ASCII . ($replace_extra_symbols ? '|[' . $EXTRA_SYMBOLS_CACHE . ']' : '') . '/u', $str, $matches)) {
-            if (!$replace_single_chars_only) {
-                if (self::$LANGUAGE_MAX_KEY === null) {
-                    self::$LANGUAGE_MAX_KEY = self::getData('ascii_language_max_key');
-                }
-
-                $maxKeyLength = self::$LANGUAGE_MAX_KEY[$language] ?? 0;
-
-                // When the full merged map is used (language="" or "en") the true maximum
-                // key length is 5, because languages like Myanmar ("my") and Bengali ("bn")
-                // contribute replacement keys up to 5 characters long.  Without this bump
-                // the 3/4/5-char combination loops are never entered, so multi-character
-                // ligatures from those languages are transliterated one character at a time
-                // instead of being replaced as a unit.
-                if (
-                    $language === ''
-                    ||
-                    $language === self::ENGLISH_LANGUAGE_CODE
-                ) {
-                    $maxKeyLength = \max($maxKeyLength, 5);
-                }
-
-                // Extra-symbol keys extend up to 3 characters (e.g. temperature units
-                // "°De" => " Delisle ", "°Re" => " Reaumur ", "°Ro" => " Romer ").
-                // The previous code only bumped maxKeyLength to 2 for extras, which caused
-                // 3-char extra-symbol replacements to be silently skipped.
-                if ($replace_extra_symbols) {
-                    $maxKeyLength = \max($maxKeyLength, 3);
-                }
-
-                if ($maxKeyLength >= 5) {
-                    foreach ($matches[0] as $keyTmp => $char) {
-                        if (isset($matches[0][$keyTmp + 4])) {
-                            $fiveChars = $matches[0][$keyTmp + 0] . $matches[0][$keyTmp + 1] . $matches[0][$keyTmp + 2] . $matches[0][$keyTmp + 3] . $matches[0][$keyTmp + 4];
-                        } else {
-                            $fiveChars = null;
-                        }
-                        if (
-                            $fiveChars
-                            &&
-                            !isset($charDone[$fiveChars])
-                            &&
-                            isset($replaceMap[$fiveChars])
-                            &&
-                            \strpos($str, $fiveChars) !== false
-                        ) {
-                            $charDone[$fiveChars] = true;
-                            $str = \str_replace($fiveChars, $replaceMap[$fiveChars], $str);
-                        }
-                    }
-                }
-
-                if ($maxKeyLength >= 4) {
-                    foreach ($matches[0] as $keyTmp => $char) {
-                        if (isset($matches[0][$keyTmp + 3])) {
-                            $fourChars = $matches[0][$keyTmp + 0] . $matches[0][$keyTmp + 1] . $matches[0][$keyTmp + 2] . $matches[0][$keyTmp + 3];
-                        } else {
-                            $fourChars = null;
-                        }
-                        if (
-                            $fourChars
-                            &&
-                            !isset($charDone[$fourChars])
-                            &&
-                            isset($replaceMap[$fourChars])
-                            &&
-                            \strpos($str, $fourChars) !== false
-                        ) {
-                            $charDone[$fourChars] = true;
-                            $str = \str_replace($fourChars, $replaceMap[$fourChars], $str);
-                        }
-                    }
-                }
-
-                if ($maxKeyLength >= 3) {
-                    foreach ($matches[0] as $keyTmp => $char) {
-                        if (isset($matches[0][$keyTmp + 2])) {
-                            $threeChars = $matches[0][$keyTmp + 0] . $matches[0][$keyTmp + 1] . $matches[0][$keyTmp + 2];
-                        } else {
-                            $threeChars = null;
-                        }
-                        if (
-                            $threeChars
-                            &&
-                            !isset($charDone[$threeChars])
-                            &&
-                            isset($replaceMap[$threeChars])
-                            &&
-                            \strpos($str, $threeChars) !== false
-                        ) {
-                            $charDone[$threeChars] = true;
-                            $str = \str_replace($threeChars, $replaceMap[$threeChars], $str);
-                        }
-                    }
-                }
-
-                if ($maxKeyLength >= 2) {
-                    foreach ($matches[0] as $keyTmp => $char) {
-                        if (isset($matches[0][$keyTmp + 1])) {
-                            $twoChars = $matches[0][$keyTmp + 0] . $matches[0][$keyTmp + 1];
-                        } else {
-                            $twoChars = null;
-                        }
-                        if (
-                            $twoChars
-                            &&
-                            !isset($charDone[$twoChars])
-                            &&
-                            isset($replaceMap[$twoChars])
-                            &&
-                            \strpos($str, $twoChars) !== false
-                        ) {
-                            $charDone[$twoChars] = true;
-                            $str = \str_replace($twoChars, $replaceMap[$twoChars], $str);
-                        }
-                    }
-                }
-            }
-
-            foreach ($matches[0] as $char) {
-                if (
-                    !isset($charDone[$char])
-                    &&
-                    isset($replaceMap[$char])
-                    &&
-                    \strpos($str, $char) !== false
-                ) {
-                    $charDone[$char] = true;
-                    $str = \str_replace($char, $replaceMap[$char], $str);
-                }
-            }
-        }
-
-        return $str;
-    }
 
     /**
+     * Apply the cached ASCII replacement map to a string via strtr().
+     *
+     * For short strings the full cached map is passed to strtr() directly —
+     * PHP's C-level Aho-Corasick handles even large maps efficiently on small
+     * input.  For longer strings a first-byte index (cached per language/options)
+     * is used to build a small filtered map, avoiding the overhead of scanning
+     * the full table.
+     *
      * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
      */
-    private static function to_ascii_long(
+    private static function to_ascii_replace(
         string $str,
         string $language,
         bool $replace_extra_symbols,
@@ -1453,13 +1273,10 @@ final class ASCII
                 $REPLACE_HELPER_CACHE[$cacheKey] = \array_merge([], $langAll, $langSpecific);
             }
 
-            // Pre-index by first byte so each call can cheaply skip most of the
-            // replacement table instead of feeding the full language map to strtr().
+            // Pre-index by first byte so long-string calls can cheaply skip most of
+            // the replacement table instead of feeding the full language map to strtr().
             $MAP_BY_FIRST_BYTE[$cacheKey] = [];
             foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $key => $val) {
-                // Some generated or merged lookup tables can retain an empty-string
-                // key from the source data, which cannot participate in a first-byte
-                // index and is therefore skipped defensively here.
                 if ($key === '') {
                     continue;
                 }
@@ -1468,26 +1285,34 @@ final class ASCII
             }
         }
 
-        if ($REPLACE_HELPER_CACHE[$cacheKey] !== []) {
-            $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
+        if ($REPLACE_HELPER_CACHE[$cacheKey] === []) {
+            return $str;
+        }
 
-            // Build a filtered map containing only entries whose leading byte is
-            // present in this specific input string.  The $MAP_BY_FIRST_BYTE index
-            // (cached per language/options) keeps this loop cheap regardless of how
-            // many different strings are processed.
-            $filteredMap = [];
-            foreach (\count_chars($str, 1) as $byte => $count) {
-                $fb = \chr($byte);
-                if (isset($indexedMap[$fb])) {
-                    foreach ($indexedMap[$fb] as $k => $v) {
-                        $filteredMap[$k] = $v;
-                    }
+        // Short strings: feed the full cached map to strtr() directly.
+        // PHP's strtr() with an array uses Aho-Corasick matching which handles
+        // even large maps efficiently on small input, and the automaton-build
+        // overhead is negligible for ≤ 64-byte strings — still faster than
+        // the per-call count_chars + filtered-map construction.
+        if (\strlen($str) <= 64) {
+            return \strtr($str, $REPLACE_HELPER_CACHE[$cacheKey]);
+        }
+
+        // Long strings: build a filtered map containing only entries whose
+        // leading byte is present in this specific input string.
+        $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
+        $filteredMap = [];
+        foreach (\count_chars($str, 1) as $byte => $count) {
+            $fb = \chr($byte);
+            if (isset($indexedMap[$fb])) {
+                foreach ($indexedMap[$fb] as $k => $v) {
+                    $filteredMap[$k] = $v;
                 }
             }
+        }
 
-            if ($filteredMap !== []) {
-                $str = \strtr($str, $filteredMap);
-            }
+        if ($filteredMap !== []) {
+            $str = \strtr($str, $filteredMap);
         }
 
         return $str;

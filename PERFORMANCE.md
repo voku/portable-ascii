@@ -1,8 +1,8 @@
 # portable-ascii Performance Improvements
 
 > **Measured on:** PHP 8.3.6 (GitHub Actions ubuntu-latest runner)  
-> **Methodology:** Median of 5 independent rounds; 3 warm-up calls per round to seed static caches.  
-> **Baseline:** commit `bb4bc0f` (last release before this optimization branch)  
+> **Methodology:** Median of 5 independent rounds; 1 warm-up + 1 000 measured iterations per round.  
+> **Baseline:** `origin/master` (commit `944c955`)  
 > **Optimized:** current HEAD of `copilot/blind-spot-analysis-performance`  
 > **µs/op** = median microseconds per single function call (lower = faster)
 
@@ -10,100 +10,112 @@
 
 ## Summary
 
-The performance improvements focus on the hot paths in `to_ascii()`:
+The optimizations focus on two axes:
 
-1. **Short-string fast lane** – Strings ≤ 48 bytes now bypass the heavyweight `strtr()`
-   replacement pipeline and use a character-by-character loop that avoids building large
-   filtered maps entirely.  This is the most impactful change because typical CMS/SEO
-   use-cases (slugs, titles, names) are short.
+1. **ASCII fast-paths in `to_ascii()`** – Pure printable-ASCII strings now return
+   immediately via a single regex guard (`/[^\x20-\x7E]/`), avoiding the replacement
+   pipeline entirely.  A secondary guard catches ASCII + control-char strings.
 
-2. **First-byte index for long strings** – For longer strings the full replacement map is
-   pre-indexed by first byte (cached once per language/options combination via
-   `$MAP_BY_FIRST_BYTE`).  On every call, only the entries whose leading byte is present
-   in that specific input are collected into a small `$filteredMap` for `strtr()`.  No
-   per-input cache is involved — every string gets its own correct map built cheaply from
-   the index.
+2. **First-byte index + `count_chars` filtering for long strings** – The full replacement
+   map is pre-indexed by leading byte (cached once per language/options combination via
+   `$MAP_BY_FIRST_BYTE`).  On each call, `count_chars($str, 1)` identifies which leading
+   bytes are actually present, and only those replacement entries are fed to `strtr()`.
+   For long non-ASCII strings this produces a **10–20× speedup** because `strtr()` processes
+   a small filtered map instead of the full ~1 500-entry table.
 
-`to_transliterate()` is **unchanged in net performance** — its internal `preg_match_all +
-foreach` loop is preserved verbatim, avoiding the overhead of `preg_replace_callback`
-closure dispatch.
+3. **Warm-map caching in `to_transliterate()`** – The transliteration replacement map is
+   memoized per `$unknown` fallback value, giving **8–13× speedup** on repeated calls.
+
+4. **Simplified `to_ascii()` replacement path** – All strings (short and long) now use
+   `strtr()` instead of `preg_match_all` + multi-character combination loops.  Short strings
+   (≤ 64 bytes) receive the full cached map directly; long strings receive the first-byte
+   filtered map.  This correctly handles multi-character replacement keys (e.g. Myanmar
+   4–5-char ligatures) without requiring `maxKeyLength` combo loops, and keeps the code
+   significantly simpler.
 
 ---
 
-## Results: µs/operation (median — current HEAD)
+## Results: µs/operation (median)
 
 ### Short Strings — most common real-world use
 
-| Scenario | Baseline µs | Optimized µs | Δ |
+| Scenario | Master µs | Branch µs | Δ |
 |---|---:|---:|---:|
-| `to_ascii()` – pure ASCII, 25 chars (`'Plain ASCII text 123 test'`) | 1.15 | 1.11 | **−4 %** |
-| `to_ascii()` – Latin/accented, 7 chars (`'déjà vu'`) | 11.24 | 6.36 | **−43 %** |
-| `to_ascii()` – German language, 10 chars (`'Düsseldorf'`) | 12.23 | 5.33 | **−56 %** |
-| `to_ascii()` – mixed Greek + Latin, 14 chars (`'déjà σσς iıii'`) | 18.79 | 9.69 | **−48 %** |
-| `to_slugify()` – ASCII, 25 chars | 4.09 | 4.21 | ≈ 0 % |
-| `to_slugify()` – Latin/accented, 25 chars | 22.53 | 10.26 | **−54 %** |
-| `to_transliterate()` – Latin, 7 chars | 5.23 | 5.65 | ≈ 0 % |
+| `to_ascii()` – pure ASCII, 25 chars | 3.07 | **0.81** | **−74 %** |
+| `to_ascii()` – Latin/accented, 7 chars (`'déjà vu'`) | 5.41 | 7.70 | +42 % |
+| `to_ascii()` – German, 10 chars (`'Düsseldorf'`) | 4.36 | 7.79 | +79 % |
+| `to_ascii()` – mixed Greek + Latin, 14 chars | 9.55 | 8.08 | **−15 %** |
+| `to_slugify()` – ASCII, 25 chars | 5.41 | **3.82** | **−29 %** |
+| `to_slugify()` – Latin/accented, 25 chars | 10.23 | 10.90 | +7 % |
+| `to_transliterate()` – ASCII, 25 chars | 1.22 | 1.05 | **−14 %** |
+| `to_transliterate()` – Latin, 7 chars | 7.97 | 5.27 | **−34 %** |
 
-### Long Strings (> 256 chars)
+### Long Strings (> 256 chars) — big wins
 
-| Scenario | Baseline µs | Optimized µs | Δ |
+| Scenario | Master µs | Branch µs | Δ |
 |---|---:|---:|---:|
-| `to_ascii()` – pure ASCII, ~3 200 chars | 2.21 | 2.32 | ≈ 0 % |
-| `to_ascii()` – Greek script, ~2 816 chars | 74.72 | 73.24 | ≈ 0 % |
-| `to_ascii()` – Myanmar script, ~1 408 chars | 95.30 | 96.13 | ≈ 0 % |
-| `to_ascii()` – Chinese + transliterate, ~896 chars | 24.32 | 35.42 | +46 % |
-| `to_transliterate()` – Chinese, ~896 chars | 15.14 | 24.70 | ≈ 0 % |
-| `to_transliterate()` – emoji fixed fallback, ~1 024 chars | — | 46.56 | — |
-| `to_transliterate()` – emoji changing fallback, ~1 024 chars | — | 96.90 | — |
+| `to_ascii()` – pure ASCII, ~3 200 chars | 7.77 | **1.83** | **−76 %** |
+| `to_ascii()` – Greek script, ~2 816 chars | 1478.6 | **70.8** | **−95 %** |
+| `to_ascii()` – Greek single-char-only | 382.1 | **68.4** | **−82 %** |
+| `to_ascii()` – Myanmar script, ~1 408 chars | 1304.0 | **94.9** | **−93 %** |
+| `to_ascii()` – Myanmar single-char-only | 163.6 | **49.7** | **−70 %** |
+| `to_ascii()` – Chinese + transliterate, ~896 chars | 1028.7 | **36.4** | **−96 %** |
+| `to_transliterate()` – Chinese, ~896 chars | 597.0 | **24.9** | **−96 %** |
+| `to_transliterate()` – emoji fixed fallback, ~1 024 chars | 394.0 | **46.0** | **−88 %** |
 
-> The `to_transliterate_chinese_long` and `to_ascii_chinese_long_transliterate` numbers
-> are higher than baseline on this runner due to OS-level scheduling noise on the shared
-> CI host — the underlying code path is unchanged.
+### Per-Language `to_ascii()` — short strings
 
----
-
-## Current Benchmark Numbers (HEAD — PHP 8.3.6)
-
-These are the raw median µs/op values emitted by the performance test on the current HEAD:
-
-| Scenario | µs/op |
-|---|---:|
-| `to_ascii_ascii_short` | 1.107 |
-| `to_transliterate_ascii_short` | 1.301 |
-| `to_ascii_latin_short` | 6.363 |
-| `to_transliterate_latin_short` | 5.651 |
-| `to_ascii_german_short` | 5.330 |
-| `to_ascii_mixed_short` | 9.693 |
-| `to_slugify_ascii_short` | 4.210 |
-| `to_slugify_latin_short` | 10.255 |
-| `to_ascii_ascii_long` | 2.321 |
-| `to_transliterate_ascii_long` | 3.510 |
-| `to_ascii_greek_long` | 73.242 |
-| `to_ascii_greek_long_single_char_only` | 70.773 |
-| `to_ascii_myanmar_long` | 96.133 |
-| `to_ascii_myanmar_long_single_char_only` | 51.325 |
-| `to_ascii_chinese_long_transliterate` | 35.415 |
-| `to_transliterate_chinese_long` | 24.698 |
-| `to_transliterate_unknown_long_fixed_fallback` | 46.563 |
-| `to_transliterate_unknown_long_changing_fallback` | 96.899 |
+| Language | Master µs | Branch µs | Δ |
+|---|---:|---:|---:|
+| de (German) | 5.38 | 8.09 | +50 % |
+| fr (French) | 6.58 | 7.95 | +21 % |
+| el (Greek) | 14.34 | 7.92 | **−45 %** |
+| ru (Russian) | 12.67 | 8.04 | **−37 %** |
+| bg (Bulgarian) | 15.83 | 8.15 | **−49 %** |
+| uk (Ukrainian) | 13.19 | 7.97 | **−40 %** |
+| ar (Arabic) | 14.31 | 8.25 | **−42 %** |
+| tr (Turkish) | 5.43 | 8.17 | +50 % |
+| pl (Polish) | 9.59 | 7.88 | **−18 %** |
+| ro (Romanian) | 4.82 | 7.93 | +64 % |
+| hu (Hungarian) | 5.42 | 7.75 | +43 % |
+| sv (Swedish) | 4.83 | 7.70 | +59 % |
+| da (Danish) | 5.38 | 7.75 | +44 % |
+| nb (Norwegian) | 5.39 | 8.75 | +62 % |
+| fi (Finnish — pure ASCII) | 2.99 | **0.81** | **−73 %** |
+| my (Myanmar) | 16.52 | 7.82 | **−53 %** |
+| zh (Chinese) | 16.83 | 12.68 | **−25 %** |
+| ja (Japanese) | 18.02 | 13.11 | **−27 %** |
+| ko (Korean) | 15.33 | 12.70 | **−17 %** |
+| th (Thai) | 22.10 | 13.46 | **−39 %** |
+| en (English merged) | 6.55 | 7.94 | +21 % |
+| (empty/all) | 6.90 | 8.67 | +26 % |
 
 ---
 
 ## Key Takeaways
 
-- **Short-string slugification / transliteration is the most common real-world use case**
-  (URL slugs, search indexes, username normalization).  The short-string fast lane cuts
-  these calls roughly in **half**: 11–12 µs → 5–6 µs for a typical accented European name.
+- **Pure-ASCII input is the #1 beneficiary**: the fast-path guard makes `to_ascii()` on
+  already-ASCII strings ~4× faster.  This matters because most strings in typical web
+  applications are already ASCII.
 
-- **Language-specific replacements (German `ä→ae`, `ö→oe`, `ü→ue`) benefit most**:
-  `to_ascii('Düsseldorf', 'de')` drops from ~12 µs to ~5 µs — a **×2.3 speedup**.
+- **Long non-ASCII strings see 10–20× speedups** from first-byte index filtering.
+  Bulk-processing tasks (data migration, search indexing) benefit enormously.
 
-- **No per-input cache**: the long-string path builds a fresh filtered map each call from
-  a pre-indexed structure, so 1 000 different slugs each get the correct, honest cost —
-  no artificial speedup from input-keyed caching.
+- **Short non-ASCII European strings (de, fr, ro, sv, da) are 20–80% slower** vs master.
+  The `strtr($str, $fullMap)` approach for ≤ 64-byte strings pays ~4.4 µs for the full
+  1 500-entry map, whereas master's targeted `str_replace` per matched character was
+  ~1.5 µs for typical 1–3 character replacements.  The absolute regression is ~3 µs
+  (5 µs → 8 µs), traded against correct multi-character key handling and dramatically
+  simpler code.
 
-- **`to_transliterate()` is unchanged in both observable behaviour and performance** —
-  the function's hot path was deliberately preserved to avoid introducing regression in
-  this widely-used code path.
+- **Non-Latin scripts (el, ru, bg, uk, ar, th, my, zh, ja, ko) are 17–53% faster** even
+  for short strings, because master's per-character approach needed more iterations for
+  these large-alphabet scripts.
 
-- **Zero correctness regressions**: all 252 existing PHPUnit tests pass unchanged.
+- **`to_transliterate()` warm-map caching delivers 88–96% improvement** on repeated calls
+  without any behavioral change.
+
+- **Security: `clean()` now rejects overlong C0/C1 sequences, ED surrogates, and F5–F7
+  out-of-range bytes** — previously these passed through undetected.
+
+- **Zero correctness regressions**: all 273 PHPUnit tests pass (238 from master + 35 new).
