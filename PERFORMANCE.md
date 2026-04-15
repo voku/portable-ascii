@@ -204,7 +204,7 @@ Latin Extended characters (ä, ö, ü, ß, é, ê, à, etc.) almost all share th
 
 **Planned fix:** Cache the flattened per-language `strtr()` map in a static array (keyed by language string + options bitmask). After the first call for language `de`, every subsequent call is a single pre-built `strtr()` — exactly as fast or faster than master's approach, while still benefiting from the MAP_BY_FIRST_BYTE cache for the initial build.
 
-### Follow-up spot-check after the single-character German retry
+### Follow-up spot-check after the single-character fast path
 
 > Same machine, same PHP version, same isolated-process benchmark style as above, but re-run only for the affected scenarios plus two representative non-Latin controls.
 
