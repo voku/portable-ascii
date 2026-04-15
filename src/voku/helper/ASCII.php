@@ -1244,11 +1244,10 @@ final class ASCII
     /**
      * Apply the cached ASCII replacement map to a string via strtr().
      *
-     * For short strings the full cached map is passed to strtr() directly —
-     * PHP's C-level Aho-Corasick handles even large maps efficiently on small
-     * input.  For longer strings a first-byte index (cached per language/options)
-     * is used to build a small filtered map, avoiding the overhead of scanning
-     * the full table.
+     * For short Latin-1-supplement inputs (for example German/French strings
+     * dominated by C2/C3-prefixed code points), replacing only the exact UTF-8
+     * sequences present in the input is faster than rebuilding a broad C3
+     * first-byte bucket on every call.
      *
      * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
      */
@@ -1260,6 +1259,7 @@ final class ASCII
     ): string {
         static $REPLACE_HELPER_CACHE = [];
         static $MAP_BY_FIRST_BYTE = [];
+        static $MAX_KEY_LENGTH = [];
         $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
 
         if (!isset($REPLACE_HELPER_CACHE[$cacheKey])) {
@@ -1273,6 +1273,8 @@ final class ASCII
                 $REPLACE_HELPER_CACHE[$cacheKey] = \array_merge([], $langAll, $langSpecific);
             }
 
+            $MAX_KEY_LENGTH[$cacheKey] = 0;
+
             // Pre-index by first byte so long-string calls can cheaply skip most of
             // the replacement table instead of feeding the full language map to strtr().
             $MAP_BY_FIRST_BYTE[$cacheKey] = [];
@@ -1281,11 +1283,103 @@ final class ASCII
                     continue;
                 }
 
+                $keyLength = \strlen($key);
+                if ($keyLength > $MAX_KEY_LENGTH[$cacheKey]) {
+                    $MAX_KEY_LENGTH[$cacheKey] = $keyLength;
+                }
+
                 $MAP_BY_FIRST_BYTE[$cacheKey][$key[0]][$key] = $val;
             }
         }
 
         if ($REPLACE_HELPER_CACHE[$cacheKey] === []) {
+            return $str;
+        }
+
+        if (
+            !$replace_extra_symbols
+            &&
+            \strlen($str) <= 200
+            &&
+            \preg_match('/[\xC2\xC3][\x80-\xBF]/', $str) === 1
+            &&
+            \preg_match_all(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str, $matches)
+        ) {
+            $cache = $REPLACE_HELPER_CACHE[$cacheKey];
+            $maxKeyLength = $MAX_KEY_LENGTH[$cacheKey];
+            $chars = $matches[0];
+            $charCount = \count($chars);
+            $charDone = [];
+
+            if (
+                !$replace_single_chars_only
+                &&
+                $maxKeyLength >= 4
+                &&
+                $charCount >= 2
+            ) {
+                if ($maxKeyLength >= 10 && $charCount >= 5) {
+                    foreach ($chars as $keyTmp => $char) {
+                        if (!isset($chars[$keyTmp + 4])) {
+                            continue;
+                        }
+
+                        $fiveChars = $chars[$keyTmp] . $chars[$keyTmp + 1] . $chars[$keyTmp + 2] . $chars[$keyTmp + 3] . $chars[$keyTmp + 4];
+                        if (!isset($charDone[$fiveChars]) && isset($cache[$fiveChars])) {
+                            $charDone[$fiveChars] = true;
+                            $str = \str_replace($fiveChars, $cache[$fiveChars], $str);
+                        }
+                    }
+                }
+
+                if ($maxKeyLength >= 8 && $charCount >= 4) {
+                    foreach ($chars as $keyTmp => $char) {
+                        if (!isset($chars[$keyTmp + 3])) {
+                            continue;
+                        }
+
+                        $fourChars = $chars[$keyTmp] . $chars[$keyTmp + 1] . $chars[$keyTmp + 2] . $chars[$keyTmp + 3];
+                        if (!isset($charDone[$fourChars]) && isset($cache[$fourChars])) {
+                            $charDone[$fourChars] = true;
+                            $str = \str_replace($fourChars, $cache[$fourChars], $str);
+                        }
+                    }
+                }
+
+                if ($maxKeyLength >= 6 && $charCount >= 3) {
+                    foreach ($chars as $keyTmp => $char) {
+                        if (!isset($chars[$keyTmp + 2])) {
+                            continue;
+                        }
+
+                        $threeChars = $chars[$keyTmp] . $chars[$keyTmp + 1] . $chars[$keyTmp + 2];
+                        if (!isset($charDone[$threeChars]) && isset($cache[$threeChars])) {
+                            $charDone[$threeChars] = true;
+                            $str = \str_replace($threeChars, $cache[$threeChars], $str);
+                        }
+                    }
+                }
+
+                foreach ($chars as $keyTmp => $char) {
+                    if (!isset($chars[$keyTmp + 1])) {
+                        continue;
+                    }
+
+                    $twoChars = $chars[$keyTmp] . $chars[$keyTmp + 1];
+                    if (!isset($charDone[$twoChars]) && isset($cache[$twoChars])) {
+                        $charDone[$twoChars] = true;
+                        $str = \str_replace($twoChars, $cache[$twoChars], $str);
+                    }
+                }
+            }
+
+            foreach ($chars as $char) {
+                if (!isset($charDone[$char]) && isset($cache[$char])) {
+                    $charDone[$char] = true;
+                    $str = \str_replace($char, $cache[$char], $str);
+                }
+            }
+
             return $str;
         }
 

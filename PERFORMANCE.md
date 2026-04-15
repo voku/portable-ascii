@@ -14,6 +14,7 @@
 |---|---|
 | **ASCII fast-path** | `preg_match('/[^\x20-\x7E]/', $str)` guard at top of `to_ascii()` — returns immediately for pure-ASCII input |
 | **MAP_BY_FIRST_BYTE** | Pre-indexes the replacement map by the leading byte of each multi-byte sequence; only builds a tiny `strtr()` map from bytes actually present in the string via `count_chars()` |
+| **C2/C3 exact-sequence fast path** | For short Latin-1-supplement strings (`ä`, `ö`, `ü`, `é`, `ê`, `à`, …), only the exact UTF-8 sequences present in the input are replaced instead of rebuilding the whole `0xC3` bucket |
 | **WARM_MAPS cache** | Static per-`$unknown` cache in `to_transliterate()` so the replacement map is only assembled once across repeated calls |
 | **Tightened UTF-8 validation** | `clean()` now rejects C0/C1 overlongs, E0 overlongs, ED surrogates, F0 overlongs, F5–F7 out-of-range sequences |
 
@@ -202,6 +203,22 @@ German slug          [███] 4.1 µs  →  [█████] 8.0 µs  +92% �
 Latin Extended characters (ä, ö, ü, ß, é, ê, à, etc.) almost all share the `0xC3` first byte. When `MAP_BY_FIRST_BYTE` groups by first byte, the 0xC3 bucket contains **all** Latin diacritics — 60+ entries. Building this map on every call adds overhead that outweighs the saving from the smaller `strtr()` table.
 
 **Planned fix:** Cache the flattened per-language `strtr()` map in a static array (keyed by language string + options bitmask). After the first call for language `de`, every subsequent call is a single pre-built `strtr()` — exactly as fast or faster than master's approach, while still benefiting from the MAP_BY_FIRST_BYTE cache for the initial build.
+
+### Follow-up spot-check after the C2/C3 fast-path retry
+
+> Same machine, same PHP version, same isolated-process benchmark style as above, but re-run only for the affected scenarios plus two representative non-Latin controls.
+
+| Scenario | Master µs | Branch µs | Δ |
+|---|---:|---:|---:|
+| German slug — *"Düsseldorf"* | 3.97 | 4.49 | +13% |
+| German sports headline | 6.11 | 6.24 | +2% |
+| French headline with accents | 11.81 | 15.25 | +29% |
+| French tourism paragraph | 5.79 | 6.20 | +7% |
+| Russian headline | 27.57 | 9.46 | **−66%** |
+| Chinese sentence | 20.47 | 15.34 | **−25%** |
+| Long German text | 63.22 | 27.94 | **−56%** |
+
+The retry eliminates the large German regression for medium strings and preserves the existing wins for Russian, Chinese, and long German input, but French headline-sized input still needs another round.
 
 ### Security hardening (not reflected in timing)
 
