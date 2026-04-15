@@ -1310,6 +1310,11 @@ final class ASCII
             $maxKeyLength = $MAX_KEY_LENGTH[$cacheKey];
             $chars = $matches[0];
             $charCount = \count($chars);
+
+            if ($charCount === 1 && isset($cache[$chars[0]])) {
+                return \str_replace($chars[0], $cache[$chars[0]], $str);
+            }
+
             $shortStringCacheKey = $cacheKey . ':' . \implode('|', $chars);
 
             if (!isset($LATIN_SHORT_STRING_MAP_CACHE[$shortStringCacheKey])) {

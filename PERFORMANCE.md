@@ -204,21 +204,21 @@ Latin Extended characters (ä, ö, ü, ß, é, ê, à, etc.) almost all share th
 
 **Planned fix:** Cache the flattened per-language `strtr()` map in a static array (keyed by language string + options bitmask). After the first call for language `de`, every subsequent call is a single pre-built `strtr()` — exactly as fast or faster than master's approach, while still benefiting from the MAP_BY_FIRST_BYTE cache for the initial build.
 
-### Follow-up spot-check after the cached filtered-map retry
+### Follow-up spot-check after the single-character German retry
 
 > Same machine, same PHP version, same isolated-process benchmark style as above, but re-run only for the affected scenarios plus two representative non-Latin controls.
 
 | Scenario | Master µs | Branch µs | Δ |
 |---|---:|---:|---:|
-| German slug — *"Düsseldorf"* | 4.25 | 4.83 | +14% |
-| German sports headline | 6.61 | 5.22 | **−21%** |
-| French headline with accents | 12.55 | 5.85 | **−53%** |
-| French tourism paragraph | 6.27 | 5.35 | **−15%** |
-| Russian headline | 29.63 | 9.86 | **−67%** |
-| Chinese sentence | 21.16 | 16.41 | **−22%** |
-| Long German text | 65.17 | 29.52 | **−55%** |
+| German slug — *"Düsseldorf"* | 4.01 | 4.29 | +7% |
+| German sports headline | 6.10 | 4.90 | **−20%** |
+| French headline with accents | 11.76 | 5.54 | **−53%** |
+| French tourism paragraph | 5.79 | 5.03 | **−13%** |
+| Russian headline | 27.73 | 9.59 | **−65%** |
+| Chinese sentence | 20.34 | 15.40 | **−24%** |
+| Long German text | 62.87 | 27.58 | **−56%** |
 
-The follow-up caches the short Latin filtered replacement map after the first call, which resolves the remaining French headline regression in the spot-check and keeps the non-Latin and long-string wins intact. The only remaining spot-check loss is the short German slug (`+14%`), so the next benchmark pass should verify whether that case needs its own threshold tweak or can be accepted as noise.
+The follow-up adds a direct single-character replacement fast path for short Latin inputs, which cuts the remaining German slug gap from `+14%` to `+7%` without giving back the French, Cyrillic, CJK, or long-string gains. The short German slug is still slightly slower than master, but it is now much closer to parity than the previous spot-check.
 
 ### Security hardening (not reflected in timing)
 
