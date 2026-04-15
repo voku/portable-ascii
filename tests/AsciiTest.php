@@ -431,4 +431,64 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
             '2-char extra-symbol key °F must still be replaced'
         );
     }
+
+    /**
+     * ASCII::clean() must strip every byte-sequence that is not valid UTF-8
+     * per RFC 3629, while preserving sequences that are valid.
+     *
+     * Categories covered:
+     *  - C0/C1 overlong double-byte: security classic (e.g. C0 AF → "/" bypass)
+     *  - E0 80..9F overlong triple-byte: known attack vector against BMP chars
+     *  - ED A0..BF UTF-16 surrogates: can crash JSON parsers / PCRE
+     *  - F0 80..8F overlong quad-byte
+     *  - F5–F7 completely outside Unicode range
+     *  - Valid sequences must survive unchanged (regression guard)
+     *  - Mixed strings: invalid bytes removed, valid bytes kept
+     *
+     * @dataProvider provideInvalidUtf8Sequences
+     */
+    public function testCleanRemovesInvalidUtf8Sequences(string $input, string $expected): void
+    {
+        static::assertSame($expected, ASCII::clean($input));
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function provideInvalidUtf8Sequences(): array
+    {
+        return [
+            // --- Overlong double-byte (C0/C1 are never valid lead bytes) ---
+            'overlong C0 80 (overlong U+0000)' => ["\xC0\x80", ''],
+            'overlong C1 BF (overlong U+007F)' => ["\xC1\xBF", ''],
+
+            // --- Overlong triple-byte via E0 (second byte must be A0..BF) ---
+            'overlong E0 80 80 (overlong U+0000)' => ["\xE0\x80\x80", ''],
+            'overlong E0 9F BF (overlong U+07FF)' => ["\xE0\x9F\xBF", ''],
+
+            // --- UTF-16 surrogates via ED (second byte must be 80..9F) ---
+            'surrogate ED A0 80 (U+D800)' => ["\xED\xA0\x80", ''],
+            'surrogate ED BF BF (U+DFFF)' => ["\xED\xBF\xBF", ''],
+
+            // --- Overlong quad-byte via F0 (second byte must be 90..BF) ---
+            'overlong F0 80 80 80 (overlong U+0000)' => ["\xF0\x80\x80\x80", ''],
+            'overlong F0 8F BF BF (overlong U+FFFF)' => ["\xF0\x8F\xBF\xBF", ''],
+
+            // --- Out-of-range quad-byte: F5–F7 exceed U+10FFFF ---
+            'out-of-range F5 80 80 80' => ["\xF5\x80\x80\x80", ''],
+            'out-of-range F7 BF BF BF' => ["\xF7\xBF\xBF\xBF", ''],
+
+            // --- Valid sequences must be preserved (regression guard) ---
+            'valid ascii'                  => ['Hello', 'Hello'],
+            'valid 2-byte U+00C4 (Ä)'      => ["\xC3\x84", "\xC3\x84"],
+            'valid 3-byte U+20AC (€)'      => ["\xE2\x82\xAC", "\xE2\x82\xAC"],
+            'valid 4-byte U+1F600 (😀)'    => ["\xF0\x9F\x98\x80", "\xF0\x9F\x98\x80"],
+            'valid max codepoint U+10FFFF' => ["\xF4\x8F\xBF\xBF", "\xF4\x8F\xBF\xBF"],
+
+            // --- Mixed strings: invalid bytes removed, valid bytes kept ---
+            'mixed valid and overlong C0'     => ["Hello\xC0\x80World", 'HelloWorld'],
+            'mixed valid and surrogate ED'    => ["\xED\xA0\x80Hallo", 'Hallo'],
+            'mixed valid and out-of-range F5' => ["Test\xF5\x80\x80\x80End", 'TestEnd'],
+        ];
+    }
 }
