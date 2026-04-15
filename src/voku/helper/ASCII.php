@@ -1300,32 +1300,27 @@ final class ASCII
                 }
 
                 $maxKeyLength = self::$LANGUAGE_MAX_KEY[$language] ?? 0;
-                if (
-                    $replace_extra_symbols
-                    &&
-                    $maxKeyLength < 2
-                ) {
-                    $maxKeyLength = 2;
-                }
+
+                // When the full merged map is used (language="" or "en") the true maximum
+                // key length is 5, because languages like Myanmar ("my") and Bengali ("bn")
+                // contribute replacement keys up to 5 characters long.  Without this bump
+                // the 3/4/5-char combination loops are never entered, so multi-character
+                // ligatures from those languages are transliterated one character at a time
+                // instead of being replaced as a unit.
                 if (
                     $language === ''
-                    &&
-                    $maxKeyLength < 2
+                    ||
+                    $language === self::ENGLISH_LANGUAGE_CODE
                 ) {
-                    $maxKeyLength = 2;
+                    $maxKeyLength = \max($maxKeyLength, 5);
                 }
-                if (
-                    (
-                        $language === ''
-                        ||
-                        $language === self::ENGLISH_LANGUAGE_CODE
-                    )
-                    &&
-                    $maxKeyLength < 2
-                    &&
-                    \preg_match('/[\x{0370}-\x{03FF}\x{1F00}-\x{1FFF}]/u', $str) === 1
-                ) {
-                    $maxKeyLength = 2;
+
+                // Extra-symbol keys extend up to 3 characters (e.g. temperature units
+                // "°De" => " Delisle ", "°Re" => " Reaumur ", "°Ro" => " Romer ").
+                // The previous code only bumped maxKeyLength to 2 for extras, which caused
+                // 3-char extra-symbol replacements to be silently skipped.
+                if ($replace_extra_symbols) {
+                    $maxKeyLength = \max($maxKeyLength, 3);
                 }
 
                 if ($maxKeyLength >= 5) {

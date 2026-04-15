@@ -332,4 +332,103 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame('Aiti einai mia dokimi ', ASCII::to_ascii('Αυτή είναι μια δοκιμή ', 'el', true, false, false, true));
         static::assertSame('ttyaniungyath ', ASCII::to_ascii('တတျနိုငျသ ', 'my', true, false, false, true));
     }
+
+    /**
+     * When language='' or 'en', to_ascii_short() merges ALL language replacement maps,
+     * which includes Myanmar (my, maxKey=5) and Bengali (bn, maxKey=5).  The old code
+     * read maxKeyLength from ascii_language_max_key for 'en' (=0) / '' (missing, also 0)
+     * and only bumped that value to 2 — causing the 3/4/5-char replacement loops to be
+     * skipped entirely, so multi-character Myanmar/Bengali ligatures were transliterated
+     * character-by-character and produced wrong output instead of the correct merged-map
+     * replacement.
+     *
+     * Expected fix: when the requested language causes the full merged map to be used
+     * (language='' or 'en'), maxKeyLength should reflect the true maximum key length
+     * present in that merged map (5).
+     */
+    public function testMergedLanguageMapUsesCorrectMaxKeyLength()
+    {
+        // Myanmar 4-char ligature "ောင်" (e180b1 e180ac e18084 e180ba) => "aung"
+        // With language='my' this works.  With 'en' or '' the merged map still
+        // contains the key, but the maxKeyLength gate previously prevented it.
+        static::assertSame(
+            'aung',
+            ASCII::to_ascii('ောင်', 'en', false),
+            'Myanmar 4-char key must be found when language=en uses merged map'
+        );
+        static::assertSame(
+            'aung',
+            ASCII::to_ascii('ောင်', '', false),
+            'Myanmar 4-char key must be found when language="" uses merged map'
+        );
+
+        // Myanmar 5-char ligature "န်ုပ်" => "nub"
+        static::assertSame(
+            'nub',
+            ASCII::to_ascii('န်ုပ်', 'en', false),
+            'Myanmar 5-char key must be found when language=en uses merged map'
+        );
+        static::assertSame(
+            'nub',
+            ASCII::to_ascii('န်ုပ်', '', false),
+            'Myanmar 5-char key must be found when language="" uses merged map'
+        );
+
+        // Bengali 3-char ligature "ভ্ল" => "vl"
+        static::assertSame(
+            'vl',
+            ASCII::to_ascii('ভ্ল', 'en', false),
+            'Bengali 3-char key must be found when language=en uses merged map'
+        );
+        static::assertSame(
+            'vl',
+            ASCII::to_ascii('ভ্ল', '', false),
+            'Bengali 3-char key must be found when language="" uses merged map'
+        );
+    }
+
+    /**
+     * The extra-symbols replacement map (replace_extra_symbols=true) contains keys
+     * up to 3 characters long (e.g. temperature units: "°De" => " Delisle ",
+     * "°Re" => " Reaumur ", "°Ro" => " Romer ").
+     *
+     * The old code bumped maxKeyLength to at most 2 when replace_extra_symbols=true,
+     * so 3-character extra-symbol keys were silently skipped and the string was
+     * processed character-by-character instead, yielding "degDe" instead of
+     * " Delisle ".
+     *
+     * Expected fix: when replace_extra_symbols=true, maxKeyLength must be at least 3
+     * to accommodate the longest extra-symbol keys.
+     */
+    public function testExtraSymbolsThreeCharKeysAreReplaced()
+    {
+        // "°De" (U+00B0 + "De") is a 3-char key in the temperature extras map.
+        static::assertSame(
+            '350 Delisle ',
+            ASCII::to_ascii('350°De', 'temperature', false, true),
+            '3-char extra-symbol key °De must be replaced when replace_extra_symbols=true'
+        );
+        static::assertSame(
+            '100 Reaumur ',
+            ASCII::to_ascii('100°Re', 'temperature', false, true),
+            '3-char extra-symbol key °Re must be replaced when replace_extra_symbols=true'
+        );
+        static::assertSame(
+            '0 Romer ',
+            ASCII::to_ascii('0°Ro', 'temperature', false, true),
+            '3-char extra-symbol key °Ro must be replaced when replace_extra_symbols=true'
+        );
+
+        // Sanity: 2-char extra-symbol keys should still work as before.
+        static::assertSame(
+            '20 Celsius ',
+            ASCII::to_ascii('20°C', 'temperature', false, true),
+            '2-char extra-symbol key °C must still be replaced'
+        );
+        static::assertSame(
+            '98 Fahrenheit ',
+            ASCII::to_ascii('98°F', 'temperature', false, true),
+            '2-char extra-symbol key °F must still be replaced'
+        );
+    }
 }
