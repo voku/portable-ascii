@@ -1302,7 +1302,7 @@ final class ASCII
             &&
             \strlen($str) <= 200
             &&
-            \preg_match_all(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str, $matches)
+            \preg_match_all('/[^\x20-\x7E]/u', $str, $matches)
         ) {
             $cache = $REPLACE_HELPER_CACHE[$cacheKey];
             $maxKeyLength = $MAX_KEY_LENGTH[$cacheKey];
