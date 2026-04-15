@@ -1310,7 +1310,7 @@ final class ASCII
             $maxKeyLength = $MAX_KEY_LENGTH[$cacheKey];
             $chars = $matches[0];
             $charCount = \count($chars);
-            $shortStringCacheKey = $cacheKey . ':' . \serialize($chars);
+            $shortStringCacheKey = $cacheKey . ':' . \implode('|', $chars);
 
             if (!isset($LATIN_SHORT_STRING_MAP_CACHE[$shortStringCacheKey])) {
                 $filteredMap = [];
@@ -1388,7 +1388,7 @@ final class ASCII
                 $LATIN_SHORT_STRING_MAP_CACHE[$shortStringCacheKey] = $filteredMap;
             }
 
-            if ($LATIN_SHORT_STRING_MAP_CACHE[$shortStringCacheKey] !== []) {
+            if (!empty($LATIN_SHORT_STRING_MAP_CACHE[$shortStringCacheKey])) {
                 return \strtr($str, $LATIN_SHORT_STRING_MAP_CACHE[$shortStringCacheKey]);
             }
 
