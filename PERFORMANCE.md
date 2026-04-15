@@ -14,7 +14,7 @@
 |---|---|
 | **ASCII fast-path** | `preg_match('/[^\x20-\x7E]/', $str)` guard at top of `to_ascii()` — returns immediately for pure-ASCII input |
 | **MAP_BY_FIRST_BYTE** | Pre-indexes the replacement map by the leading byte of each multi-byte sequence; only builds a tiny `strtr()` map from bytes actually present in the string via `count_chars()` |
-| **Latin short-string filtered-map cache** | For short Latin-1-supplement strings (`ä`, `ö`, `ü`, `é`, `ê`, `à`, …), build and cache a tiny filtered `strtr()` map from the exact UTF-8 sequences present in the input, so repeat calls avoid rebuilding the `0xC3` bucket |
+| **Latin short-string filtered-map cache** | For short Latin-1-supplement strings (`ä`, `ö`, `ü`, `é`, `ê`, `à`, …), build and cache a tiny filtered `strtr()` map from the exact UTF-8 sequences present in the input, so repeat calls avoid rebuilding the broad `0xC2` / `0xC3` Latin buckets |
 | **WARM_MAPS cache** | Static per-`$unknown` cache in `to_transliterate()` so the replacement map is only assembled once across repeated calls |
 | **Tightened UTF-8 validation** | `clean()` now rejects C0/C1 overlongs, E0 overlongs, ED surrogates, F0 overlongs, F5–F7 out-of-range sequences |
 

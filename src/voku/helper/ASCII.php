@@ -1310,7 +1310,7 @@ final class ASCII
             $maxKeyLength = $MAX_KEY_LENGTH[$cacheKey];
             $chars = $matches[0];
             $charCount = \count($chars);
-            $shortStringCacheKey = $cacheKey . "\x00" . \implode("\x1F", $chars);
+            $shortStringCacheKey = $cacheKey . ':' . \serialize($chars);
 
             if (!isset($LATIN_SHORT_STRING_MAP_CACHE[$shortStringCacheKey])) {
                 $filteredMap = [];
