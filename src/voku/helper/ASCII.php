@@ -1244,9 +1244,9 @@ final class ASCII
     /**
      * Apply the cached ASCII replacement map to a string via strtr().
      *
-     * For medium UTF-8 inputs, building a per-call filtered map from exact byte
-     * sequences present in the input avoids feeding the full replacement table to
-     * strtr() while also avoiding unbounded per-input caches.
+     * For medium and long UTF-8 inputs, filtering the replacement table by bytes
+     * present in the input avoids feeding the full replacement table to strtr()
+     * without introducing per-input cache growth.
      *
      * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
      */
@@ -1292,63 +1292,6 @@ final class ASCII
         }
 
         if ($REPLACE_HELPER_CACHE[$cacheKey] === []) {
-            return $str;
-        }
-
-        if (
-            !$replace_extra_symbols
-            &&
-            \strlen($str) > 64
-            &&
-            \strlen($str) <= 200
-            &&
-            \preg_match_all('/[^\x20-\x7E]/u', $str, $matches)
-        ) {
-            $cache = $REPLACE_HELPER_CACHE[$cacheKey];
-            $chars = $matches[0];
-            $charCount = \count($chars);
-
-            if ($charCount === 1 && isset($cache[$chars[0]])) {
-                return \str_replace($chars[0], $cache[$chars[0]], $str);
-            }
-
-            $filteredMap = [];
-
-            if (!$replace_single_chars_only) {
-                $strLength = \strlen($str);
-                $maxKeyLength = \min($MAX_KEY_LENGTH[$cacheKey], $strLength);
-
-                for ($keyLength = $maxKeyLength; $keyLength >= 2; --$keyLength) {
-                    $lastOffset = $strLength - $keyLength;
-
-                    for ($offset = 0; $offset <= $lastOffset; ++$offset) {
-                        $candidate = (string) \substr($str, $offset, $keyLength);
-
-                        if (
-                            !isset($filteredMap[$candidate])
-                            &&
-                            isset($cache[$candidate])
-                        ) {
-                            $filteredMap[$candidate] = $cache[$candidate];
-                        }
-                    }
-                }
-            }
-
-            foreach ($chars as $char) {
-                if (
-                    !isset($filteredMap[$char])
-                    &&
-                    isset($cache[$char])
-                ) {
-                    $filteredMap[$char] = $cache[$char];
-                }
-            }
-
-            if ($filteredMap !== []) {
-                return \strtr($str, $filteredMap);
-            }
-
             return $str;
         }
 
