@@ -1244,10 +1244,9 @@ final class ASCII
     /**
      * Apply the cached ASCII replacement map to a string via strtr().
      *
-     * For short Latin-1-supplement inputs (for example German/French strings
-     * dominated by C2/C3-prefixed code points), replacing only the exact UTF-8
-     * sequences present in the input is faster than rebuilding a broad C3
-     * first-byte bucket on every call.
+     * For medium UTF-8 inputs, building a per-call filtered map from exact byte
+     * sequences present in the input avoids feeding the full replacement table to
+     * strtr() while also avoiding unbounded per-input caches.
      *
      * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
      */
@@ -1260,7 +1259,6 @@ final class ASCII
         static $REPLACE_HELPER_CACHE = [];
         static $MAP_BY_FIRST_BYTE = [];
         static $MAX_KEY_LENGTH = [];
-        static $LATIN_SHORT_STRING_MAP_CACHE = [];
         $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
 
         if (!isset($REPLACE_HELPER_CACHE[$cacheKey])) {
@@ -1300,12 +1298,13 @@ final class ASCII
         if (
             !$replace_extra_symbols
             &&
+            \strlen($str) > 64
+            &&
             \strlen($str) <= 200
             &&
             \preg_match_all('/[^\x20-\x7E]/u', $str, $matches)
         ) {
             $cache = $REPLACE_HELPER_CACHE[$cacheKey];
-            $maxKeyLength = $MAX_KEY_LENGTH[$cacheKey];
             $chars = $matches[0];
             $charCount = \count($chars);
 
@@ -1313,86 +1312,41 @@ final class ASCII
                 return \str_replace($chars[0], $cache[$chars[0]], $str);
             }
 
-            $shortStringCacheKey = $cacheKey . ':' . \implode('|', $chars);
+            $filteredMap = [];
 
-            if (!isset($LATIN_SHORT_STRING_MAP_CACHE[$shortStringCacheKey])) {
-                $filteredMap = [];
-                $charDone = [];
+            if (!$replace_single_chars_only) {
+                $strLength = \strlen($str);
+                $maxKeyLength = \min($MAX_KEY_LENGTH[$cacheKey], $strLength);
 
-                if (
-                    !$replace_single_chars_only
-                    &&
-                    $maxKeyLength >= 4
-                    &&
-                    $charCount >= 2
-                ) {
-                    if ($maxKeyLength >= 10 && $charCount >= 5) {
-                        foreach ($chars as $keyTmp => $char) {
-                            if (!isset($chars[$keyTmp + 4])) {
-                                continue;
-                            }
+                for ($keyLength = $maxKeyLength; $keyLength >= 2; --$keyLength) {
+                    $lastOffset = $strLength - $keyLength;
 
-                            $fiveChars = $chars[$keyTmp] . $chars[$keyTmp + 1] . $chars[$keyTmp + 2] . $chars[$keyTmp + 3] . $chars[$keyTmp + 4];
-                            if (!isset($charDone[$fiveChars]) && isset($cache[$fiveChars])) {
-                                $charDone[$fiveChars] = true;
-                                $filteredMap[$fiveChars] = $cache[$fiveChars];
-                            }
-                        }
-                    }
+                    for ($offset = 0; $offset <= $lastOffset; ++$offset) {
+                        $candidate = (string) \substr($str, $offset, $keyLength);
 
-                    if ($maxKeyLength >= 8 && $charCount >= 4) {
-                        foreach ($chars as $keyTmp => $char) {
-                            if (!isset($chars[$keyTmp + 3])) {
-                                continue;
-                            }
-
-                            $fourChars = $chars[$keyTmp] . $chars[$keyTmp + 1] . $chars[$keyTmp + 2] . $chars[$keyTmp + 3];
-                            if (!isset($charDone[$fourChars]) && isset($cache[$fourChars])) {
-                                $charDone[$fourChars] = true;
-                                $filteredMap[$fourChars] = $cache[$fourChars];
-                            }
-                        }
-                    }
-
-                    if ($maxKeyLength >= 6 && $charCount >= 3) {
-                        foreach ($chars as $keyTmp => $char) {
-                            if (!isset($chars[$keyTmp + 2])) {
-                                continue;
-                            }
-
-                            $threeChars = $chars[$keyTmp] . $chars[$keyTmp + 1] . $chars[$keyTmp + 2];
-                            if (!isset($charDone[$threeChars]) && isset($cache[$threeChars])) {
-                                $charDone[$threeChars] = true;
-                                $filteredMap[$threeChars] = $cache[$threeChars];
-                            }
-                        }
-                    }
-
-                    foreach ($chars as $keyTmp => $char) {
-                        if (!isset($chars[$keyTmp + 1])) {
-                            continue;
-                        }
-
-                        $twoChars = $chars[$keyTmp] . $chars[$keyTmp + 1];
-                        if (!isset($charDone[$twoChars]) && isset($cache[$twoChars])) {
-                            $charDone[$twoChars] = true;
-                            $filteredMap[$twoChars] = $cache[$twoChars];
+                        if (
+                            !isset($filteredMap[$candidate])
+                            &&
+                            isset($cache[$candidate])
+                        ) {
+                            $filteredMap[$candidate] = $cache[$candidate];
                         }
                     }
                 }
-
-                foreach ($chars as $char) {
-                    if (!isset($charDone[$char]) && isset($cache[$char])) {
-                        $charDone[$char] = true;
-                        $filteredMap[$char] = $cache[$char];
-                    }
-                }
-
-                $LATIN_SHORT_STRING_MAP_CACHE[$shortStringCacheKey] = $filteredMap;
             }
 
-            if (!empty($LATIN_SHORT_STRING_MAP_CACHE[$shortStringCacheKey])) {
-                return \strtr($str, $LATIN_SHORT_STRING_MAP_CACHE[$shortStringCacheKey]);
+            foreach ($chars as $char) {
+                if (
+                    !isset($filteredMap[$char])
+                    &&
+                    isset($cache[$char])
+                ) {
+                    $filteredMap[$char] = $cache[$char];
+                }
+            }
+
+            if ($filteredMap !== []) {
+                return \strtr($str, $filteredMap);
             }
 
             return $str;
