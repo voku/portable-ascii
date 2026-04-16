@@ -354,7 +354,7 @@ final class ASCII
      *
      * @return ($asOrigReplaceArray is true ? array{orig: list<string>, replace: list<string>} : array<string, string>)
      *
-     * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
+     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
      */
     public static function charsArrayWithOneLanguage(
         string $language = self::ENGLISH_LANGUAGE_CODE,
@@ -518,7 +518,7 @@ final class ASCII
         if ($remove_invalid_utf8) {
             $regex = '/
               (
-                (?: [\x00-\x7F]               # single-byte sequences   0xxxxxxx
+                (?: [\x00-\x7F]                           # single-byte sequences   0xxxxxxx
                 |   [\xC2-\xDF][\x80-\xBF]                # double-byte sequences   110xxxxx 10xxxxxx
                 |   \xE0[\xA0-\xBF][\x80-\xBF]            # triple-byte sequences   excluding overlongs
                 |   [\xE1-\xEC\xEE-\xEF][\x80-\xBF]{2}    # triple-byte sequences   excluding surrogates
@@ -526,10 +526,10 @@ final class ASCII
                 |   \xF0[\x90-\xBF][\x80-\xBF]{2}         # quadruple-byte sequences excluding overlongs
                 |   [\xF1-\xF3][\x80-\xBF]{3}             # quadruple-byte sequences
                 |   \xF4[\x80-\x8F][\x80-\xBF]{2}         # quadruple-byte sequences up to U+10FFFF
-                ){1,100}                      # ...one or more times
+                ){1,100}                                  # ...one or more times
               )
-            | ( [\x80-\xBF] )                 # invalid byte in range 10000000 - 10111111
-            | ( [\xC0-\xFF] )                 # invalid byte in range 11000000 - 11111111
+            | ( [\x80-\xBF] )                             # invalid byte in range 10000000 - 10111111
+            | ( [\xC0-\xFF] )                             # invalid byte in range 11000000 - 11111111
             /x';
             $str = (string) \preg_replace($regex, '$1', $str);
         }
@@ -550,7 +550,7 @@ final class ASCII
     }
 
     /**
-     * Checks if a string is 7 bit ASCII.
+     * Checks if a string is 7-bit ASCII.
      *
      * EXAMPLE: <code>
      * ASCII::is_ascii('白'); // false
@@ -814,7 +814,7 @@ final class ASCII
         $language = self::get_language($language);
         /** @phpstan-var ASCII::*_LANGUAGE_CODE $language - hack for phpstan */
 
-        // secondary fast path: only 7-bit bytes (no multi-byte UTF-8).
+        // secondary fast path: only 7-bit bytes (no multibyte UTF-8).
         // Strings with control chars (\x00-\x1F, \x7F) but no high bytes
         // still need $remove_unsupported_chars cleanup, but never need the
         // strtr replacement map because all replaceable characters are ≥ 0x80.
@@ -1112,6 +1112,13 @@ final class ASCII
                 $str = self::normalize_whitespace($str);
                 $str = self::normalize_msword($str);
                 $str = self::remove_invisible_characters($str);
+                $str = self::clean(
+                    $str,
+                    true,
+                    false,
+                    true,
+                    false
+                );
                 if (
                     $str !== $str_before_clean
                     &&
@@ -1303,7 +1310,7 @@ final class ASCII
      * present in the input avoids feeding the full replacement table to strtr()
      * without introducing per-input cache growth.
      *
-     * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
+     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
      */
     private static function to_ascii_replace(
         string $str,
@@ -1497,7 +1504,7 @@ final class ASCII
     }
 
     /**
-     * @phpstan-param ASCII::*_LANGUAGE_CODE|'' $language
+     * @phpstan-param ASCII::*_LANGUAGE_CODE $language
      *
      * @return array<string, string>
      */

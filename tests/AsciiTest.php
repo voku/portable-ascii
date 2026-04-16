@@ -500,4 +500,133 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
             'mixed valid and out-of-range F5' => ["Test\xF5\x80\x80\x80End", 'TestEnd'],
         ];
     }
+
+    public function testToSlugifyWithCustomSeparator()
+    {
+        // Test with underscore separator
+        static::assertSame('hello_world', ASCII::to_slugify('Hello World', '_'));
+
+        // Test with underscore and no lowercase (CamelCase)
+        // 'CamelCase' -> 'Camel-Case' -> 'Camel_Case'
+        static::assertSame('Camel_Case', ASCII::to_slugify('CamelCase', '_', 'en', [], false, false));
+    }
+
+    public function testToSlugifyWithSpecialCharsInSeparator()
+    {
+        // Test with separator that needs regex quoting (e.g. '.')
+        static::assertSame('hello.world', ASCII::to_slugify('Hello World', '.'));
+        static::assertSame('Camel.Case', ASCII::to_slugify('CamelCase', '.', 'en', [], false, false));
+    }
+
+    public function testToAsciiWithExtraSymbols()
+    {
+        // This uses the new to_ascii_replace logic
+        $str = 'test © test';
+        // Note: the map for '©' is ' (c) ', so with spaces around it in input, we get double spaces.
+        // This is consistent with the mapping data.
+        static::assertSame('test  (c)  test', ASCII::to_ascii($str, 'en', false, true));
+    }
+
+    public function testToAsciiWithExtraSymbolsAndCleanup()
+    {
+        $str = 'test © test';
+        // Cleanup (remove_unsupported_chars=true) doesn't collapse spaces.
+        static::assertSame('test  (c)  test', ASCII::to_ascii($str, 'en', true, true));
+    }
+
+    public function testToAsciiWithExtraSymbolsAndSingleCharsOnly()
+    {
+        $str = 'test © test';
+        static::assertSame('test  (c)  test', ASCII::to_ascii($str, 'en', false, true, false, true));
+    }
+
+    public function testToSlugifyWithExtraSymbols()
+    {
+        $str = 'test © test';
+        // to_slugify collapses multiple separators/spaces.
+        static::assertSame('test-c-test', ASCII::to_slugify($str, '-', 'en', [], true));
+    }
+
+    public function testToTransliterateWithStrict()
+    {
+        // If intl is available, it should use it.
+        $str = 'déjà vu';
+        static::assertSame('deja vu', ASCII::to_transliterate($str, '?', true));
+    }
+
+    public function testToTransliterateWithUnknownNull()
+    {
+        // When unknown is null, it should keep the original character if it can't transliterate.
+        // But for many emojis, it DOES have a transliteration (to empty string or space sometimes).
+        // Let's find a character that is NOT in the maps.
+        // U+10FFFF is likely not in any map.
+        $str = "\xF4\x8F\xBF\xBF";
+        // If it's valid UTF-8 but not in map, and unknown is null, it should be kept.
+        static::assertSame($str, ASCII::to_transliterate($str, null, false));
+
+        // If it's NOT valid UTF-8, it should be removed by clean() even if unknown is null.
+        static::assertSame('', ASCII::to_transliterate("\xC0\xAF", null, false));
+    }
+
+    public function testCleanWithRemoveInvalidUtf8False()
+    {
+        $invalidUtf8 = "a\xC0\xAFb";
+        // Default is true, so it's removed
+        static::assertSame('ab', ASCII::clean($invalidUtf8));
+        // If false, it should be kept (by the regex part that matches single bytes if they are not part of a valid sequence)
+        static::assertSame($invalidUtf8, ASCII::clean($invalidUtf8, true, false, true, true, false));
+    }
+
+    public function testToAsciiRemapStillWorks()
+    {
+        static::assertSame(['testi' . \chr(128) . 'g', 'testing'], ASCII::to_ascii_remap('testiñg', 'testing'));
+    }
+
+    public function testToAsciiWithMalformedUtf8()
+    {
+        // Test how to_ascii handles malformed UTF-8 with its new fast paths
+        $invalidUtf8 = "a\xC0\xAFb";
+        // to_ascii calls clean() by default if it's not pure ASCII.
+        // \xC0\xAF is not pure ASCII.
+        static::assertSame('ab', ASCII::to_ascii($invalidUtf8));
+    }
+
+    public function testToTransliterateWithEmptyUnknown()
+    {
+        $str = '😀';
+        static::assertSame('', ASCII::to_transliterate($str, '', false));
+    }
+
+    public function testToAsciiWithUnsupportedChars()
+    {
+        // Emoji is not in the 'en' replacement map.
+        $str = 'hello 😀';
+        // By default, it's removed.
+        static::assertSame('hello ', ASCII::to_ascii($str, 'en', true));
+        // If remove_unsupported_chars=false, it's kept?
+        // No, to_ascii only keeps ASCII.
+        // Wait, what does to_ascii do if remove_unsupported_chars=false?
+        // It should NOT run the final cleanup.
+        static::assertSame('hello 😀', ASCII::to_ascii($str, 'en', false));
+
+        // If use_transliterate=true, it should use to_transliterate for the emoji.
+        static::assertSame('hello ', ASCII::to_ascii($str, 'en', true, false, true));
+    }
+
+    public function testToAsciiWithLongStringAndFilteredMap()
+    {
+        // A long string to exercise the MAP_BY_FIRST_BYTE optimization
+        $str = \str_repeat('abc ', 100) . '©' . \str_repeat(' def', 100);
+        $result = ASCII::to_ascii($str, 'en', true, true);
+        static::assertStringContainsString('(c)', $result);
+    }
+
+    public function testToAsciiWithLanguageSpecificExtraSymbols()
+    {
+        // '∞' in Dutch (nl) is ' oneindig '
+        // '∞' in Italian (it) is ' infinito '
+        $str = '∞';
+        static::assertSame(' oneindig ', ASCII::to_ascii($str, 'nl', true, true));
+        static::assertSame(' infinito ', ASCII::to_ascii($str, 'it', true, true));
+    }
 }
