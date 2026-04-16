@@ -583,7 +583,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
                 'expected' => 'fussgaengeruebergaenge-in-duesseldorf-altstadt',
             ],
             'english unicode input still follows legacy dropping rules' => [
-                'arguments' => ["A中"],
+                'arguments' => ['A中'],
                 'expected' => 'a',
             ],
         ];
