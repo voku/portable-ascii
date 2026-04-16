@@ -75,6 +75,16 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('ab', ASCII::to_transliterate("a\xC0\xAFb", 'X', false));
     }
 
+    public function testLeadingMalformedUtf8IsDroppedWhileTrailingAsciiIsPreserved()
+    {
+        static::assertSame('x', ASCII::to_transliterate("\xC0\xAFx", '?', false));
+        static::assertSame('x', ASCII::to_transliterate("\xC0\xAFx", 'X', false));
+        static::assertSame('x', ASCII::to_transliterate("\xC0\xAFx", null, false));
+
+        // Repeat the same input to cover the warm-path cache after the first pass.
+        static::assertSame('x', ASCII::to_transliterate("\xC0\xAFx", '?', false));
+    }
+
     public function testUnknownWithPregSpecialCharsIsLiteral()
     {
         static::assertSame('$0', ASCII::to_transliterate('😀', '$0', false));

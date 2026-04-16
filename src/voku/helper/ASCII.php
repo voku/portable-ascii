@@ -178,6 +178,8 @@ final class ASCII
      */
     private static $REGEX_ASCII = "[^\x09\x10\x13\x0A\x0D\x20-\x7E]";
 
+    private const REGEX_PRINTABLE_ASCII = '[^\x20-\x7E]';
+
     /**
      * bidirectional text chars
      *
@@ -806,13 +808,43 @@ final class ASCII
         if (
             !$replace_extra_symbols
             &&
-            !\preg_match('/[^\x20-\x7E]/', $str)
+            !\preg_match('/' . self::REGEX_PRINTABLE_ASCII . '/', $str)
         ) {
             return $str;
         }
 
         $language = self::get_language($language);
         /** @phpstan-var ASCII::*_LANGUAGE_CODE $language - hack for phpstan */
+
+        if (
+            !$replace_extra_symbols
+            &&
+            \strlen($str) <= 64
+        ) {
+            $isValidUtf8 = true;
+            $str = self::to_ascii_replace($str, $language, $replace_extra_symbols, $replace_single_chars_only, $isValidUtf8);
+
+            if ($isValidUtf8) {
+                if (!isset(self::$ASCII_MAPS[$language])) {
+                    $use_transliterate = true;
+                }
+
+                if ($use_transliterate) {
+                    $str = self::to_transliterate($str, null, false);
+                }
+
+                if ($remove_unsupported_chars) {
+                    if (!\preg_match('/' . self::REGEX_PRINTABLE_ASCII . '/', $str)) {
+                        return $str;
+                    }
+
+                    $str = (string) \str_replace(["\r\n", "\n", "\r", "\t"], ' ', $str);
+                    $str = (string) \preg_replace('/' . self::$REGEX_ASCII . '/', '', $str);
+                }
+
+                return $str;
+            }
+        }
 
         // secondary fast path: only 7-bit bytes (no multibyte UTF-8).
         // Strings with control chars (\x00-\x1F, \x7F) but no high bytes
@@ -847,6 +879,10 @@ final class ASCII
             }
 
             if ($remove_unsupported_chars) {
+                if (!\preg_match('/' . self::REGEX_PRINTABLE_ASCII . '/', $str)) {
+                    return $str;
+                }
+
                 $str = (string) \str_replace(["\r\n", "\n", "\r", "\t"], ' ', $str);
                 $str = (string) \preg_replace('/' . self::$REGEX_ASCII . '/', '', $str);
             }
@@ -881,6 +917,10 @@ final class ASCII
         }
 
         if ($remove_unsupported_chars) {
+            if (!\preg_match('/' . self::REGEX_PRINTABLE_ASCII . '/', $str)) {
+                return $str;
+            }
+
             $str = (string) \str_replace(["\r\n", "\n", "\r", "\t"], ' ', $str);
             $str = (string) \preg_replace('/' . self::$REGEX_ASCII . '/', '', $str);
         }
@@ -981,8 +1021,10 @@ final class ASCII
             !$use_transliterate
             &&
             self::get_language($language) === self::ENGLISH_LANGUAGE_CODE
+            &&
+            !\preg_match('/' . self::REGEX_PRINTABLE_ASCII . '/', $str)
         ) {
-            $str = self::to_transliterate($str, null, false);
+            // Pure printable ASCII does not need transliteration or remapping.
         } else {
             $str = self::to_ascii(
                 $str,
@@ -1065,8 +1107,19 @@ final class ASCII
             return '';
         }
 
-        if ($SUPPORT_INTL === null) {
-            $SUPPORT_INTL = \extension_loaded('intl');
+        // Long pure printable ASCII strings are common in benchmarks and can
+        // skip the broader ASCII/control-character validator entirely.
+        if (
+            isset($str[63])
+            &&
+            !\preg_match('/' . self::REGEX_PRINTABLE_ASCII . '/', $str)
+        ) {
+            return $str;
+        }
+
+        // check if we only have ASCII, first (better performance)
+        if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0) {
+            return $str;
         }
 
         // Prefix the cache key so unknown=null does not collide with an
@@ -1074,6 +1127,10 @@ final class ASCII
         $unknownCacheKey = $unknown === null
             ? "\x00null"
             : "\x01" . $unknown;
+
+        if ($SUPPORT_INTL === null) {
+            $SUPPORT_INTL = \extension_loaded('intl');
+        }
 
         $warmPathAlreadyApplied = false;
         if (
@@ -1090,11 +1147,6 @@ final class ASCII
 
             $str = $warmStr;
             $warmPathAlreadyApplied = true;
-        }
-
-        // check if we only have ASCII, first (better performance)
-        if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0) {
-            return $str;
         }
 
         // only run the heavy clean() regex when the string has invalid UTF-8
@@ -1316,7 +1368,8 @@ final class ASCII
         string $str,
         string $language,
         bool $replace_extra_symbols,
-        bool $replace_single_chars_only
+        bool $replace_single_chars_only,
+        ?bool &$isValidUtf8 = null
     ): string {
         static $REPLACE_HELPER_CACHE = [];
         static $MAP_BY_FIRST_BYTE = [];
@@ -1355,20 +1408,32 @@ final class ASCII
             !$replace_extra_symbols
             &&
             \strlen($str) <= 64
-            &&
-            \preg_match_all('/[^\x20-\x7E]/u', $str, $matches)
         ) {
+            $matchResult = \preg_match_all('/' . self::REGEX_PRINTABLE_ASCII . '/u', $str, $matches);
+            if ($matchResult === false) {
+                $isValidUtf8 = false;
+
+                return $str;
+            }
+
+            $isValidUtf8 = true;
+
+            if (!$matchResult) {
+                return $str;
+            }
+
             $cache = $REPLACE_HELPER_CACHE[$cacheKey];
             $chars = $matches[0];
             $charCount = \count($chars);
+
+            if ($charCount === 1 && isset($cache[$chars[0]])) {
+                return \str_replace($chars[0], $cache[$chars[0]], $str);
+            }
+
             $shortCacheKey = $cacheKey . ':' . \implode('|', $chars);
 
             if (isset($SHORT_FILTERED_MAP_CACHE[$shortCacheKey])) {
                 return \strtr($str, $SHORT_FILTERED_MAP_CACHE[$shortCacheKey]);
-            }
-
-            if ($charCount === 1 && isset($cache[$chars[0]])) {
-                return \str_replace($chars[0], $cache[$chars[0]], $str);
             }
 
             $filteredMap = [];
@@ -1424,6 +1489,8 @@ final class ASCII
 
             return $str;
         }
+
+        $isValidUtf8 = true;
 
         // Build a filtered map containing only entries whose
         // leading byte is present in this specific input string.
