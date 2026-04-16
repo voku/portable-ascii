@@ -172,8 +172,8 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
     public function testToAsciiHandlesMixedAsciiAndNonAsciiMapKeysAcrossLengthBuckets()
     {
-        $short = \str_repeat("A̧", 10);
-        $medium = \str_repeat("A̧", 30);
+        $short = \str_repeat('A̧', 10);
+        $medium = \str_repeat('A̧', 30);
 
         static::assertSame(\str_repeat('A', 10), ASCII::to_ascii($short, '', false), 'tested: short mixed key');
         static::assertSame(\str_repeat('A', 30), ASCII::to_ascii($medium, '', false), 'tested: medium mixed key');
