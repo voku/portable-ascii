@@ -172,11 +172,6 @@ final class ASCII
     private static $ORD;
 
     /**
-     * @var array<string, int>|null
-     */
-    private static $LANGUAGE_MAX_KEY;
-
-    /**
      * url: https://en.wikipedia.org/wiki/Wikipedia:ASCII#ASCII_printable_characters
      *
      * @var string
@@ -859,15 +854,30 @@ final class ASCII
             return $str;
         }
 
-        // Apply the ASCII replacement map via strtr().
-        $str = self::to_ascii_replace($str, $language, $replace_extra_symbols, $replace_single_chars_only);
-
         if (!isset(self::$ASCII_MAPS[$language])) {
             $use_transliterate = true;
         }
 
-        if ($use_transliterate) {
+        // For English transliteration mode, going directly through
+        // to_transliterate() avoids an expensive replacement-map pass that
+        // rarely contributes useful substitutions for non-Latin long strings.
+        if (
+            $use_transliterate
+            &&
+            !$replace_extra_symbols
+            &&
+            !$replace_single_chars_only
+            &&
+            $language === self::ENGLISH_LANGUAGE_CODE
+        ) {
             $str = self::to_transliterate($str, null, false);
+        } else {
+            // Apply the ASCII replacement map via strtr().
+            $str = self::to_ascii_replace($str, $language, $replace_extra_symbols, $replace_single_chars_only);
+
+            if ($use_transliterate) {
+                $str = self::to_transliterate($str, null, false);
+            }
         }
 
         if ($remove_unsupported_chars) {
@@ -965,28 +975,43 @@ final class ASCII
             $str = \str_replace($from, $to, $str);
         }
 
-        $str = self::to_ascii(
-            $str,
-            $language,
-            false,
-            $replace_extra_symbols,
-            $use_transliterate
-        );
+        if (
+            !$replace_extra_symbols
+            &&
+            !$use_transliterate
+            &&
+            self::get_language($language) === self::ENGLISH_LANGUAGE_CODE
+        ) {
+            $str = self::to_transliterate($str, null, false);
+        } else {
+            $str = self::to_ascii(
+                $str,
+                $language,
+                false,
+                $replace_extra_symbols,
+                $use_transliterate
+            );
+        }
 
         $str = \str_replace('@', $separator, $str);
 
-        $str = (string) \preg_replace(
-            '/[^a-zA-Z\\d\\s\\-_' . \preg_quote($separator, '/') . ']/',
-            '',
-            $str
-        );
-
         if ($use_str_to_lower) {
             $str = \strtolower($str);
+            $str = (string) \preg_replace(
+                '/[^a-z\\d\\s\\-_' . \preg_quote($separator, '/') . ']/',
+                '',
+                $str
+            );
+        } else {
+            $str = (string) \preg_replace(
+                '/[^a-zA-Z\\d\\s\\-_' . \preg_quote($separator, '/') . ']/',
+                '',
+                $str
+            );
+            $str = (string) \preg_replace('/\\B([A-Z])/', '-\1', $str);
         }
 
         $str = (string) \preg_replace('/^[\'\\s]+|[\'\\s]+$/', '', $str);
-        $str = (string) \preg_replace('/\\B([A-Z])/', '-\1', $str);
         $str = (string) \preg_replace('/[\\-_\\s]+/', $separator, $str);
 
         $l = \strlen($separator);
@@ -1033,6 +1058,8 @@ final class ASCII
 
         /** @var array<string, string|false> */
         static $TRANSLIT_CHAR_CACHE = [];
+        /** @var array<string, array<string, string>> */
+        static $WARM_MAPS = [];
 
         if ($str === '') {
             return '';
@@ -1042,6 +1069,29 @@ final class ASCII
             $SUPPORT_INTL = \extension_loaded('intl');
         }
 
+        // Prefix the cache key so unknown=null does not collide with an
+        // explicit fallback string such as "\x00".
+        $unknownCacheKey = $unknown === null
+            ? "\x00null"
+            : "\x01" . $unknown;
+
+        $warmPathAlreadyApplied = false;
+        if (
+            $unknown !== '?'
+            &&
+            isset($WARM_MAPS[$unknownCacheKey])
+            &&
+            \preg_match('//u', $str) === 1
+        ) {
+            $warmStr = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
+            if (!\preg_match('/[\x80-\xFF]/', $warmStr)) {
+                return $warmStr;
+            }
+
+            $str = $warmStr;
+            $warmPathAlreadyApplied = true;
+        }
+
         // check if we only have ASCII, first (better performance)
         if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0) {
             return $str;
@@ -1049,16 +1099,26 @@ final class ASCII
 
         // only run the heavy clean() regex when the string has invalid UTF-8
         if (\preg_match('//u', $str) === 1) {
-            $str_before_clean = $str;
-            $str = self::normalize_whitespace($str);
-            $str = self::normalize_msword($str);
-            $str = self::remove_invisible_characters($str);
             if (
-                $str !== $str_before_clean
-                &&
-                \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
+                $unknown === '?'
+                ||
+                \strpos($str, "\xC2") !== false
+                ||
+                \strpos($str, "\xE2") !== false
+                ||
+                \preg_match('/[\x00-\x1F\x7F]/', $str) === 1
             ) {
-                return $str;
+                $str_before_clean = $str;
+                $str = self::normalize_whitespace($str);
+                $str = self::normalize_msword($str);
+                $str = self::remove_invisible_characters($str);
+                if (
+                    $str !== $str_before_clean
+                    &&
+                    \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
+                ) {
+                    return $str;
+                }
             }
         } else {
             $str_before_clean = $str;
@@ -1107,17 +1167,12 @@ final class ASCII
         /** @var array<string, int> $ordMap */
         $ordMap = self::$ORD;
 
-        /** @var array<string, array<string, string>> */
-        static $WARM_MAPS = [];
-
-        // Prefix the cache key so unknown=null does not collide with an
-        // explicit fallback string such as "\x00".
-        $unknownCacheKey = $unknown === null
-            ? "\x00null"
-            : "\x01" . $unknown;
-
         // warm path: if we already built a map for this $unknown value, try it first
-        if (isset($WARM_MAPS[$unknownCacheKey])) {
+        if (
+            !$warmPathAlreadyApplied
+            &&
+            isset($WARM_MAPS[$unknownCacheKey])
+        ) {
             $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
 
             if (!\preg_match('/[\x80-\xFF]/', $str)) {
@@ -1258,7 +1313,8 @@ final class ASCII
     ): string {
         static $REPLACE_HELPER_CACHE = [];
         static $MAP_BY_FIRST_BYTE = [];
-        static $MAX_KEY_LENGTH = [];
+        static $SHORT_FILTERED_MAP_CACHE = [];
+        static $SHORT_FILTERED_MAP_CACHE_QUEUE = [];
         $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
 
         if (!isset($REPLACE_HELPER_CACHE[$cacheKey])) {
@@ -1272,19 +1328,12 @@ final class ASCII
                 $REPLACE_HELPER_CACHE[$cacheKey] = \array_merge([], $langAll, $langSpecific);
             }
 
-            $MAX_KEY_LENGTH[$cacheKey] = 0;
-
             // Pre-index by first byte so long-string calls can cheaply skip most of
             // the replacement table instead of feeding the full language map to strtr().
             $MAP_BY_FIRST_BYTE[$cacheKey] = [];
             foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $key => $val) {
                 if ($key === '') {
                     continue;
-                }
-
-                $keyLength = \strlen($key);
-                if ($keyLength > $MAX_KEY_LENGTH[$cacheKey]) {
-                    $MAX_KEY_LENGTH[$cacheKey] = $keyLength;
                 }
 
                 $MAP_BY_FIRST_BYTE[$cacheKey][$key[0]][$key] = $val;
@@ -1295,16 +1344,81 @@ final class ASCII
             return $str;
         }
 
-        // Short strings: feed the full cached map to strtr() directly.
-        // PHP's strtr() with an array uses Aho-Corasick matching which handles
-        // even large maps efficiently on small input, and the automaton-build
-        // overhead is negligible for ≤ 64-byte strings — still faster than
-        // the per-call count_chars + filtered-map construction.
-        if (\strlen($str) <= 64) {
-            return \strtr($str, $REPLACE_HELPER_CACHE[$cacheKey]);
+        if (
+            !$replace_extra_symbols
+            &&
+            \strlen($str) <= 64
+            &&
+            \preg_match_all('/[^\x20-\x7E]/u', $str, $matches)
+        ) {
+            $cache = $REPLACE_HELPER_CACHE[$cacheKey];
+            $chars = $matches[0];
+            $charCount = \count($chars);
+            $shortCacheKey = $cacheKey . ':' . \implode('|', $chars);
+
+            if (isset($SHORT_FILTERED_MAP_CACHE[$shortCacheKey])) {
+                return \strtr($str, $SHORT_FILTERED_MAP_CACHE[$shortCacheKey]);
+            }
+
+            if ($charCount === 1 && isset($cache[$chars[0]])) {
+                return \str_replace($chars[0], $cache[$chars[0]], $str);
+            }
+
+            $filteredMap = [];
+
+            if (
+                !$replace_single_chars_only
+                &&
+                $charCount >= 2
+            ) {
+                // Mixed keys like "A̧" (ASCII + combining mark) are rare; let
+                // strtr handle those with the full map to preserve correctness.
+                if (\preg_match('/[A-Za-z][\x{0300}-\x{036F}]/u', $str) === 1) {
+                    return \strtr($str, $cache);
+                }
+
+                for ($span = 5; $span >= 2; --$span) {
+                    if ($charCount < $span) {
+                        continue;
+                    }
+
+                    $lastIndex = $charCount - $span;
+                    for ($idx = 0; $idx <= $lastIndex; ++$idx) {
+                        $candidate = '';
+                        for ($offset = 0; $offset < $span; ++$offset) {
+                            $candidate .= $chars[$idx + $offset];
+                        }
+
+                        if (isset($cache[$candidate])) {
+                            $filteredMap[$candidate] = $cache[$candidate];
+                        }
+                    }
+                }
+            }
+
+            foreach ($chars as $char) {
+                if (isset($cache[$char])) {
+                    $filteredMap[$char] = $cache[$char];
+                }
+            }
+
+            if ($filteredMap !== []) {
+                $SHORT_FILTERED_MAP_CACHE[$shortCacheKey] = $filteredMap;
+                $SHORT_FILTERED_MAP_CACHE_QUEUE[] = $shortCacheKey;
+                if (\count($SHORT_FILTERED_MAP_CACHE_QUEUE) > 256) {
+                    $oldestKey = \array_shift($SHORT_FILTERED_MAP_CACHE_QUEUE);
+                    if ($oldestKey !== null) {
+                        unset($SHORT_FILTERED_MAP_CACHE[$oldestKey]);
+                    }
+                }
+
+                return \strtr($str, $filteredMap);
+            }
+
+            return $str;
         }
 
-        // Long strings: build a filtered map containing only entries whose
+        // Build a filtered map containing only entries whose
         // leading byte is present in this specific input string.
         $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
         $filteredMap = [];

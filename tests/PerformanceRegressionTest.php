@@ -46,6 +46,41 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
         $mixedShort = 'déjà σσς iıii';
         $slugAsciiShort = 'Using strings like foo bar';
         $slugLatinShort = 'Using strings like fòô bàř';
+        /** @var array<int, int> $slugLoopCounts */
+        $slugLoopCounts = [1, 10, 100, 1000];
+        /** @var array<string, array{language: string, input: string, expected: string}> $localizedSlugScenarios */
+        $localizedSlugScenarios = [
+            'en' => [
+                'language' => 'en',
+                'input' => 'Using strings like foo bar',
+                'expected' => 'using-strings-like-foo-bar',
+            ],
+            'de' => [
+                'language' => 'de',
+                'input' => 'Fußgängerübergänge in Düsseldorf Altstadt',
+                'expected' => 'fussgaengeruebergaenge-in-duesseldorf-altstadt',
+            ],
+            'fr' => [
+                'language' => 'fr',
+                'input' => 'Événement spécial à l\'Opéra de Montréal',
+                'expected' => 'evenement-special-a-lopera-de-montreal',
+            ],
+            'es' => [
+                'language' => 'es',
+                'input' => 'Niño y acción en corazón de Bogotá',
+                'expected' => 'nino-y-accion-en-corazon-de-bogota',
+            ],
+            'ru' => [
+                'language' => 'ru',
+                'input' => 'Тестовый заголовок для новостей в Москве',
+                'expected' => 'testovyy-zagolovok-dlya-novostey-v-moskve',
+            ],
+            'tr' => [
+                'language' => 'tr',
+                'input' => 'Iğdır İstanbul için çağrı',
+                'expected' => 'igdir-istanbul-icin-cagri',
+            ],
+        ];
         $asciiLong = \str_repeat('Plain ASCII text 123 test ', 128);
         $greekLong = \str_repeat('Αυτή είναι μια δοκιμή ', 128);
         $myanmarLong = \str_repeat('တတျနိုငျသ ', 128);
@@ -166,6 +201,23 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
                 1000
             ),
         ];
+
+        foreach ($localizedSlugScenarios as $scenarioLabel => $scenario) {
+            static::assertSame(
+                $scenario['expected'],
+                ASCII::to_slugify($scenario['input'], '-', $scenario['language']),
+                'tested localized slug scenario: ' . $scenarioLabel
+            );
+
+            foreach ($slugLoopCounts as $loopCount) {
+                $benchmarks['to_slugify_' . $scenarioLabel . '_n' . $loopCount] = $this->benchmarkScenario(
+                    function () use ($scenario): string {
+                        return ASCII::to_slugify($scenario['input'], '-', $scenario['language']);
+                    },
+                    $loopCount
+                );
+            }
+        }
 
         $this->writeBenchmarks($benchmarks);
 
