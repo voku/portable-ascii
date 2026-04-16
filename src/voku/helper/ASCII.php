@@ -1141,7 +1141,7 @@ final class ASCII
             \preg_match('//u', $str) === 1
         ) {
             $warmStr = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
-            if (!\preg_match('/[\x80-\xFF]/', $warmStr)) {
+            if (!\preg_match('/[\x80-\xFF\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $warmStr)) {
                 return $warmStr;
             }
 
@@ -1158,7 +1158,7 @@ final class ASCII
                 ||
                 \strpos($str, "\xE2") !== false
                 ||
-                \preg_match('/[\x00-\x1F\x7F]/', $str) === 1
+                \preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) === 1
             ) {
                 $str_before_clean = $str;
                 $str = self::normalize_whitespace($str);

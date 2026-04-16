@@ -179,6 +179,50 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame(\str_repeat('A', 30), ASCII::to_ascii($medium, '', false), 'tested: medium mixed key');
     }
 
+    public function testToAsciiShortcutBranchesStayCorrectAcrossRepeatedCalls()
+    {
+        $cases = [
+            'pure printable ASCII fast path' => [
+                'arguments' => ['Plain ASCII text 123 test', 'en', true],
+                'expected' => 'Plain ASCII text 123 test',
+            ],
+            'secondary 7-bit path without cleanup' => [
+                'arguments' => ["a\n\tb\rc", 'en', false],
+                'expected' => "a\n\tb\rc",
+            ],
+            'secondary 7-bit path with cleanup' => [
+                'arguments' => ["a\n\tb\rc", 'en', true],
+                'expected' => 'a  b c',
+            ],
+            'short single-char replacement path' => [
+                'arguments' => ['Düsseldorf', 'de', true],
+                'expected' => 'Duesseldorf',
+            ],
+            'short filtered-map path' => [
+                'arguments' => ['déjà σσς iıii', 'en', true],
+                'expected' => 'deja sss iiii',
+            ],
+            'invalid UTF-8 fallback path' => [
+                'arguments' => ["a\xC0\xAFb", 'en', true],
+                'expected' => 'ab',
+            ],
+            'english transliteration shortcut for non-latin input' => [
+                'arguments' => ['中文空白測試', 'en', true, false, true],
+                'expected' => 'Zhong Wen Kong Bai Ce Shi ',
+            ],
+        ];
+
+        foreach ($cases as $label => $scenario) {
+            for ($pass = 1; $pass <= 2; ++$pass) {
+                static::assertSame(
+                    $scenario['expected'],
+                    \call_user_func_array([ASCII::class, 'to_ascii'], $scenario['arguments']),
+                    $label . ' pass ' . $pass
+                );
+            }
+        }
+    }
+
     public function testRemoveInvisibleCharacters()
     {
         $testArray = [
@@ -525,6 +569,34 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame('a', ASCII::to_slugify("A中"));
         static::assertSame('coxi', ASCII::to_slugify('ç😊中ö!xi'));
         static::assertSame('iaxzozc-ezssa-ups', ASCII::to_slugify("İäxzözC é🚀Жßà-ü£\n"));
+    }
+
+    public function testToSlugifyShortcutBranchesStayCorrectAcrossRepeatedCalls()
+    {
+        $cases = [
+            'pure printable ASCII English shortcut' => [
+                'arguments' => ['Using strings like foo bar'],
+                'expected' => 'using-strings-like-foo-bar',
+            ],
+            'localized slugify path still goes through transliteration' => [
+                'arguments' => ['Fußgängerübergänge in Düsseldorf Altstadt', '-', 'de'],
+                'expected' => 'fussgaengeruebergaenge-in-duesseldorf-altstadt',
+            ],
+            'english unicode input still follows legacy dropping rules' => [
+                'arguments' => ["A中"],
+                'expected' => 'a',
+            ],
+        ];
+
+        foreach ($cases as $label => $scenario) {
+            for ($pass = 1; $pass <= 2; ++$pass) {
+                static::assertSame(
+                    $scenario['expected'],
+                    \call_user_func_array([ASCII::class, 'to_slugify'], $scenario['arguments']),
+                    $label . ' pass ' . $pass
+                );
+            }
+        }
     }
 
     public function testToAsciiWithExtraSymbols()

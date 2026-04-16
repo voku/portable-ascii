@@ -85,6 +85,58 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('x', ASCII::to_transliterate("\xC0\xAFx", '?', false));
     }
 
+    public function testBasicControlCharactersArePreservedDuringTransliteration()
+    {
+        $input = "déjà\n\tvu\rStraße";
+
+        static::assertSame("deja\n\tvu\rStrasse", ASCII::to_transliterate($input, '?', false));
+        static::assertSame("deja\n\tvu\rStrasse", ASCII::to_transliterate($input, '?', false));
+    }
+
+    public function testNonBasicControlCharactersAreStillRemovedDuringTransliteration()
+    {
+        static::assertSame('dejavu', ASCII::to_transliterate("déjà\x01vu", '?', false));
+        static::assertSame('dejavu', ASCII::to_transliterate("déjà\x0Bvu", '?', false));
+        static::assertSame('dejavu', ASCII::to_transliterate("déjà\x7Fvu", '?', false));
+    }
+
+    public function testWarmUnknownFallbackDoesNotSkipControlByteCleanup()
+    {
+        static::assertSame('X', ASCII::to_transliterate("😀\x01", 'X', false));
+        static::assertSame('X', ASCII::to_transliterate("😀\x01", 'X', false));
+
+        static::assertSame("X\n", ASCII::to_transliterate("😀\n", 'X', false));
+        static::assertSame("X\n", ASCII::to_transliterate("😀\n", 'X', false));
+    }
+
+    public function testTransliterateShortcutBranchesStayCorrectAcrossRepeatedCalls()
+    {
+        $cases = [
+            'long printable ASCII fast path' => [
+                'arguments' => [\str_repeat('Plain ASCII text 123 test ', 4), '?', false],
+                'expected' => \str_repeat('Plain ASCII text 123 test ', 4),
+            ],
+            'basic controls remain preserved' => [
+                'arguments' => ["a\n\tb\rc", '?', false],
+                'expected' => "a\n\tb\rc",
+            ],
+            'warm unknown fallback cache for unmapped characters' => [
+                'arguments' => ['😀', 'X', false],
+                'expected' => 'X',
+            ],
+        ];
+
+        foreach ($cases as $label => $scenario) {
+            for ($pass = 1; $pass <= 2; ++$pass) {
+                static::assertSame(
+                    $scenario['expected'],
+                    \call_user_func_array([ASCII::class, 'to_transliterate'], $scenario['arguments']),
+                    $label . ' pass ' . $pass
+                );
+            }
+        }
+    }
+
     public function testUnknownWithPregSpecialCharsIsLiteral()
     {
         static::assertSame('$0', ASCII::to_transliterate('😀', '$0', false));
