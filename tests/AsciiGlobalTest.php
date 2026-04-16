@@ -219,6 +219,14 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         static::assertSame('&', $array['orig'][$tmpKey]);
     }
 
+    public function testCharsArrayWithOneLanguageWithUnknownLanguageAndExtras()
+    {
+        $array = ASCII::charsArrayWithOneLanguage('####', true);
+
+        static::assertSame([], $array['replace']);
+        static::assertSame([], $array['orig']);
+    }
+
     public function testCharsArrayWithSingleLanguageValues()
     {
         $array = ASCII::charsArrayWithSingleLanguageValues();
@@ -617,6 +625,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         static::assertSame('﻿„Abcdef  …” — 😃', ASCII::clean($dirtyTestString, true, true, false, true));
         static::assertSame('﻿"Abcdef  ..." - 😃', ASCII::clean($dirtyTestString, true, true, true, false));
         static::assertSame('﻿"Abcdef  ..." - 😃', ASCII::clean($dirtyTestString, true, true, true, true));
+        static::assertSame('﻿„Abcdef  …” — 😃', ASCII::clean($dirtyTestString, false, true, false, false, false));
     }
 
     public function testLanguageFiles()

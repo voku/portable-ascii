@@ -29,6 +29,161 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('testing', ASCII::to_transliterate($str));
     }
 
+    public function testMalformedUtf8SequencesAreDiscarded()
+    {
+        // Malformed UTF-8 is removed during cleaning, regardless of $unknown.
+        $tests = [
+            "\xC0\xAF"         => '',  // overlong 2-byte
+            "\xE0\x80\xAF"     => '',  // overlong 3-byte
+            "\xF0\x80\x80\xAF" => '',  // overlong 4-byte
+            "\xF5\x80\x80\x80" => '',  // beyond-Unicode 4-byte
+            "\xED\xA0\x80"     => '',  // surrogate
+        ];
+
+        foreach ($tests as $before => $after) {
+            static::assertSame($after, ASCII::to_transliterate($before), 'first pass: ' . \bin2hex($before));
+            // Re-run the same input to exercise the warm-cache path implicitly.
+            static::assertSame($after, ASCII::to_transliterate($before), 'warm pass: ' . \bin2hex($before));
+        }
+    }
+
+    public function testCleanRemovesOverlongTwoByteSequences()
+    {
+        // C0 and C1 are invalid UTF-8 starters (overlong encodings of ASCII chars).
+        // clean() should strip them instead of treating them as valid 2-byte sequences.
+        static::assertSame('ab', ASCII::clean("a\xC0\xAFb"));
+        static::assertSame('ab', ASCII::clean("a\xC1\xBFb"));
+        // C2 is a valid 2-byte starter and should be preserved
+        static::assertSame("a\xC2\xA3b", ASCII::clean("a\xC2\xA3b")); // £ sign
+    }
+
+    public function testInvalidUtf8SequencesAreDiscardedRegardlessOfUnknown()
+    {
+        static::assertSame('', ASCII::to_transliterate("\xED\xA0\x80", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xED\xA0\x80", 'X', false));
+        static::assertSame('', ASCII::to_transliterate("\xE0\x80\xAF", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xF0\x80\x80\xAF", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xF4\x90\x80\x80", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xC0\xAF", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xC0\xAF", 'X', false));
+        static::assertSame('', ASCII::to_transliterate("\xC1\xBF", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xF5\x80\x80\x80", '?', false));
+        static::assertSame('', ASCII::to_transliterate("\xF5\x80\x80\x80", 'X', false));
+        static::assertSame('ab', ASCII::to_transliterate("a\xED\xA0\x80b", '?', false));
+        static::assertSame('ab', ASCII::to_transliterate("a\xED\xA0\x80b", 'X', false));
+        static::assertSame('ab', ASCII::to_transliterate("a\xC0\xAFb", '?', false));
+        static::assertSame('ab', ASCII::to_transliterate("a\xC0\xAFb", 'X', false));
+    }
+
+    public function testLeadingMalformedUtf8IsDroppedWhileTrailingAsciiIsPreserved()
+    {
+        static::assertSame('x', ASCII::to_transliterate("\xC0\xAFx", '?', false));
+        static::assertSame('x', ASCII::to_transliterate("\xC0\xAFx", 'X', false));
+        static::assertSame('x', ASCII::to_transliterate("\xC0\xAFx", null, false));
+
+        // Repeat the same input to cover the warm-path cache after the first pass.
+        static::assertSame('x', ASCII::to_transliterate("\xC0\xAFx", '?', false));
+    }
+
+    public function testBasicControlCharactersArePreservedDuringTransliteration()
+    {
+        $input = "déjà\n\tvu\rStraße";
+
+        static::assertSame("deja\n\tvu\rStrasse", ASCII::to_transliterate($input, '?', false));
+        static::assertSame("deja\n\tvu\rStrasse", ASCII::to_transliterate($input, '?', false));
+    }
+
+    public function testNonBasicControlCharactersAreStillRemovedDuringTransliteration()
+    {
+        static::assertSame('dejavu', ASCII::to_transliterate("déjà\x01vu", '?', false));
+        static::assertSame('dejavu', ASCII::to_transliterate("déjà\x0Bvu", '?', false));
+        static::assertSame('dejavu', ASCII::to_transliterate("déjà\x7Fvu", '?', false));
+    }
+
+    public function testWarmUnknownFallbackDoesNotSkipControlByteCleanup()
+    {
+        static::assertSame('X', ASCII::to_transliterate("😀\x01", 'X', false));
+        static::assertSame('X', ASCII::to_transliterate("😀\x01", 'X', false));
+
+        static::assertSame("X\n", ASCII::to_transliterate("😀\n", 'X', false));
+        static::assertSame("X\n", ASCII::to_transliterate("😀\n", 'X', false));
+    }
+
+    public function testTransliterateShortcutBranchesStayCorrectAcrossRepeatedCalls()
+    {
+        $cases = [
+            'long printable ASCII fast path' => [
+                'arguments' => [\str_repeat('Plain ASCII text 123 test ', 4), '?', false],
+                'expected' => \str_repeat('Plain ASCII text 123 test ', 4),
+            ],
+            'basic controls remain preserved' => [
+                'arguments' => ["a\n\tb\rc", '?', false],
+                'expected' => "a\n\tb\rc",
+            ],
+            'warm unknown fallback cache for unmapped characters' => [
+                'arguments' => ['😀', 'X', false],
+                'expected' => 'X',
+            ],
+        ];
+
+        foreach ($cases as $label => $scenario) {
+            for ($pass = 1; $pass <= 2; ++$pass) {
+                static::assertSame(
+                    $scenario['expected'],
+                    \call_user_func_array([ASCII::class, 'to_transliterate'], $scenario['arguments']),
+                    $label . ' pass ' . $pass
+                );
+            }
+        }
+    }
+
+    public function testUnknownWithPregSpecialCharsIsLiteral()
+    {
+        static::assertSame('$0', ASCII::to_transliterate('😀', '$0', false));
+        static::assertSame('\\1', ASCII::to_transliterate('😀', '\\1', false));
+        static::assertSame('${1}', ASCII::to_transliterate('😀', '${1}', false));
+    }
+
+    public function testInvalidUtf8SequencesAreDiscardedWhenUnknownNull()
+    {
+        static::assertSame('', ASCII::to_transliterate("\xED\xA0\x80", null, false));
+        static::assertSame('ab', ASCII::to_transliterate("a\xE0\x80\xAFb", null, false));
+    }
+
+    public function testUnknownFallbackWarmCacheRespectsUnknown()
+    {
+        static::assertSame('?', ASCII::to_transliterate('😀', '?', false));
+        static::assertSame('X', ASCII::to_transliterate('😀', 'X', false));
+        static::assertSame('😀', ASCII::to_transliterate('😀', null, false));
+        static::assertSame('?', ASCII::to_transliterate('😀', '?', false));
+    }
+
+    public function testUnknownFallbackWarmCacheStoresUnmappedCharacters()
+    {
+        $input = \str_repeat('😀🚀', 32);
+
+        static::assertSame(\str_repeat('????', 32), ASCII::to_transliterate($input, '??', false));
+        static::assertSame(\str_repeat('ZZZZ', 32), ASCII::to_transliterate($input, 'ZZ', false));
+        static::assertSame(\str_repeat('????', 32), ASCII::to_transliterate($input, '??', false));
+    }
+
+    public function testRepeatedNonAsciiInputStaysCorrect()
+    {
+        $input = \str_repeat('中文😀', 64);
+        $withMalformedUtf8 = ASCII::to_transliterate(\str_repeat("中文\xED\xA0\x80", 64), '?', false);
+
+        static::assertSame(\str_repeat('Zhong Wen ?', 64), ASCII::to_transliterate($input, '?', false));
+        static::assertSame(\str_repeat('Zhong Wen ', 64), $withMalformedUtf8);
+        static::assertStringNotContainsString('?', $withMalformedUtf8);
+    }
+
+    public function testNullUnknownAndNullByteUnknownUseDifferentWarmMaps()
+    {
+        static::assertSame('😀', ASCII::to_transliterate('😀', null, false));
+        static::assertSame("\x00", ASCII::to_transliterate('😀', "\x00", false));
+        static::assertSame('😀', ASCII::to_transliterate('😀', null, false));
+    }
+
     public function testEmptyStr()
     {
         $str = '';

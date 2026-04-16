@@ -1,0 +1,455 @@
+<?php
+
+declare(strict_types=1);
+
+namespace voku\tests;
+
+use voku\helper\ASCII;
+
+/**
+ * @internal
+ */
+final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
+{
+    private const PERFORMANCE_ENV = 'PORTABLE_ASCII_RUN_PERFORMANCE_TESTS';
+    private const MICROSECONDS_PER_SECOND = 1000000;
+
+    public function testRepresentativeInputsStayCorrectUnderRepeatedCalls(): void
+    {
+        foreach (self::repeatedScenarioProvider() as $label => $scenario) {
+            $result = null;
+
+            for ($i = 0; $i < $scenario['iterations']; ++$i) {
+                /** @var string $result */
+                $result = \call_user_func_array([ASCII::class, $scenario['method']], $scenario['arguments']);
+            }
+
+            static::assertSame($scenario['expected'], $result, 'tested: ' . $label);
+        }
+    }
+
+    /**
+     * Opt-in benchmark test.
+     *
+     * Run with:
+     * PORTABLE_ASCII_RUN_PERFORMANCE_TESTS=1 ./vendor/bin/phpunit --filter PerformanceRegressionTest
+     */
+    public function testPerformanceRatiosForRepresentativeInputs(): void
+    {
+        if (\getenv(self::PERFORMANCE_ENV) !== '1') {
+            $this->markTestSkipped('Set PORTABLE_ASCII_RUN_PERFORMANCE_TESTS=1 to run performance benchmarks.');
+        }
+
+        $asciiShort = 'Plain ASCII text 123 test';
+        $latinShort = 'déjà vu';
+        $germanShort = 'Düsseldorf';
+        $mixedShort = 'déjà σσς iıii';
+        $slugAsciiShort = 'Using strings like foo bar';
+        $slugLatinShort = 'Using strings like fòô bàř';
+        /** @var array<int, int> $slugLoopCounts */
+        $slugLoopCounts = [1, 10, 100, 1000, 10000];
+        /**
+         * Keep benchmark_key stable for emitted metric names, but use headline_text
+         * when documenting the `Load-Curve Headlines` table in PERFORMANCE.md.
+         *
+         * @var array<int, array{
+         *     benchmark_key: string,
+         *     headline_text: string,
+         *     language: string,
+         *     input: string,
+         *     expected: string
+         * }> $localizedSlugScenarios
+         */
+        $localizedSlugScenarios = [
+            [
+                'benchmark_key' => 'en',
+                'headline_text' => 'Using strings like foo bar',
+                'language' => 'en',
+                'input' => 'Using strings like foo bar',
+                'expected' => 'using-strings-like-foo-bar',
+            ],
+            [
+                'benchmark_key' => 'de',
+                'headline_text' => 'Fußgängerübergänge in Düsseldorf Altstadt',
+                'language' => 'de',
+                'input' => 'Fußgängerübergänge in Düsseldorf Altstadt',
+                'expected' => 'fussgaengeruebergaenge-in-duesseldorf-altstadt',
+            ],
+            [
+                'benchmark_key' => 'fr',
+                'headline_text' => 'Événement spécial à l\'Opéra de Montréal',
+                'language' => 'fr',
+                'input' => 'Événement spécial à l\'Opéra de Montréal',
+                'expected' => 'evenement-special-a-lopera-de-montreal',
+            ],
+            [
+                'benchmark_key' => 'es',
+                'headline_text' => 'Niño y acción en corazón de Bogotá',
+                'language' => 'es',
+                'input' => 'Niño y acción en corazón de Bogotá',
+                'expected' => 'nino-y-accion-en-corazon-de-bogota',
+            ],
+            [
+                'benchmark_key' => 'ru',
+                'headline_text' => 'Тестовый заголовок для новостей в Москве',
+                'language' => 'ru',
+                'input' => 'Тестовый заголовок для новостей в Москве',
+                'expected' => 'testovyy-zagolovok-dlya-novostey-v-moskve',
+            ],
+            [
+                'benchmark_key' => 'tr',
+                'headline_text' => 'Iğdır İstanbul için çağrı',
+                'language' => 'tr',
+                'input' => 'Iğdır İstanbul için çağrı',
+                'expected' => 'igdir-istanbul-icin-cagri',
+            ],
+        ];
+        $asciiLong = \str_repeat('Plain ASCII text 123 test ', 128);
+        $greekLong = \str_repeat('Αυτή είναι μια δοκιμή ', 128);
+        $myanmarLong = \str_repeat('တတျနိုငျသ ', 128);
+        $chineseLong = \str_repeat('中文空白測試 ', 128);
+        $unknownLong = \str_repeat('😀🚀🛸✨', 128);
+        $fixedUnknownFallback = 'u0000';
+        $changingUnknownFallbackCounter = 0;
+
+        $benchmarks = [
+            'to_ascii_ascii_short' => $this->benchmarkScenario(
+                function () use ($asciiShort): string {
+                    return ASCII::to_ascii($asciiShort, 'en', true);
+                },
+                25000
+            ),
+            'to_transliterate_ascii_short' => $this->benchmarkScenario(
+                function () use ($asciiShort): string {
+                    return ASCII::to_transliterate($asciiShort, '?', false);
+                },
+                25000
+            ),
+            'to_ascii_latin_short' => $this->benchmarkScenario(
+                function () use ($latinShort): string {
+                    return ASCII::to_ascii($latinShort, 'en', true);
+                },
+                25000
+            ),
+            'to_transliterate_latin_short' => $this->benchmarkScenario(
+                function () use ($latinShort): string {
+                    return ASCII::to_transliterate($latinShort, '?', false);
+                },
+                25000
+            ),
+            'to_ascii_german_short' => $this->benchmarkScenario(
+                function () use ($germanShort): string {
+                    return ASCII::to_ascii($germanShort, 'de', true);
+                },
+                25000
+            ),
+            'to_ascii_mixed_short' => $this->benchmarkScenario(
+                function () use ($mixedShort): string {
+                    return ASCII::to_ascii($mixedShort, 'en', true);
+                },
+                20000
+            ),
+            'to_slugify_ascii_short' => $this->benchmarkScenario(
+                function () use ($slugAsciiShort): string {
+                    return ASCII::to_slugify($slugAsciiShort);
+                },
+                20000
+            ),
+            'to_slugify_latin_short' => $this->benchmarkScenario(
+                function () use ($slugLatinShort): string {
+                    return ASCII::to_slugify($slugLatinShort);
+                },
+                20000
+            ),
+            'to_ascii_ascii_long' => $this->benchmarkScenario(
+                function () use ($asciiLong): string {
+                    return ASCII::to_ascii($asciiLong, 'en', true);
+                },
+                5000
+            ),
+            'to_transliterate_ascii_long' => $this->benchmarkScenario(
+                function () use ($asciiLong): string {
+                    return ASCII::to_transliterate($asciiLong, '?', false);
+                },
+                5000
+            ),
+            'to_ascii_greek_long' => $this->benchmarkScenario(
+                function () use ($greekLong): string {
+                    return ASCII::to_ascii($greekLong, 'el', true);
+                },
+                1500
+            ),
+            'to_ascii_greek_long_single_char_only' => $this->benchmarkScenario(
+                function () use ($greekLong): string {
+                    return ASCII::to_ascii($greekLong, 'el', true, false, false, true);
+                },
+                1500
+            ),
+            'to_ascii_myanmar_long' => $this->benchmarkScenario(
+                function () use ($myanmarLong): string {
+                    return ASCII::to_ascii($myanmarLong, 'my', true);
+                },
+                1000
+            ),
+            'to_ascii_myanmar_long_single_char_only' => $this->benchmarkScenario(
+                function () use ($myanmarLong): string {
+                    return ASCII::to_ascii($myanmarLong, 'my', true, false, false, true);
+                },
+                1000
+            ),
+            'to_ascii_chinese_long_transliterate' => $this->benchmarkScenario(
+                function () use ($chineseLong): string {
+                    return ASCII::to_ascii($chineseLong, 'en', true, false, true);
+                },
+                1000
+            ),
+            'to_transliterate_chinese_long' => $this->benchmarkScenario(
+                function () use ($chineseLong): string {
+                    return ASCII::to_transliterate($chineseLong, '?', false);
+                },
+                1000
+            ),
+            'to_transliterate_unknown_long_fixed_fallback' => $this->benchmarkScenario(
+                function () use ($unknownLong, $fixedUnknownFallback): string {
+                    return ASCII::to_transliterate($unknownLong, $fixedUnknownFallback, false);
+                },
+                1000
+            ),
+            'to_transliterate_unknown_long_changing_fallback' => $this->benchmarkScenario(
+                function () use ($unknownLong, &$changingUnknownFallbackCounter): string {
+                    ++$changingUnknownFallbackCounter;
+
+                    return ASCII::to_transliterate($unknownLong, \sprintf('u%04d', $changingUnknownFallbackCounter), false);
+                },
+                1000
+            ),
+        ];
+
+        foreach ($localizedSlugScenarios as $scenario) {
+            static::assertSame(
+                $scenario['expected'],
+                ASCII::to_slugify($scenario['input'], '-', $scenario['language']),
+                'tested localized slug scenario: ' . $scenario['headline_text']
+            );
+
+            foreach ($slugLoopCounts as $loopCount) {
+                $benchmarks['to_slugify_' . $scenario['benchmark_key'] . '_n' . $loopCount] = $this->benchmarkScenario(
+                    function () use ($scenario): string {
+                        return ASCII::to_slugify($scenario['input'], '-', $scenario['language']);
+                    },
+                    $loopCount
+                );
+            }
+        }
+
+        $this->writeBenchmarks($benchmarks);
+
+        // Smoke thresholds: keep the opt-in benchmark green on both this branch
+        // and current master while still flagging major regressions.
+        static::assertLessThan(
+            3.5,
+            $benchmarks['to_ascii_ascii_short'] / $benchmarks['to_transliterate_ascii_short'],
+            'ASCII-only to_ascii() became disproportionately slower than the ASCII fast path in to_transliterate().'
+        );
+        static::assertLessThan(
+            1.25,
+            $benchmarks['to_ascii_latin_short'] / $benchmarks['to_transliterate_latin_short'],
+            'Short Latin/accented to_ascii() inputs regressed relative to direct transliteration.'
+        );
+        static::assertLessThan(
+            1.25,
+            $benchmarks['to_ascii_german_short'] / $benchmarks['to_ascii_latin_short'],
+            'Short language-specific Latin replacements became disproportionately expensive.'
+        );
+        static::assertLessThan(
+            4.0,
+            $benchmarks['to_slugify_latin_short'] / $benchmarks['to_slugify_ascii_short'],
+            'Short slugify() inputs with accents regressed relative to ASCII-only slugification.'
+        );
+        static::assertLessThan(
+            3.0,
+            $benchmarks['to_ascii_ascii_long'] / $benchmarks['to_transliterate_ascii_long'],
+            'Long ASCII-only to_ascii() inputs regressed relative to to_transliterate().'
+        );
+        static::assertLessThan(
+            4.0,
+            $benchmarks['to_ascii_greek_long'] / $benchmarks['to_ascii_greek_long_single_char_only'],
+            'Default multi-character Greek replacements became disproportionately expensive.'
+        );
+        static::assertLessThan(
+            7.0,
+            $benchmarks['to_ascii_myanmar_long'] / $benchmarks['to_ascii_myanmar_long_single_char_only'],
+            'Default multi-character Myanmar replacements became disproportionately expensive.'
+        );
+        static::assertLessThan(
+            2.25,
+            $benchmarks['to_ascii_chinese_long_transliterate'] / $benchmarks['to_transliterate_chinese_long'],
+            'The transliteration fallback path inside to_ascii() regressed relative to direct to_transliterate().'
+        );
+        static::assertLessThan(
+            1.10,
+            $benchmarks['to_transliterate_unknown_long_fixed_fallback'] / $benchmarks['to_transliterate_unknown_long_changing_fallback'],
+            'Repeated unknown-fallback transliteration stopped benefiting from the warm-path cache.'
+        );
+    }
+
+    public static function repeatedScenarioProvider(): array
+    {
+        return [
+            'to_ascii ascii long' => [
+                'method' => 'to_ascii',
+                'arguments' => [
+                    \str_repeat('Plain ASCII text 123 test ', 64),
+                    'en',
+                    true,
+                ],
+                'expected' => \str_repeat('Plain ASCII text 123 test ', 64),
+                'iterations' => 150,
+            ],
+            'to_ascii latin short' => [
+                'method' => 'to_ascii',
+                'arguments' => [
+                    'déjà vu',
+                    'en',
+                    true,
+                ],
+                'expected' => 'deja vu',
+                'iterations' => 300,
+            ],
+            'to_ascii german short' => [
+                'method' => 'to_ascii',
+                'arguments' => [
+                    'Düsseldorf',
+                    'de',
+                    true,
+                ],
+                'expected' => 'Duesseldorf',
+                'iterations' => 300,
+            ],
+            'to_ascii street short' => [
+                'method' => 'to_ascii',
+                'arguments' => [
+                    'Straße',
+                    'de',
+                    true,
+                ],
+                'expected' => 'Strasse',
+                'iterations' => 300,
+            ],
+            'to_ascii mixed short' => [
+                'method' => 'to_ascii',
+                'arguments' => [
+                    'déjà σσς iıii',
+                    'en',
+                    true,
+                ],
+                'expected' => 'deja sss iiii',
+                'iterations' => 250,
+            ],
+            'to_slugify latin short' => [
+                'method' => 'to_slugify',
+                'arguments' => [
+                    'Using strings like fòô bàř',
+                ],
+                'expected' => 'using-strings-like-foo-bar',
+                'iterations' => 250,
+            ],
+            'to_ascii latin long' => [
+                'method' => 'to_ascii',
+                'arguments' => [
+                    \str_repeat('Déjà vu für Köln Straße ', 64),
+                    'de',
+                    true,
+                ],
+                'expected' => \str_repeat('Deja vu fuer Koeln Strasse ', 64),
+                'iterations' => 75,
+            ],
+            'to_ascii greek long' => [
+                'method' => 'to_ascii',
+                'arguments' => [
+                    \str_repeat('Αυτή είναι μια δοκιμή ', 32),
+                    'el',
+                    true,
+                ],
+                'expected' => \str_repeat('Auti inai mia dokimi ', 32),
+                'iterations' => 50,
+            ],
+            'to_ascii myanmar long' => [
+                'method' => 'to_ascii',
+                'arguments' => [
+                    \str_repeat('တတျနိုငျသ ', 32),
+                    'my',
+                    true,
+                ],
+                'expected' => \str_repeat('ttyanongyath ', 32),
+                'iterations' => 50,
+            ],
+            'to_transliterate chinese long' => [
+                'method' => 'to_transliterate',
+                'arguments' => [
+                    \str_repeat('中文空白 ', 32),
+                    '?',
+                    false,
+                ],
+                'expected' => \str_repeat('Zhong Wen Kong Bai  ', 32),
+                'iterations' => 50,
+            ],
+            'to_transliterate unknown long with fallback' => [
+                'method' => 'to_transliterate',
+                'arguments' => [
+                    \str_repeat('😀🚀', 32),
+                    '??',
+                    false,
+                ],
+                'expected' => \str_repeat('????', 32),
+                'iterations' => 75,
+            ],
+        ];
+    }
+
+    /**
+     * @param callable():string $callback
+     *
+     * @return float Median microseconds per operation across the sampled rounds.
+     */
+    private function benchmarkScenario(callable $callback, int $iterations, int $rounds = 5): float
+    {
+        $samples = [];
+
+        for ($round = 0; $round < $rounds; ++$round) {
+            for ($i = 0; $i < 3; ++$i) {
+                $callback();
+            }
+
+            $start = \microtime(true);
+
+            for ($i = 0; $i < $iterations; ++$i) {
+                $callback();
+            }
+
+            $samples[] = (\microtime(true) - $start) * self::MICROSECONDS_PER_SECOND / $iterations;
+        }
+
+        \sort($samples);
+
+        return $samples[(int) \floor(\count($samples) / 2)];
+    }
+
+    /**
+     * @param array<string, float> $benchmarks
+     */
+    private function writeBenchmarks(array $benchmarks): void
+    {
+        if (!\defined('STDERR')) {
+            return;
+        }
+
+        \fwrite(\STDERR, "\nportable-ascii performance profile (median µs/op)\n");
+
+        foreach ($benchmarks as $label => $microsecondsPerOp) {
+            \fwrite(\STDERR, \sprintf("- %-42s %9.3f\n", $label, $microsecondsPerOp));
+        }
+
+        \fwrite(\STDERR, "\n");
+    }
+}
