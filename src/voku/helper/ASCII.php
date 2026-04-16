@@ -1363,6 +1363,7 @@ final class ASCII
      * without introducing per-input cache growth.
      *
      * @phpstan-param ASCII::*_LANGUAGE_CODE $language
+     * @param-out bool $isValidUtf8
      */
     private static function to_ascii_replace(
         string $str,
@@ -1392,16 +1393,8 @@ final class ASCII
             // the replacement table instead of feeding the full language map to strtr().
             $MAP_BY_FIRST_BYTE[$cacheKey] = [];
             foreach ($REPLACE_HELPER_CACHE[$cacheKey] as $key => $val) {
-                if ($key === '') {
-                    continue;
-                }
-
                 $MAP_BY_FIRST_BYTE[$cacheKey][$key[0]][$key] = $val;
             }
-        }
-
-        if ($REPLACE_HELPER_CACHE[$cacheKey] === []) {
-            return $str;
         }
 
         if (
