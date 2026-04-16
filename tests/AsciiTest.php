@@ -566,7 +566,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
     {
         // Regression guard: a pure-ASCII fast path in to_slugify() must not
         // change the behavior for English inputs that still contain Unicode.
-        static::assertSame('a', ASCII::to_slugify("A中"));
+        static::assertSame('a', ASCII::to_slugify('A中'));
         static::assertSame('coxi', ASCII::to_slugify('ç😊中ö!xi'));
         static::assertSame('iaxzozc-ezssa-ups', ASCII::to_slugify("İäxzözC é🚀Жßà-ü£\n"));
     }
