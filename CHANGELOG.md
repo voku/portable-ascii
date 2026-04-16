@@ -1,10 +1,14 @@
 # Changelog
 
-### unreleased
+### 2.1.0 (2026-04-16)
 
-- raise minimum PHP version from 7.0 to 7.1
+- run all checks and tests up to PHP 8.5
+- raise the minimum PHP version from 7.0 to 7.1
 - update PHPUnit dev-dependency to support ~8.5 || ~9.6 || ~10.5 || ~11.5
-- modernize CI: add PHPStan job, update GitHub Actions workflow and AppVeyor config
+- modernize CI: add a required PHPStan job, update the GitHub Actions matrix, and refresh the AppVeyor config
+- optimize `ASCII::to_ascii()` / `ASCII::to_transliterate()` hot paths, add benchmark coverage, and document current benchmark results
+- harden invalid UTF-8 handling in `clean()`, `to_ascii()`, and `to_transliterate()` for malformed, overlong, surrogate, and out-of-range sequences
+- expand regression coverage for malformed UTF-8, transliteration boundaries, slug loops, and other edge cases
 
 ### 2.0.3 (2024-11-21)
 
