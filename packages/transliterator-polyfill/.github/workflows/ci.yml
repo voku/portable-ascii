@@ -1,0 +1,58 @@
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [7.2, 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5]
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@2.37.0
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer
+
+      - name: Install dependencies
+        run: |
+          composer update --prefer-dist --no-interaction
+          composer dump-autoload -o
+
+      - name: Run tests
+        run: php vendor/bin/phpunit -c phpunit.xml
+
+  phpstan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@2.37.0
+        with:
+          php-version: "8.3"
+          tools: composer, phpstan
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction
+
+      - name: Run phpstan
+        run: phpstan analyse -c phpstan.neon
