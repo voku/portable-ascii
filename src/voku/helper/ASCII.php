@@ -1421,14 +1421,6 @@ final class ASCII
             $chars = $matches[0];
             $charCount = \count($chars);
 
-            if (
-                !$replace_single_chars_only
-                &&
-                \preg_match('/[A-Za-z][\x{0300}-\x{036F}]/u', $str) === 1
-            ) {
-                return \strtr($str, $cache);
-            }
-
             if ($charCount === 1 && isset($cache[$chars[0]])) {
                 return \str_replace($chars[0], $cache[$chars[0]], $str);
             }
@@ -1446,6 +1438,12 @@ final class ASCII
                 &&
                 $charCount >= 2
             ) {
+                // Mixed keys like "A̧" (ASCII + combining mark) are rare; let
+                // strtr handle those with the full map to preserve correctness.
+                if (\preg_match('/[A-Za-z][\x{0300}-\x{036F}]/u', $str) === 1) {
+                    return \strtr($str, $cache);
+                }
+
                 for ($span = 5; $span >= 2; --$span) {
                     if ($charCount < $span) {
                         continue;
