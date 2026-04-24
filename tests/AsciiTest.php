@@ -179,6 +179,52 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame(\str_repeat('A', 30), ASCII::to_ascii($medium, '', false), 'tested: medium mixed key');
     }
 
+    public function testToAsciiHandlesSingleMixedAsciiAndNonAsciiMapKeysOnShortPath()
+    {
+        $cases = [
+            'A̧' => 'A',
+            'a̧' => 'a',
+            'C̈' => 'C',
+            'c̈' => 'c',
+        ];
+
+        foreach ($cases as $before => $after) {
+            static::assertSame($after, ASCII::to_ascii($before, '', false), 'tested: ' . $before);
+        }
+    }
+
+    public function testToAsciiSingleMixedAsciiAndNonAsciiMapKeysStayStableAcrossShortPathModes()
+    {
+        $cases = [
+            'short mixed key without cleanup' => [
+                'arguments' => ['A̧', '', false],
+                'expected' => 'A',
+            ],
+            'short mixed key with cleanup' => [
+                'arguments' => ['C̈', '', true],
+                'expected' => 'C',
+            ],
+            'single-char-only without cleanup keeps original input' => [
+                'arguments' => ['A̧', '', false, false, false, true],
+                'expected' => 'A̧',
+            ],
+            'single-char-only with cleanup strips leftover combining mark' => [
+                'arguments' => ['A̧', '', true, false, false, true],
+                'expected' => 'A',
+            ],
+        ];
+
+        foreach ($cases as $label => $scenario) {
+            for ($pass = 1; $pass <= 2; ++$pass) {
+                static::assertSame(
+                    $scenario['expected'],
+                    \call_user_func_array([ASCII::class, 'to_ascii'], $scenario['arguments']),
+                    $label . ' pass ' . $pass
+                );
+            }
+        }
+    }
+
     public function testToAsciiShortcutBranchesStayCorrectAcrossRepeatedCalls()
     {
         $cases = [
