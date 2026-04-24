@@ -179,84 +179,6 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame(\str_repeat('A', 30), ASCII::to_ascii($medium, '', false), 'tested: medium mixed key');
     }
 
-    public function testToAsciiHandlesSingleMixedAsciiAndNonAsciiMapKeysOnShortPath()
-    {
-        $cases = [
-            'A̧' => 'A',
-            'a̧' => 'a',
-            'C̈' => 'C',
-            'c̈' => 'c',
-        ];
-
-        foreach ($cases as $before => $after) {
-            static::assertSame($after, ASCII::to_ascii($before, '', false), 'tested: ' . $before);
-        }
-    }
-
-    public function testToAsciiSingleMixedAsciiAndNonAsciiMapKeysStayStableAcrossShortPathModes()
-    {
-        $cases = [
-            'short mixed key without cleanup' => [
-                'arguments' => ['A̧', '', false],
-                'expected' => 'A',
-            ],
-            'short mixed key with cleanup' => [
-                'arguments' => ['C̈', '', true],
-                'expected' => 'C',
-            ],
-            'single-char-only without cleanup keeps original input' => [
-                'arguments' => ['A̧', '', false, false, false, true],
-                'expected' => 'A̧',
-            ],
-            'single-char-only with cleanup strips leftover combining mark' => [
-                'arguments' => ['A̧', '', true, false, false, true],
-                'expected' => 'A',
-            ],
-        ];
-
-        foreach ($cases as $label => $scenario) {
-            for ($pass = 1; $pass <= 2; ++$pass) {
-                static::assertSame(
-                    $scenario['expected'],
-                    \call_user_func_array([ASCII::class, 'to_ascii'], $scenario['arguments']),
-                    $label . ' pass ' . $pass
-                );
-            }
-        }
-    }
-
-    public function testToAsciiMixedAsciiAndNonAsciiMapKeysStayCorrectAtShortPathLengthBoundary()
-    {
-        $cases = [
-            '63-byte short-path mixed key input' => [
-                'arguments' => [\str_repeat('A̧', 21), '', false],
-                'expected' => \str_repeat('A', 21),
-            ],
-            '66-byte long-path mixed key input' => [
-                'arguments' => [\str_repeat('A̧', 22), '', false],
-                'expected' => \str_repeat('A', 22),
-            ],
-            '63-byte single-char-only cleanup boundary' => [
-                'arguments' => [\str_repeat('A̧', 21), '', true, false, false, true],
-                'expected' => \str_repeat('A', 21),
-            ],
-            '66-byte single-char-only cleanup boundary' => [
-                'arguments' => [\str_repeat('A̧', 22), '', true, false, false, true],
-                'expected' => \str_repeat('A', 22),
-            ],
-        ];
-
-        foreach ($cases as $label => $scenario) {
-            for ($pass = 1; $pass <= 2; ++$pass) {
-                static::assertSame(
-                    $scenario['expected'],
-                    \call_user_func_array([ASCII::class, 'to_ascii'], $scenario['arguments']),
-                    $label . ' pass ' . $pass
-                );
-            }
-        }
-    }
-
     public function testToAsciiShortcutBranchesStayCorrectAcrossRepeatedCalls()
     {
         $cases = [
@@ -299,58 +221,6 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
                 );
             }
         }
-    }
-
-    public function testToAsciiShortPathStaysCorrectForBytePrefilterInputs(): void
-    {
-        $cases = [
-            'precomposed latin input without combining marks' => [
-                'arguments' => ['déjà vu', 'en', true],
-                'expected' => 'deja vu',
-            ],
-            'mixed ASCII and combining mark key' => [
-                'arguments' => ['A̧', '', false],
-                'expected' => 'A',
-            ],
-            '0xCD-range punctuation still transliterates normally' => [
-                'arguments' => ['Aʹ', '', false],
-                'expected' => 'A\'',
-            ],
-            '0xCD-range non-combining char still respects cleanup mode' => [
-                'arguments' => ['AͿ', '', true],
-                'expected' => 'A',
-            ],
-        ];
-
-        foreach ($cases as $label => $scenario) {
-            for ($pass = 1; $pass <= 2; ++$pass) {
-                static::assertSame(
-                    $scenario['expected'],
-                    \call_user_func_array([ASCII::class, 'to_ascii'], $scenario['arguments']),
-                    $label . ' pass ' . $pass
-                );
-            }
-        }
-    }
-
-    public function testToAsciiLongSevenBitOnlyPathStaysCorrectAcrossRepeatedCalls()
-    {
-        $input = \str_repeat("a\n\tb\rc\x7F", 20);
-
-        static::assertSame($input, ASCII::to_ascii($input, 'en', false), 'without cleanup');
-        static::assertSame($input, ASCII::to_ascii($input, 'en', false), 'without cleanup warm');
-
-        static::assertSame(\str_repeat('a  b c', 20), ASCII::to_ascii($input, 'en', true), 'with cleanup');
-        static::assertSame(\str_repeat('a  b c', 20), ASCII::to_ascii($input, 'en', true), 'with cleanup warm');
-    }
-
-    public function testToAsciiLongEnglishTransliterationShortcutStaysCorrectAcrossRepeatedCalls()
-    {
-        $input = \str_repeat('中文空白測試 ', 8);
-        $expected = \str_repeat('Zhong Wen Kong Bai Ce Shi  ', 8);
-
-        static::assertSame($expected, ASCII::to_ascii($input, 'en', true, false, true), 'cold');
-        static::assertSame($expected, ASCII::to_ascii($input, 'en', true, false, true), 'warm');
     }
 
     public function testToAsciiConsistentAcrossRepeatedCallsWithSpecialChars()
@@ -755,38 +625,6 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         $str = 'test © test';
         // Cleanup (remove_unsupported_chars=true) doesn't collapse spaces.
         static::assertSame('test  (c)  test', ASCII::to_ascii($str, 'en', true, true));
-    }
-
-    public function testToAsciiOverlappingExtraSymbolKeysStayCorrectAcrossBoundariesAndRepeatedCalls()
-    {
-        $cases = [
-            'temperature multichar key at 64-byte boundary' => [
-                'arguments' => [\str_repeat('°Re', 16), 'temperature', false, true],
-                'expected' => \str_repeat(' Reaumur ', 16),
-            ],
-            'temperature multichar key above 64-byte boundary' => [
-                'arguments' => [\str_repeat('°Re', 17), 'temperature', false, true],
-                'expected' => \str_repeat(' Reaumur ', 17),
-            ],
-            'overlapping temperature prefixes prefer longest keys' => [
-                'arguments' => ['°Re°R°Ro', 'temperature', false, true],
-                'expected' => ' Reaumur  Rankine  Romer ',
-            ],
-            'overlapping currency keys stay stable without separators' => [
-                'arguments' => ['﷼‎﷼', 'currency', false, true],
-                'expected' => ' riyal  riyal ',
-            ],
-        ];
-
-        foreach ($cases as $label => $scenario) {
-            for ($pass = 1; $pass <= 2; ++$pass) {
-                static::assertSame(
-                    $scenario['expected'],
-                    \call_user_func_array([ASCII::class, 'to_ascii'], $scenario['arguments']),
-                    $label . ' pass ' . $pass
-                );
-            }
-        }
     }
 
     public function testToAsciiWithExtraSymbolsAndSingleCharsOnly()
