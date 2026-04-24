@@ -233,6 +233,15 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame(\str_repeat('a  b c', 20), ASCII::to_ascii($input, 'en', true), 'with cleanup');
         static::assertSame(\str_repeat('a  b c', 20), ASCII::to_ascii($input, 'en', true), 'with cleanup warm');
     }
+    
+    public function testToAsciiLongCorrectAcrossRepeatedCalls()
+    {
+        $input = 'Webinaire des transitions n°34 - Agir et mobiliser pour la biodiversité dans son entreprise';
+        $output = 'Webinaire des transitions ndeg34 - Agir et mobiliser pour la biodiversite dans son entreprise';
+        
+        static::assertSame($output, ASCII::to_ascii($input, 'en'), 'with cleanup');
+        static::assertSame($output, ASCII::to_ascii($input, 'en'), 'with cleanup warm');
+    }
 
     public function testToAsciiLongEnglishTransliterationShortcutStaysCorrectAcrossRepeatedCalls()
     {
