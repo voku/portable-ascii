@@ -243,6 +243,18 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame($expected, ASCII::to_ascii($input, 'en', true, false, true), 'warm');
     }
 
+    public function testToAsciiConsistentAcrossRepeatedCallsWithSpecialChars()
+    {
+        // Regression test for https://github.com/voku/portable-ascii/issues/135
+        // The degree sign (°) and accented chars should behave consistently on
+        // every call, regardless of internal map-loading order.
+        $input = 'Webinaire des transitions n°34 - Agir et mobiliser pour la biodiversité dans son entreprise';
+        $expected = 'Webinaire des transitions n34 - Agir et mobiliser pour la biodiversite dans son entreprise';
+
+        static::assertSame($expected, ASCII::to_ascii($input, 'en'), 'first call');
+        static::assertSame($expected, ASCII::to_ascii($input, 'en'), 'second call (warm)');
+    }
+
     public function testRemoveInvisibleCharacters()
     {
         $testArray = [
