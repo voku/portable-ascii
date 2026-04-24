@@ -179,6 +179,38 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame(\str_repeat('A', 30), ASCII::to_ascii($medium, '', false), 'tested: medium mixed key');
     }
 
+    public function testToAsciiHandlesAdditionalMixedAsciiAndNonAsciiMapKeysAtLengthBoundary()
+    {
+        $cases = [
+            '63-byte grave-accent C key' => [
+                'input' => \str_repeat('C̀', 21),
+                'expected' => \str_repeat('C', 21),
+            ],
+            '66-byte diaeresis c key' => [
+                'input' => \str_repeat('c̈', 22),
+                'expected' => \str_repeat('c', 22),
+            ],
+            '63-byte dot-above U key' => [
+                'input' => \str_repeat('U̇', 21),
+                'expected' => \str_repeat('U', 21),
+            ],
+            '66-byte cedilla u key' => [
+                'input' => \str_repeat('u̧', 22),
+                'expected' => \str_repeat('u', 22),
+            ],
+        ];
+
+        foreach ($cases as $label => $case) {
+            for ($pass = 1; $pass <= 2; ++$pass) {
+                static::assertSame(
+                    $case['expected'],
+                    ASCII::to_ascii($case['input'], '', false),
+                    $label . ' pass ' . $pass
+                );
+            }
+        }
+    }
+
     public function testToAsciiShortcutBranchesStayCorrectAcrossRepeatedCalls()
     {
         $cases = [
