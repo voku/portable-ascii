@@ -170,6 +170,15 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         }
     }
 
+    public function testToAsciiHandlesMixedAsciiAndNonAsciiMapKeysAcrossLengthBuckets()
+    {
+        $short = \str_repeat('A̧', 10);
+        $medium = \str_repeat('A̧', 30);
+
+        static::assertSame(\str_repeat('A', 10), ASCII::to_ascii($short, '', false), 'tested: short mixed key');
+        static::assertSame(\str_repeat('A', 30), ASCII::to_ascii($medium, '', false), 'tested: medium mixed key');
+    }
+
     public function testToAsciiShortcutBranchesStayCorrectAcrossRepeatedCalls()
     {
         $cases = [
@@ -212,6 +221,26 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
                 );
             }
         }
+    }
+
+    public function testToAsciiLongSevenBitOnlyPathStaysCorrectAcrossRepeatedCalls()
+    {
+        $input = \str_repeat("a\n\tb\rc\x7F", 20);
+
+        static::assertSame($input, ASCII::to_ascii($input, 'en', false), 'without cleanup');
+        static::assertSame($input, ASCII::to_ascii($input, 'en', false), 'without cleanup warm');
+
+        static::assertSame(\str_repeat('a  b c', 20), ASCII::to_ascii($input, 'en', true), 'with cleanup');
+        static::assertSame(\str_repeat('a  b c', 20), ASCII::to_ascii($input, 'en', true), 'with cleanup warm');
+    }
+
+    public function testToAsciiLongEnglishTransliterationShortcutStaysCorrectAcrossRepeatedCalls()
+    {
+        $input = \str_repeat('中文空白測試 ', 8);
+        $expected = \str_repeat('Zhong Wen Kong Bai Ce Shi  ', 8);
+
+        static::assertSame($expected, ASCII::to_ascii($input, 'en', true, false, true), 'cold');
+        static::assertSame($expected, ASCII::to_ascii($input, 'en', true, false, true), 'warm');
     }
 
     public function testToAsciiConsistentAcrossRepeatedCallsWithSpecialChars()
