@@ -1424,6 +1424,12 @@ final class ASCII
             if (
                 !$replace_single_chars_only
                 &&
+                (
+                    \strpos($str, "\xCC") !== false
+                    ||
+                    \strpos($str, "\xCD") !== false
+                )
+                &&
                 \preg_match('/[A-Za-z][\x{0300}-\x{036F}]/u', $str) === 1
             ) {
                 return \strtr($str, $cache);

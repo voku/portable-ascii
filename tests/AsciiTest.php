@@ -301,6 +301,38 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         }
     }
 
+    public function testToAsciiShortPathStaysCorrectForBytePrefilterInputs(): void
+    {
+        $cases = [
+            'precomposed latin input without combining marks' => [
+                'arguments' => ['déjà vu', 'en', true],
+                'expected' => 'deja vu',
+            ],
+            'mixed ASCII and combining mark key' => [
+                'arguments' => ['A̧', '', false],
+                'expected' => 'A',
+            ],
+            '0xCD-range punctuation still transliterates normally' => [
+                'arguments' => ['Aʹ', '', false],
+                'expected' => 'A\'',
+            ],
+            '0xCD-range non-combining char still respects cleanup mode' => [
+                'arguments' => ['AͿ', '', true],
+                'expected' => 'A',
+            ],
+        ];
+
+        foreach ($cases as $label => $scenario) {
+            for ($pass = 1; $pass <= 2; ++$pass) {
+                static::assertSame(
+                    $scenario['expected'],
+                    \call_user_func_array([ASCII::class, 'to_ascii'], $scenario['arguments']),
+                    $label . ' pass ' . $pass
+                );
+            }
+        }
+    }
+
     public function testToAsciiLongSevenBitOnlyPathStaysCorrectAcrossRepeatedCalls()
     {
         $input = \str_repeat("a\n\tb\rc\x7F", 20);
