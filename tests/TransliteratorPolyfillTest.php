@@ -152,6 +152,18 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
         static::assertSame('AE OE UE ae oe ue ss', $result);
     }
 
+    public function testGermanAsciiRuleUsesTitlecaseExpansionsInsideWords(): void
+    {
+        $result = TransliteratorPolyfill::transliterate('de-ASCII', 'Äpfel Öl Übergröße');
+        static::assertSame('Aepfel Oel Uebergroesse', $result);
+    }
+
+    public function testGermanAsciiRuleKeepsAllCapsExpansionsForUppercaseWords(): void
+    {
+        $result = TransliteratorPolyfill::transliterate('de-ASCII', 'ÄPFEL ÖL ÜBER');
+        static::assertSame('AEPFEL OEL UEBER', $result);
+    }
+
     public function testGermanAustrianAsciiRuleMatchesNativeAlias(): void
     {
         $result = TransliteratorPolyfill::transliterate('de_AT-ascii', 'Ä Ö Ü ä ö ü ß');
@@ -171,6 +183,24 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
             'ŤÉŚŢ - öäü - 123 - abc - …'
         );
         static::assertSame('TEST - oau - 123 - abc - ...', $result);
+    }
+
+    public function testRussianLatinBgnAlias(): void
+    {
+        $result = TransliteratorPolyfill::transliterate('Russian-Latin/BGN', 'Привет мир');
+        static::assertSame('Privet mir', $result);
+    }
+
+    public function testUkrainianLatinBgnAlias(): void
+    {
+        $result = TransliteratorPolyfill::transliterate('Ukrainian-Latin/BGN', 'Привіт світ');
+        static::assertSame('Pryvit svit', $result);
+    }
+
+    public function testArabicLatinAlias(): void
+    {
+        $result = TransliteratorPolyfill::transliterate('Arabic-Latin', 'أبجد');
+        static::assertSame('abgd', $result);
     }
 
     // ─── Mixed-language / accented character tests ──────────────────────
@@ -350,6 +380,15 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
         // 'Latin-ASCII' is supported, but 'Katakana-Hiragana' is not
         $result = @TransliteratorPolyfill::transliterate('Latin-ASCII; Katakana-Hiragana', 'test');
         static::assertFalse($result);
+    }
+
+    public function testMixedSupportedAndUnsupportedStepsTriggerWarningForUnsupportedStep(): void
+    {
+        $captured = self::transliterateCapturingWarning('Latin-ASCII; Katakana-Hiragana', 'résumé');
+
+        static::assertFalse($captured['result']);
+        static::assertNotNull($captured['warning']);
+        static::assertStringContainsString('Katakana-Hiragana', $captured['warning']);
     }
 
     // ─── Invalid-input / edge-case tests ────────────────────────────────

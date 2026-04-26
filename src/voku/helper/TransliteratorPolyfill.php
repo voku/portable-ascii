@@ -375,6 +375,23 @@ final class TransliteratorPolyfill
     private static function applyGermanAsciiAlias(string $string, bool $expandUmlauts): string
     {
         if ($expandUmlauts) {
+            $string = \preg_replace_callback(
+                '/[ÄÖÜ](?=\p{Ll})/u',
+                static function (array $matches): string {
+                    switch ($matches[0]) {
+                        case 'Ä':
+                            return 'Ae';
+                        case 'Ö':
+                            return 'Oe';
+                        case 'Ü':
+                            return 'Ue';
+                    }
+
+                    return $matches[0];
+                },
+                $string
+            ) ?? $string;
+
             $string = \strtr($string, [
                 'Ä' => 'AE',
                 'Ö' => 'OE',
