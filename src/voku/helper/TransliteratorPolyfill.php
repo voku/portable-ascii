@@ -111,7 +111,7 @@ final class TransliteratorPolyfill
 
         if (!self::isValidUtf8($transliterator)) {
             \trigger_error(
-                'transliterator_transliterate(): polyfill requires a valid UTF-8 transliterator ID; invalid UTF-8 given',
+                'transliterator_transliterate(): invalid UTF-8 in transliterator ID. Transliterator IDs must be valid UTF-8 strings.',
                 \E_USER_WARNING
             );
 
@@ -120,7 +120,7 @@ final class TransliteratorPolyfill
 
         if (!self::isValidUtf8($string)) {
             \trigger_error(
-                'transliterator_transliterate(): polyfill requires a valid UTF-8 input string; invalid UTF-8 given',
+                'transliterator_transliterate(): invalid UTF-8 in input string. Input strings must be valid UTF-8.',
                 \E_USER_WARNING
             );
 
