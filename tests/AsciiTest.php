@@ -179,6 +179,38 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame(\str_repeat('A', 30), ASCII::to_ascii($medium, '', false), 'tested: medium mixed key');
     }
 
+    public function testToAsciiHandlesAdditionalMixedAsciiAndNonAsciiMapKeysAtLengthBoundary()
+    {
+        $cases = [
+            '63-byte grave-accent C key' => [
+                'input' => \str_repeat('C̀', 21),
+                'expected' => \str_repeat('C', 21),
+            ],
+            '66-byte diaeresis c key' => [
+                'input' => \str_repeat('c̈', 22),
+                'expected' => \str_repeat('c', 22),
+            ],
+            '63-byte dot-above U key' => [
+                'input' => \str_repeat('U̇', 21),
+                'expected' => \str_repeat('U', 21),
+            ],
+            '66-byte cedilla u key' => [
+                'input' => \str_repeat('u̧', 22),
+                'expected' => \str_repeat('u', 22),
+            ],
+        ];
+
+        foreach ($cases as $label => $case) {
+            for ($pass = 1; $pass <= 2; ++$pass) {
+                static::assertSame(
+                    $case['expected'],
+                    ASCII::to_ascii($case['input'], '', false),
+                    $label . ' pass ' . $pass
+                );
+            }
+        }
+    }
+
     public function testToAsciiShortcutBranchesStayCorrectAcrossRepeatedCalls()
     {
         $cases = [
@@ -250,6 +282,18 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame($expected, ASCII::to_ascii($input, 'en', true, false, true), 'cold');
         static::assertSame($expected, ASCII::to_ascii($input, 'en', true, false, true), 'warm');
+    }
+
+    public function testToAsciiConsistentAcrossRepeatedCallsWithSpecialChars()
+    {
+        // Regression test for https://github.com/voku/portable-ascii/issues/135
+        // The degree sign (°) and accented chars should behave consistently on
+        // every call, regardless of internal map-loading order.
+        $input = 'Webinaire des transitions n°34 - Agir et mobiliser pour la biodiversité dans son entreprise';
+        $expected = 'Webinaire des transitions n34 - Agir et mobiliser pour la biodiversite dans son entreprise';
+
+        static::assertSame($expected, ASCII::to_ascii($input, 'en'), 'first call');
+        static::assertSame($expected, ASCII::to_ascii($input, 'en'), 'second call (warm)');
     }
 
     public function testRemoveInvisibleCharacters()

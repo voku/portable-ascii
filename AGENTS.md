@@ -8,7 +8,9 @@
 ## Validation
 
 - Run the test suite with `php vendor/bin/phpunit -c phpunit.xml`.
-- Run static analysis with `php vendor/bin/phpstan analyse -c phpstan.neon`.
+- PHPStan is installed in CI on demand and is not part of the committed root `require-dev` set.
+- Before running static analysis locally, install PHPStan the same way CI does: `composer require --dev --no-interaction phpstan/phpstan:^2.1 phpstan/phpstan-strict-rules:^2.0`.
+- Then run static analysis with `php vendor/bin/phpstan analyse -c phpstan.neon`.
 - Also run the PHP 7-targeted static analysis with `php vendor/bin/phpstan analyse -c phpstan-php7.neon`.
 - After changing PHP code, run PHPUnit and both PHPStan commands before wrapping up.
 
