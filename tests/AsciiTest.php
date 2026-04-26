@@ -266,13 +266,22 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame(\str_repeat('a  b c', 20), ASCII::to_ascii($input, 'en', true), 'with cleanup warm');
     }
     
-    public function testToAsciiLongCorrectAcrossRepeatedCalls()
+    public function testToAsciiLongDefaultPathDropsDegreeSymbolAcrossRepeatedCalls()
     {
         $input = 'Webinaire des transitions n°34 - Agir et mobiliser pour la biodiversité dans son entreprise';
-        $output = 'Webinaire des transitions ndeg34 - Agir et mobiliser pour la biodiversite dans son entreprise';
-        
-        static::assertSame($output, ASCII::to_ascii($input, 'en'), 'with cleanup');
-        static::assertSame($output, ASCII::to_ascii($input, 'en'), 'with cleanup warm');
+        $expected = 'Webinaire des transitions n34 - Agir et mobiliser pour la biodiversite dans son entreprise';
+
+        // Warm the transliteration and extra-symbol paths first to ensure they do
+        // not leak degree-sign expansion into the default cleanup-only path.
+        static::assertSame(
+            'Webinaire des transitions ndeg34 - Agir et mobiliser pour la biodiversite dans son entreprise',
+            ASCII::to_ascii($input, 'en', true, false, true),
+            'transliteration warmup'
+        );
+        static::assertSame('20 Celsius ', ASCII::to_ascii('20°C', 'temperature', false, true), 'extra-symbol warmup');
+
+        static::assertSame($expected, ASCII::to_ascii($input, 'en'), 'with cleanup');
+        static::assertSame($expected, ASCII::to_ascii($input, 'en'), 'with cleanup warm');
     }
 
     public function testToAsciiLongEnglishTransliterationShortcutStaysCorrectAcrossRepeatedCalls()
@@ -284,16 +293,37 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame($expected, ASCII::to_ascii($input, 'en', true, false, true), 'warm');
     }
 
-    public function testToAsciiConsistentAcrossRepeatedCallsWithSpecialChars()
+    public function testToAsciiLongTransliterationExpandsDegreeSymbolAcrossRepeatedCalls()
     {
         // Regression test for https://github.com/voku/portable-ascii/issues/135
-        // The degree sign (°) and accented chars should behave consistently on
-        // every call, regardless of internal map-loading order.
+        // The transliteration-enabled path should keep expanding "°" to "deg"
+        // regardless of the order in which other long-string paths were warmed.
         $input = 'Webinaire des transitions n°34 - Agir et mobiliser pour la biodiversité dans son entreprise';
-        $expected = 'Webinaire des transitions n34 - Agir et mobiliser pour la biodiversite dans son entreprise';
+        $expected = 'Webinaire des transitions ndeg34 - Agir et mobiliser pour la biodiversite dans son entreprise';
 
-        static::assertSame($expected, ASCII::to_ascii($input, 'en'), 'first call');
-        static::assertSame($expected, ASCII::to_ascii($input, 'en'), 'second call (warm)');
+        static::assertSame(
+            'Webinaire des transitions n34 - Agir et mobiliser pour la biodiversite dans son entreprise',
+            ASCII::to_ascii($input, 'en'),
+            'default-path warmup'
+        );
+
+        static::assertSame($expected, ASCII::to_ascii($input, 'en', true, false, true), 'first transliteration call');
+        static::assertSame($expected, ASCII::to_ascii($input, 'en', true, false, true), 'second transliteration call (warm)');
+    }
+
+    public function testToAsciiLongRetentionPathKeepsDegreeSymbolAcrossRepeatedCalls()
+    {
+        $input = 'Webinaire des transitions n°34 - Agir et mobiliser pour la biodiversité dans son entreprise';
+        $expected = 'Webinaire des transitions n°34 - Agir et mobiliser pour la biodiversite dans son entreprise';
+
+        static::assertSame(
+            'Webinaire des transitions ndeg34 - Agir et mobiliser pour la biodiversite dans son entreprise',
+            ASCII::to_ascii($input, 'en', true, false, true),
+            'transliteration warmup'
+        );
+
+        static::assertSame($expected, ASCII::to_ascii($input, 'en', false), 'first retention call');
+        static::assertSame($expected, ASCII::to_ascii($input, 'en', false), 'second retention call (warm)');
     }
 
     public function testRemoveInvisibleCharacters()

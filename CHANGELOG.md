@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.1.1 (2026-04-24)
+
+- fix long-string `ASCII::to_ascii()` regression coverage to match current degree-sign handling and lock in cache-order behavior across cleanup, transliteration, and retention modes
+
 ### 2.1.0 (2026-04-16)
 
 - run all checks and tests up to PHP 8.5
