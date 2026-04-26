@@ -109,6 +109,24 @@ final class TransliteratorPolyfill
             return false;
         }
 
+        if (!self::isValidUtf8($transliterator)) {
+            \trigger_error(
+                'transliterator_transliterate(): polyfill requires a valid UTF-8 transliterator ID; invalid UTF-8 given',
+                \E_USER_WARNING
+            );
+
+            return false;
+        }
+
+        if (!self::isValidUtf8($string)) {
+            \trigger_error(
+                'transliterator_transliterate(): polyfill requires a valid UTF-8 input string; invalid UTF-8 given',
+                \E_USER_WARNING
+            );
+
+            return false;
+        }
+
         if (!self::validateOffsets($start, $end)) {
             return false;
         }
@@ -343,6 +361,11 @@ final class TransliteratorPolyfill
         }
 
         return true;
+    }
+
+    private static function isValidUtf8(string $string): bool
+    {
+        return \preg_match('//u', $string) === 1;
     }
 
     private static function failForInvalidOffsets(string $message): bool

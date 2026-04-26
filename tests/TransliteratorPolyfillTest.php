@@ -391,6 +391,33 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
         static::assertStringContainsString('Katakana-Hiragana', $captured['warning']);
     }
 
+    public function testInvalidUtf8InputTriggersWarningAndReturnsFalse(): void
+    {
+        $captured = self::transliterateCapturingWarning('Latin-ASCII', "\x80\x03");
+
+        static::assertFalse($captured['result']);
+        static::assertNotNull($captured['warning']);
+        static::assertStringContainsString('invalid UTF-8', $captured['warning']);
+    }
+
+    public function testInvalidUtf8TransliteratorIdTriggersWarningAndReturnsFalse(): void
+    {
+        $captured = self::transliterateCapturingWarning("\x8F", 'test');
+
+        static::assertFalse($captured['result']);
+        static::assertNotNull($captured['warning']);
+        static::assertStringContainsString('invalid UTF-8', $captured['warning']);
+    }
+
+    public function testUnsupportedRuleStringFromUpstreamVariantTriggersWarningAndReturnsFalse(): void
+    {
+        $captured = self::transliterateCapturingWarning('[\p{White_Space}] hex', ' o');
+
+        static::assertFalse($captured['result']);
+        static::assertNotNull($captured['warning']);
+        static::assertStringContainsString('[\p{White_Space}] hex', $captured['warning']);
+    }
+
     // ─── Invalid-input / edge-case tests ────────────────────────────────
 
     public function testEmptyStringReturnsEmpty(): void
@@ -418,6 +445,22 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
         static::assertFalse($captured['result']);
         static::assertNotNull($captured['warning']);
         static::assertStringContainsString('integer', $captured['warning']);
+    }
+
+    public function testObjectTransliteratorWithToStringIsStillRejected(): void
+    {
+        $transliterator = new class {
+            public function __toString(): string
+            {
+                return 'Latin-ASCII';
+            }
+        };
+
+        $captured = self::transliterateCapturingWarning($transliterator, 'test');
+
+        static::assertFalse($captured['result']);
+        static::assertNotNull($captured['warning']);
+        static::assertStringContainsString('object', $captured['warning']);
     }
 
     public function testNullBytesInString(): void
