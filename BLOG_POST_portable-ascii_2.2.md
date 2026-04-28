@@ -34,6 +34,6 @@ composer update voku/portable-ascii
 - GitHub: https://github.com/voku/portable-ascii
 - Changelog: https://github.com/voku/portable-ascii/blob/master/CHANGELOG.md
 - Issue report: https://github.com/voku/portable-ascii/issues/135
-- Sponsor / support: https://www.patreon.com/voku/posts
+- Sponsor/support: https://www.patreon.com/voku/posts
 
 If you are using `portable-ascii` in production and spot another edge case around transliteration or cleanup, please open an issue on GitHub.
