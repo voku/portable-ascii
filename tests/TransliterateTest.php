@@ -116,7 +116,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         $method->setAccessible(true);
 
         static::assertSame('déjà', $method->invoke(null, 'déjà', 'X'));
-        static::assertSame("x y", $method->invoke(null, "x\xC2\xA0y", 'X'));
+        static::assertSame('x y', $method->invoke(null, "x\xC2\xA0y", 'X'));
         static::assertSame("x'y", $method->invoke(null, "x\xE2\x80\x99y", 'X'));
         static::assertSame('xy', $method->invoke(null, "x\x01y", 'X'));
     }
@@ -127,7 +127,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         $method = $rc->getMethod('pre_clean_transliteration_input');
         $method->setAccessible(true);
 
-        static::assertSame("x y", $method->invoke(null, "x\xC2\xA0y", '?'));
+        static::assertSame('x y', $method->invoke(null, "x\xC2\xA0y", '?'));
         static::assertSame('xy', $method->invoke(null, "x\x01y", '?'));
     }
 
