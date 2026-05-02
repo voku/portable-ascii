@@ -328,12 +328,12 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame($expected, ASCII::to_ascii($input, 'en', false), 'second retention call (warm)');
     }
 
-    public function testRemoveInvisibleCharactersReturnsImmediatelyForCleanStrings()
+    public function testRemoveInvisibleCharactersHandlesCleanStrings()
     {
         $this->assertRemoveInvisibleCharactersSame('already clean', 'already clean');
     }
 
-    public function testRemoveInvisibleCharactersStopsWhenReplacementDoesNotChangeInput()
+    public function testRemoveInvisibleCharactersHandlesReplacementMatchingPattern()
     {
         $this->assertRemoveInvisibleCharactersSame("\0a", "\0a", false, "\0");
         $this->assertRemoveInvisibleCharactersSame('%00a', '%00a', true, '%00');
