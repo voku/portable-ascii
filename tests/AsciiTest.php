@@ -326,6 +326,11 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame($expected, ASCII::to_ascii($input, 'en', false), 'second retention call (warm)');
     }
 
+    public function testRemoveInvisibleCharactersReturnsImmediatelyForCleanStrings()
+    {
+        $this->assertRemoveInvisibleCharactersSame('already clean', 'already clean');
+    }
+
     public function testRemoveInvisibleCharacters()
     {
         $testArray = [
@@ -339,18 +344,50 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         ];
 
         foreach ($testArray as $before => $after) {
-            static::assertSame($after, ASCII::remove_invisible_characters($before), 'error by ' . $before);
-            static::assertSame($after, ASCII::remove_invisible_characters($before, true, '', true), 'error by ' . $before);
-            static::assertSame($after, ASCII::remove_invisible_characters($before, false, '', false), 'error by ' . $before);
+            $this->assertRemoveInvisibleCharactersSame($after, $before, false, '', true, 'error by ' . $before);
+            $this->assertRemoveInvisibleCharactersSame($after, $before, true, '', true, 'error by ' . $before);
+            $this->assertRemoveInvisibleCharactersSame($after, $before, false, '', false, 'error by ' . $before);
         }
 
-        static::assertSame('äöüäöüäöü-κόσμεκόσμεäöüäöüäöü κόσμεκόσμεäöüäöüäöü-κόσμεκόσμε', ASCII::remove_invisible_characters("äöüäöüäöü-κόσμεκόσμεäöüäöüäöü\xe1\x9a\x80κόσμεκόσμεäöüäöüäöü-κόσμεκόσμε"));
+        $this->assertRemoveInvisibleCharactersSame('äöüäöüäöü-κόσμεκόσμεäöüäöüäöü κόσμεκόσμεäöüäöüäöü-κόσμεκόσμε', "äöüäöüäöü-κόσμεκόσμεäöüäöüäöü\xe1\x9a\x80κόσμεκόσμεäöüäöüäöü-κόσμεκόσμε");
 
-        static::assertSame('%*ł€! ‎| | ', ASCII::remove_invisible_characters('%*ł€! ‎| | '));
-        static::assertSame('%*ł€! |' . "\n|\t " . "\t", ASCII::remove_invisible_characters('%*ł€! ‎| | ' . "\t", false, '', false));
+        $this->assertRemoveInvisibleCharactersSame('%*ł€! ‎| | ', '%*ł€! ‎| | ');
+        $this->assertRemoveInvisibleCharactersSame('%*ł€! |' . "\n|\t " . "\t", '%*ł€! ‎| | ' . "\t", false, '', false);
 
-        static::assertSame('κόσ?με 	%00 | tes%20öäü%20\u00edtest', ASCII::remove_invisible_characters("κόσ\0με 	%00 | tes%20öäü%20\u00edtest", false, '?'));
-        static::assertSame('κόσμε 	 | tes%20öäü%20\u00edtest', ASCII::remove_invisible_characters("κόσ\0με 	%00 | tes%20öäü%20\u00edtest", true, ''));
+        $this->assertRemoveInvisibleCharactersSame('κόσ?με 	%00 | tes%20öäü%20\u00edtest', "κόσ\0με 	%00 | tes%20öäü%20\u00edtest", false, '?');
+        $this->assertRemoveInvisibleCharactersSame('κόσμε 	 | tes%20öäü%20\u00edtest', "κόσ\0με 	%00 | tes%20öäü%20\u00edtest", true, '');
+        $this->assertRemoveInvisibleCharactersSame("\0a", "\0a", false, "\0");
+        $this->assertRemoveInvisibleCharactersSame('%00a', '%00a', true, '%00');
+    }
+
+    private function assertRemoveInvisibleCharactersSame(
+        string $expected,
+        string $input,
+        bool $urlEncoded = false,
+        string $replacement = '',
+        bool $keepBasicControlCharacters = true,
+        string $message = ''
+    ): void {
+        if (\function_exists('pcntl_async_signals') && \function_exists('pcntl_alarm') && \function_exists('pcntl_signal')) {
+            \pcntl_async_signals(true);
+            \pcntl_signal(\SIGALRM, static function (): void {
+                throw new \RuntimeException('ASCII::remove_invisible_characters() timed out.');
+            });
+            \pcntl_alarm(1);
+        }
+
+        try {
+            static::assertSame(
+                $expected,
+                ASCII::remove_invisible_characters($input, $urlEncoded, $replacement, $keepBasicControlCharacters),
+                $message
+            );
+        } finally {
+            if (\function_exists('pcntl_async_signals') && \function_exists('pcntl_alarm')) {
+                \pcntl_alarm(0);
+                \pcntl_async_signals(false);
+            }
+        }
     }
 
     public function testGetSupportedLanguages()

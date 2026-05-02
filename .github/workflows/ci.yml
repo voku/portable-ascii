@@ -178,4 +178,4 @@ jobs:
 
       - name: Run Infection with PHPStan integration
         run: |
-          php vendor/bin/infection --configuration=infection.json5 --threads=max --min-msi=0 --min-covered-msi=0 --logger-github
+          php vendor/bin/infection --configuration=infection.json5 --logger-github

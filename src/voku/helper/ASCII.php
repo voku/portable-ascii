@@ -733,10 +733,17 @@ final class ASCII
         }
 
         do {
+            $str_before_replace = $str;
             $str = (string) \preg_replace($non_displayables, $replacement, $str, -1, $count);
-        } while ($count !== 0);
 
-        return $str;
+            if ($str === $str_before_replace) {
+                return $str;
+            }
+
+            if ($count === 0) {
+                return $str;
+            }
+        } while (true);
     }
 
     /**
