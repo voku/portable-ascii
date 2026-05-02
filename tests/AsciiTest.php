@@ -1067,7 +1067,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         ], $filtered);
     }
 
-    public function testFilterAsciiReplacementMapKeepsSingleControlCodePointsOnly()
+    public function testFilterAsciiReplacementMapKeepsDotAllNewlineKeys()
     {
         $rc = new \ReflectionClass(ASCII::class);
         $method = $rc->getMethod('filterAsciiReplacementMap');
