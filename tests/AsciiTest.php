@@ -944,6 +944,30 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertGreaterThan(\count($singleCharBaseMap), \count($baseMap));
     }
 
+    public function testAsciiAllReplacementMapCacheRemainsSeparatedAcrossWarmLookups()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('getAsciiAllReplacementMap');
+        $method->setAccessible(true);
+
+        $method->invoke(null, true, true);
+        $baseMap = $method->invoke(null, false, false);
+        $method->invoke(null, false, true);
+        $extraMap = $method->invoke(null, true, false);
+        $singleCharBaseMap = $method->invoke(null, false, true);
+        $singleCharExtraMap = $method->invoke(null, true, true);
+
+        static::assertSame('EUR', $baseMap['€']);
+        static::assertSame(' Euro ', $extraMap['€']);
+        static::assertSame('EUR', $singleCharBaseMap['€']);
+        static::assertSame(' Euro ', $singleCharExtraMap['€']);
+
+        static::assertArrayNotHasKey('∞', $baseMap);
+        static::assertArrayNotHasKey('∞', $singleCharBaseMap);
+        static::assertSame('∞', $extraMap['∞']);
+        static::assertSame('∞', $singleCharExtraMap['∞']);
+    }
+
     public function testAsciiLanguageReplacementMapCacheSeparatesLanguageAndExtraFlags()
     {
         $rc = new \ReflectionClass(ASCII::class);
@@ -968,6 +992,61 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertArrayNotHasKey('∞', $germanSingleCharBase);
     }
 
+    public function testAsciiLanguageReplacementMapCacheHandlesNumericLanguageSuffixes()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('getAsciiLanguageReplacementMap');
+        $method->setAccessible(true);
+
+        $method->invoke(null, 'ru__gost_2000_b', true, true);
+        $gostBase = $method->invoke(null, 'ru__gost_2000_b', false, false);
+        $passportExtra = $method->invoke(null, 'ru__passport_2013', true, false);
+        $passportSingleBase = $method->invoke(null, 'ru__passport_2013', false, true);
+        $gostExtra = $method->invoke(null, 'ru__gost_2000_b', true, false);
+
+        static::assertSame('Shh', $gostBase['Щ']);
+        static::assertArrayNotHasKey('∞', $gostBase);
+
+        static::assertSame('Shh', $gostExtra['Щ']);
+        static::assertSame(' beskonecnost\' ', $gostExtra['∞']);
+
+        static::assertSame('Shch', $passportExtra['Щ']);
+        static::assertSame(' beskonecnost\' ', $passportExtra['∞']);
+
+        static::assertSame('Shch', $passportSingleBase['Щ']);
+        static::assertArrayNotHasKey('∞', $passportSingleBase);
+    }
+
+    public function testToAsciiReplaceCacheSeparatesNumericLanguageSuffixesAndFlags()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('to_ascii_replace');
+        $method->setAccessible(true);
+
+        $valid = null;
+        $method->invokeArgs(null, ['Щ∞', 'ru__gost_2000_b', true, true, &$valid]);
+
+        $valid = null;
+        $gostBase = $method->invokeArgs(null, ['Щ∞', 'ru__gost_2000_b', false, false, &$valid]);
+        static::assertTrue($valid);
+        static::assertSame('Shh∞', $gostBase);
+
+        $valid = null;
+        $passportExtra = $method->invokeArgs(null, ['Щ∞', 'ru__passport_2013', true, false, &$valid]);
+        static::assertTrue($valid);
+        static::assertSame('Shch beskonecnost\' ', $passportExtra);
+
+        $valid = null;
+        $passportSingleBase = $method->invokeArgs(null, ['Щ∞', 'ru__passport_2013', false, true, &$valid]);
+        static::assertTrue($valid);
+        static::assertSame('Shch∞', $passportSingleBase);
+
+        $valid = null;
+        $gostExtra = $method->invokeArgs(null, ['Щ∞', 'ru__gost_2000_b', true, false, &$valid]);
+        static::assertTrue($valid);
+        static::assertSame('Shh beskonecnost\' ', $gostExtra);
+    }
+
     public function testFilterAsciiReplacementMapKeepsOnlySingleUtf8CodePoints()
     {
         $rc = new \ReflectionClass(ASCII::class);
@@ -985,6 +1064,25 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame([
             'ä' => 'ae',
             '😀' => 'smile',
+        ], $filtered);
+    }
+
+    public function testFilterAsciiReplacementMapKeepsSingleControlCodePointsOnly()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('filterAsciiReplacementMap');
+        $method->setAccessible(true);
+
+        $filtered = $method->invoke(null, [
+            "\n" => 'newline',
+            "\n\n" => 'two-newlines',
+            "😀\n" => 'emoji-plus-newline',
+            'abcde' => 'five-bytes',
+        ], true);
+
+        static::assertSame([
+            "\n" => 'newline',
+            "\n\n" => 'two-newlines',
         ], $filtered);
     }
 
