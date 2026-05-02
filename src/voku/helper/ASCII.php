@@ -1159,7 +1159,7 @@ final class ASCII
         // only run the heavy clean() regex when the string has invalid UTF-8
         if (\preg_match('//u', $str) === 1) {
             $str_before_clean = $str;
-            $str = self::clean_valid_utf8_transliteration_input($str, $unknown);
+            $str = self::pre_clean_transliteration_input($str, $unknown);
             if (
                 $str !== $str_before_clean
                 &&
@@ -1630,11 +1630,13 @@ final class ASCII
     /**
      * @param string|null $unknown
      */
-    private static function clean_valid_utf8_transliteration_input(string $str, $unknown): string
+    private static function pre_clean_transliteration_input(string $str, $unknown): string
     {
         if (
             $unknown !== '?'
             &&
+            // C2 and E2 are the leading bytes for the valid UTF-8 sequences that
+            // normalize_whitespace() and normalize_msword() can collapse to ASCII.
             \preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) !== 1
         ) {
             return $str;

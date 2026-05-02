@@ -109,10 +109,10 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame("X\n", ASCII::to_transliterate("😀\n", 'X', false));
     }
 
-    public function testValidUtf8TransliterationCleanupOnlyRunsWhenNeededForUnknownFallbacks()
+    public function testCleanupSkippedForCustomUnknownWithoutMarkers()
     {
         $rc = new \ReflectionClass(ASCII::class);
-        $method = $rc->getMethod('clean_valid_utf8_transliteration_input');
+        $method = $rc->getMethod('pre_clean_transliteration_input');
         $method->setAccessible(true);
 
         static::assertSame('déjà', $method->invoke(null, 'déjà', 'X'));
@@ -121,10 +121,10 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('xy', $method->invoke(null, "x\x01y", 'X'));
     }
 
-    public function testValidUtf8TransliterationCleanupAlwaysRunsForQuestionMarkUnknown()
+    public function testCleanupAlwaysRunsForQuestionMarkUnknown()
     {
         $rc = new \ReflectionClass(ASCII::class);
-        $method = $rc->getMethod('clean_valid_utf8_transliteration_input');
+        $method = $rc->getMethod('pre_clean_transliteration_input');
         $method->setAccessible(true);
 
         static::assertSame("x y", $method->invoke(null, "x\xC2\xA0y", '?'));
