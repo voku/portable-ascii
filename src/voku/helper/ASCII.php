@@ -1465,7 +1465,7 @@ final class ASCII
                     }
                 }
 
-                return \strtr($str, $filteredMap);
+                $str = \strtr($str, $filteredMap);
             }
 
             return $str;
@@ -1477,8 +1477,7 @@ final class ASCII
         // leading byte is present in this specific input string.
         $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
         $filteredMap = [];
-        foreach (\count_chars($str, 1) as $byte => $count) {
-            $fb = \chr($byte);
+        foreach (\str_split(\count_chars($str, 3)) as $fb) {
             if (isset($indexedMap[$fb])) {
                 foreach ($indexedMap[$fb] as $k => $v) {
                     $filteredMap[$k] = $v;
@@ -1510,23 +1509,23 @@ final class ASCII
         }
 
         static $LANGUAGE_CACHE = [];
-        if (isset($LANGUAGE_CACHE[$language])) {
-            return $LANGUAGE_CACHE[$language];
+        if (!isset($LANGUAGE_CACHE[$language])) {
+            if (
+                \strpos($language, '_') === false
+                &&
+                \strpos($language, '-') === false
+            ) {
+                $LANGUAGE_CACHE[$language] = \strtolower($language);
+            } else {
+                $language_tmp = \str_replace('-', '_', \strtolower($language));
+
+                $regex = '/(?<first>[a-z]+)_\g{first}/';
+
+                $LANGUAGE_CACHE[$language] = (string) \preg_replace($regex, '$1', $language_tmp);
+            }
         }
 
-        if (
-            \strpos($language, '_') === false
-            &&
-            \strpos($language, '-') === false
-        ) {
-            return $LANGUAGE_CACHE[$language] = \strtolower($language);
-        }
-
-        $language_tmp = \str_replace('-', '_', \strtolower($language));
-
-        $regex = '/(?<first>[a-z]+)_\g{first}/';
-
-        return $LANGUAGE_CACHE[$language] = (string) \preg_replace($regex, '$1', $language_tmp);
+        return $LANGUAGE_CACHE[$language];
     }
 
     /**
@@ -1539,14 +1538,12 @@ final class ASCII
         static $CACHE = [];
         $cacheKey = (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
 
-        if (isset($CACHE[$cacheKey])) {
-            return $CACHE[$cacheKey];
+        if (!isset($CACHE[$cacheKey])) {
+            $CACHE[$cacheKey] = self::filterAsciiReplacementMap(
+                self::charsArrayWithSingleLanguageValues($replace_extra_symbols, false),
+                $replace_single_chars_only
+            );
         }
-
-        $CACHE[$cacheKey] = self::filterAsciiReplacementMap(
-            self::charsArrayWithSingleLanguageValues($replace_extra_symbols, false),
-            $replace_single_chars_only
-        );
 
         return $CACHE[$cacheKey];
     }
@@ -1564,14 +1561,12 @@ final class ASCII
         static $CACHE = [];
         $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
 
-        if (isset($CACHE[$cacheKey])) {
-            return $CACHE[$cacheKey];
+        if (!isset($CACHE[$cacheKey])) {
+            $CACHE[$cacheKey] = self::filterAsciiReplacementMap(
+                self::charsArrayWithOneLanguage($language, $replace_extra_symbols, false),
+                $replace_single_chars_only
+            );
         }
-
-        $CACHE[$cacheKey] = self::filterAsciiReplacementMap(
-            self::charsArrayWithOneLanguage($language, $replace_extra_symbols, false),
-            $replace_single_chars_only
-        );
 
         return $CACHE[$cacheKey];
     }

@@ -888,6 +888,27 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
             static::assertNotSame($pair, $out, 'pair should be remapped: ' . $pair);
             static::assertTrue($valid);
         }
+
+        $staticVars = $replace->getStaticVariables();
+        $shortCache = $staticVars['SHORT_FILTERED_MAP_CACHE'];
+        $shortQueue = $staticVars['SHORT_FILTERED_MAP_CACHE_QUEUE'];
+
+        static::assertCount(256, $shortCache);
+        static::assertCount(256, $shortQueue);
+
+        \preg_match_all('/./u', $pairs[0], $firstPairChars);
+        \preg_match_all('/./u', $pairs[1], $secondPairChars);
+        \preg_match_all('/./u', $pairs[256], $lastPairChars);
+
+        $firstShortCacheKey = 'de-0-0:' . \implode('|', $firstPairChars[0]);
+        $secondShortCacheKey = 'de-0-0:' . \implode('|', $secondPairChars[0]);
+        $lastShortCacheKey = 'de-0-0:' . \implode('|', $lastPairChars[0]);
+
+        static::assertArrayNotHasKey($firstShortCacheKey, $shortCache);
+        static::assertArrayHasKey($secondShortCacheKey, $shortCache);
+        static::assertArrayHasKey($lastShortCacheKey, $shortCache);
+        static::assertSame($secondShortCacheKey, $shortQueue[0]);
+        static::assertSame($lastShortCacheKey, $shortQueue[255]);
     }
 
     public function testAsciiLanguageReplacementMapCacheIsHitOnRepeatedLookup()
@@ -916,6 +937,27 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame('de', $method->invoke(null, 'DE'));
         static::assertSame('en_us', $method->invoke(null, 'EN-us'));
+
+        $cache = $method->getStaticVariables()['LANGUAGE_CACHE'];
+        static::assertSame('de', $cache['DE']);
+        static::assertSame('de', $cache['de-DE']);
+        static::assertSame('de_at', $cache['de_at']);
+        static::assertSame('en_us', $cache['EN-us']);
+    }
+
+    public function testGetLanguageEmptyInputDoesNotPopulateCache()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('get_language');
+        $method->setAccessible(true);
+
+        $before = $method->getStaticVariables()['LANGUAGE_CACHE'] ?? [];
+
+        static::assertSame('', $method->invoke(null, ''));
+
+        $after = $method->getStaticVariables()['LANGUAGE_CACHE'] ?? [];
+        static::assertSame($before, $after);
+        static::assertArrayNotHasKey('', $after);
     }
 
     public function testAsciiAllReplacementMapCacheSeparatesExtraAndSingleCharacterFlags()
@@ -966,6 +1008,12 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertArrayNotHasKey('∞', $singleCharBaseMap);
         static::assertSame('∞', $extraMap['∞']);
         static::assertSame('∞', $singleCharExtraMap['∞']);
+
+        $cache = $method->getStaticVariables()['CACHE'];
+        static::assertSame('EUR', $cache['0-0']['€']);
+        static::assertSame('EUR', $cache['0-1']['€']);
+        static::assertSame(' Euro ', $cache['1-0']['€']);
+        static::assertSame(' Euro ', $cache['1-1']['€']);
     }
 
     public function testAsciiLanguageReplacementMapCacheSeparatesLanguageAndExtraFlags()
@@ -1015,6 +1063,12 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame('Shch', $passportSingleBase['Щ']);
         static::assertArrayNotHasKey('∞', $passportSingleBase);
+
+        $cache = $method->getStaticVariables()['CACHE'];
+        static::assertSame('Shh', $cache['ru__gost_2000_b-0-0']['Щ']);
+        static::assertSame(' beskonecnost\' ', $cache['ru__gost_2000_b-1-0']['∞']);
+        static::assertSame('Shch', $cache['ru__passport_2013-0-1']['Щ']);
+        static::assertSame(' beskonecnost\' ', $cache['ru__passport_2013-1-0']['∞']);
     }
 
     public function testToAsciiReplaceCacheSeparatesNumericLanguageSuffixesAndFlags()
@@ -1084,6 +1138,45 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
             "\n" => 'newline',
             "\n\n" => 'two-newlines',
         ], $filtered);
+    }
+
+    public function testPrepareAsciiAndExtrasMapsInitializesBaseAndExtraMaps()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('prepareAsciiAndExtrasMaps');
+        $method->setAccessible(true);
+
+        $mapsProperty = $rc->getProperty('ASCII_MAPS');
+        $mapsAndExtrasProperty = $rc->getProperty('ASCII_MAPS_AND_EXTRAS');
+        $extrasProperty = $rc->getProperty('ASCII_EXTRAS');
+
+        $originalMaps = $mapsProperty->getValue();
+        $originalMapsAndExtras = $mapsAndExtrasProperty->getValue();
+        $originalExtras = $extrasProperty->getValue();
+
+        $mapsProperty->setValue(null, null);
+        $mapsAndExtrasProperty->setValue(null, null);
+        $extrasProperty->setValue(null, null);
+
+        try {
+            $method->invoke(null);
+
+            $maps = $mapsProperty->getValue();
+            $mapsAndExtras = $mapsAndExtrasProperty->getValue();
+            $extras = $extrasProperty->getValue();
+
+            static::assertIsArray($maps);
+            static::assertIsArray($mapsAndExtras);
+            static::assertIsArray($extras);
+            static::assertSame('ae', $maps['de']['ä']);
+            static::assertSame(' undendlich ', $extras['de']['∞']);
+            static::assertSame('ae', $mapsAndExtras['de']['ä']);
+            static::assertSame(' undendlich ', $mapsAndExtras['de']['∞']);
+        } finally {
+            $mapsProperty->setValue(null, $originalMaps);
+            $mapsAndExtrasProperty->setValue(null, $originalMapsAndExtras);
+            $extrasProperty->setValue(null, $originalExtras);
+        }
     }
 
     public function testCharsArrayWithExtraSymbolsIncludesBaseAndExtraMappings()
