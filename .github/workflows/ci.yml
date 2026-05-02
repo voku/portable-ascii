@@ -68,7 +68,14 @@ jobs:
       - name: Run tests
         run: |
           mkdir -p build/logs
-          php vendor/bin/phpunit -c phpunit.xml --coverage-clover=build/logs/clover.xml
+          phpunit_major="$(php vendor/bin/phpunit --version | awk '{print $2}' | cut -d. -f1)"
+          phpunit_config="phpunit.xml"
+
+          if [[ "$phpunit_major" -lt 10 ]]; then
+            phpunit_config="phpunit-legacy.xml"
+          fi
+
+          php vendor/bin/phpunit -c "$phpunit_config" --coverage-clover=build/logs/clover.xml
 
       - name: Upload coverage results to Coveralls
         continue-on-error: true

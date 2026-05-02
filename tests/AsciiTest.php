@@ -1149,6 +1149,9 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         $mapsProperty = $rc->getProperty('ASCII_MAPS');
         $mapsAndExtrasProperty = $rc->getProperty('ASCII_MAPS_AND_EXTRAS');
         $extrasProperty = $rc->getProperty('ASCII_EXTRAS');
+        $mapsProperty->setAccessible(true);
+        $mapsAndExtrasProperty->setAccessible(true);
+        $extrasProperty->setAccessible(true);
 
         $originalMaps = $mapsProperty->getValue();
         $originalMapsAndExtras = $mapsAndExtrasProperty->getValue();
