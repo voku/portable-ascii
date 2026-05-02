@@ -333,6 +333,12 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         $this->assertRemoveInvisibleCharactersSame('already clean', 'already clean');
     }
 
+    public function testRemoveInvisibleCharactersStopsWhenReplacementDoesNotChangeInput()
+    {
+        $this->assertRemoveInvisibleCharactersSame("\0a", "\0a", false, "\0");
+        $this->assertRemoveInvisibleCharactersSame('%00a', '%00a', true, '%00');
+    }
+
     public function testRemoveInvisibleCharacters()
     {
         $testArray = [
@@ -358,8 +364,6 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         $this->assertRemoveInvisibleCharactersSame('κόσ?με 	%00 | tes%20öäü%20\u00edtest', "κόσ\0με 	%00 | tes%20öäü%20\u00edtest", false, '?');
         $this->assertRemoveInvisibleCharactersSame('κόσμε 	 | tes%20öäü%20\u00edtest', "κόσ\0με 	%00 | tes%20öäü%20\u00edtest", true, '');
-        $this->assertRemoveInvisibleCharactersSame("\0a", "\0a", false, "\0");
-        $this->assertRemoveInvisibleCharactersSame('%00a', '%00a', true, '%00');
     }
 
     private function assertRemoveInvisibleCharactersSame(
@@ -370,7 +374,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         bool $keepBasicControlCharacters = true,
         string $message = ''
     ): void {
-        if (\function_exists('pcntl_async_signals') && \function_exists('pcntl_alarm') && \function_exists('pcntl_signal')) {
+        if ($this->isPcntlAvailable()) {
             \pcntl_async_signals(true);
             \pcntl_signal(\SIGALRM, static function (): void {
                 throw new \RuntimeException('ASCII::remove_invisible_characters() timed out.');
@@ -385,11 +389,18 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
                 $message
             );
         } finally {
-            if (\function_exists('pcntl_async_signals') && \function_exists('pcntl_alarm')) {
+            if ($this->isPcntlAvailable()) {
                 \pcntl_alarm(0);
                 \pcntl_async_signals(false);
             }
         }
+    }
+
+    private function isPcntlAvailable(): bool
+    {
+        return \function_exists('pcntl_async_signals')
+            && \function_exists('pcntl_alarm')
+            && \function_exists('pcntl_signal');
     }
 
     public function testGetSupportedLanguages()
