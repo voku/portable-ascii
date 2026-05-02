@@ -1158,33 +1158,14 @@ final class ASCII
 
         // only run the heavy clean() regex when the string has invalid UTF-8
         if (\preg_match('//u', $str) === 1) {
+            $str_before_clean = $str;
+            $str = self::clean_valid_utf8_transliteration_input($str, $unknown);
             if (
-                $unknown === '?'
-                ||
-                \strpos($str, "\xC2") !== false
-                ||
-                \strpos($str, "\xE2") !== false
-                ||
-                \preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) === 1
+                $str !== $str_before_clean
+                &&
+                \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
             ) {
-                $str_before_clean = $str;
-                $str = self::normalize_whitespace($str);
-                $str = self::normalize_msword($str);
-                $str = self::remove_invisible_characters($str);
-                $str = self::clean(
-                    $str,
-                    true,
-                    false,
-                    true,
-                    false
-                );
-                if (
-                    $str !== $str_before_clean
-                    &&
-                    \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
-                ) {
-                    return $str;
-                }
+                return $str;
             }
         } else {
             $str_before_clean = $str;
@@ -1644,6 +1625,25 @@ final class ASCII
         }
 
         return $map;
+    }
+
+    /**
+     * @param string|null $unknown
+     */
+    private static function clean_valid_utf8_transliteration_input(string $str, $unknown): string
+    {
+        if (
+            $unknown !== '?'
+            &&
+            \preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) !== 1
+        ) {
+            return $str;
+        }
+
+        $str = self::normalize_whitespace($str);
+        $str = self::normalize_msword($str);
+
+        return self::remove_invisible_characters($str);
     }
 
     /**

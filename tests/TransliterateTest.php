@@ -109,6 +109,28 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame("X\n", ASCII::to_transliterate("😀\n", 'X', false));
     }
 
+    public function testValidUtf8TransliterationCleanupOnlyRunsWhenNeededForUnknownFallbacks()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('clean_valid_utf8_transliteration_input');
+        $method->setAccessible(true);
+
+        static::assertSame('déjà', $method->invoke(null, 'déjà', 'X'));
+        static::assertSame("x y", $method->invoke(null, "x\xC2\xA0y", 'X'));
+        static::assertSame("x'y", $method->invoke(null, "x\xE2\x80\x99y", 'X'));
+        static::assertSame('xy', $method->invoke(null, "x\x01y", 'X'));
+    }
+
+    public function testValidUtf8TransliterationCleanupAlwaysRunsForQuestionMarkUnknown()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('clean_valid_utf8_transliteration_input');
+        $method->setAccessible(true);
+
+        static::assertSame("x y", $method->invoke(null, "x\xC2\xA0y", '?'));
+        static::assertSame('xy', $method->invoke(null, "x\x01y", '?'));
+    }
+
     public function testTransliterateShortcutBranchesStayCorrectAcrossRepeatedCalls()
     {
         $cases = [
