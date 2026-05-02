@@ -903,6 +903,99 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertArrayHasKey('ü', $second);
     }
 
+    public function testGetLanguageNormalizesVariantsAcrossRepeatedLookups()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('get_language');
+        $method->setAccessible(true);
+
+        static::assertSame('de', $method->invoke(null, 'DE'));
+        static::assertSame('de', $method->invoke(null, 'de-DE'));
+        static::assertSame('de_at', $method->invoke(null, 'de_at'));
+        static::assertSame('en_us', $method->invoke(null, 'EN-us'));
+
+        static::assertSame('de', $method->invoke(null, 'DE'));
+        static::assertSame('en_us', $method->invoke(null, 'EN-us'));
+    }
+
+    public function testAsciiAllReplacementMapCacheSeparatesExtraAndSingleCharacterFlags()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('getAsciiAllReplacementMap');
+        $method->setAccessible(true);
+
+        $baseMap = $method->invoke(null, false, false);
+        $singleCharBaseMap = $method->invoke(null, false, true);
+        $extraMap = $method->invoke(null, true, false);
+        $singleCharExtraMap = $method->invoke(null, true, true);
+
+        static::assertSame('EUR', $baseMap['€']);
+        static::assertSame('EUR', $singleCharBaseMap['€']);
+        static::assertArrayNotHasKey('∞', $baseMap);
+        static::assertArrayNotHasKey('∞', $singleCharBaseMap);
+
+        static::assertSame(' Euro ', $extraMap['€']);
+        static::assertSame(' Euro ', $singleCharExtraMap['€']);
+        static::assertSame('∞', $extraMap['∞']);
+        static::assertSame('∞', $singleCharExtraMap['∞']);
+
+        static::assertGreaterThan(\count($baseMap), \count($extraMap));
+        static::assertGreaterThan(\count($singleCharExtraMap), \count($extraMap));
+        static::assertGreaterThan(\count($singleCharBaseMap), \count($baseMap));
+    }
+
+    public function testAsciiLanguageReplacementMapCacheSeparatesLanguageAndExtraFlags()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('getAsciiLanguageReplacementMap');
+        $method->setAccessible(true);
+
+        $germanBase = $method->invoke(null, 'de', false, false);
+        $germanExtra = $method->invoke(null, 'de', true, false);
+        $dutchExtra = $method->invoke(null, 'nl', true, false);
+        $germanSingleCharBase = $method->invoke(null, 'de', false, true);
+
+        static::assertSame('ae', $germanBase['ä']);
+        static::assertArrayNotHasKey('∞', $germanBase);
+
+        static::assertSame('ae', $germanExtra['ä']);
+        static::assertSame(' undendlich ', $germanExtra['∞']);
+
+        static::assertSame('a', $dutchExtra['ä']);
+        static::assertSame(' oneindig ', $dutchExtra['∞']);
+
+        static::assertSame('ae', $germanSingleCharBase['ä']);
+        static::assertArrayNotHasKey('∞', $germanSingleCharBase);
+    }
+
+    public function testFilterAsciiReplacementMapKeepsOnlySingleUtf8CodePoints()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('filterAsciiReplacementMap');
+        $method->setAccessible(true);
+
+        $filtered = $method->invoke(null, [
+            'ä' => 'ae',
+            '😀' => 'smile',
+            '😀😀' => 'double-emoji',
+            'A̧' => 'combining',
+            'abc' => 'ascii-string',
+        ], true);
+
+        static::assertSame([
+            'ä' => 'ae',
+            '😀' => 'smile',
+        ], $filtered);
+    }
+
+    public function testCharsArrayWithExtraSymbolsIncludesBaseAndExtraMappings()
+    {
+        $dutch = ASCII::charsArrayWithOneLanguage('nl', true, false);
+
+        static::assertSame('a', $dutch['ä']);
+        static::assertSame(' oneindig ', $dutch['∞']);
+    }
+
     public function testToAsciiWithLanguageSpecificExtraSymbols()
     {
         // '∞' in Dutch (nl) is ' oneindig '
