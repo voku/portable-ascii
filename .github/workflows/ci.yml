@@ -163,7 +163,7 @@ jobs:
         uses: actions/cache@v5.0.5
         with:
           path: ${{ steps.composer-cache.outputs.directory }}
-          key: infection-composer-${{ hashFiles('**/composer.json', 'infection.json5') }}
+          key: infection-composer-${{ hashFiles('composer.json', '.github/workflows/ci.yml') }}
           restore-keys: infection-composer-
 
       - name: Install runtime dependencies
