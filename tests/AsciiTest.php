@@ -11,6 +11,8 @@ use voku\helper\ASCII;
  */
 final class AsciiTest extends \PHPUnit\Framework\TestCase
 {
+    private const REMOVE_INVISIBLE_CHARACTERS_TIMEOUT_SECONDS = 1;
+
     public function testToAsciiRemap()
     {
         static::assertSame(['testi' . \chr(128) . 'g', 'testing'], ASCII::to_ascii_remap('testiñg', 'testing'));
@@ -373,7 +375,7 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
             \pcntl_signal(\SIGALRM, static function (): void {
                 throw new \RuntimeException('ASCII::remove_invisible_characters() timed out.');
             });
-            \pcntl_alarm(1);
+            \pcntl_alarm(self::REMOVE_INVISIBLE_CHARACTERS_TIMEOUT_SECONDS);
         }
 
         try {
