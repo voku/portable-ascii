@@ -68,8 +68,14 @@ jobs:
       - name: Run tests
         run: |
           mkdir -p build/logs
-          phpunit_major="$(php vendor/bin/phpunit --version | awk '{print $2}' | cut -d. -f1)"
+          phpunit_version="$(php vendor/bin/phpunit --version | awk 'NR == 1 { print $2 }')"
+          phpunit_major="${phpunit_version%%.*}"
           phpunit_config="phpunit.xml"
+
+          if [[ ! "$phpunit_major" =~ ^[0-9]+$ ]]; then
+            echo "Unable to detect PHPUnit major version from: $phpunit_version" >&2
+            exit 1
+          fi
 
           if [[ "$phpunit_major" -lt 10 ]]; then
             phpunit_config="phpunit-legacy.xml"
