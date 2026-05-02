@@ -732,7 +732,6 @@ final class ASCII
             $non_displayables[] = '/[^\P{C}\s]/u';
         }
 
-        // Use explicit returns so unchanged replacements cannot be turned into non-terminating loop conditions.
         do {
             $str_before_replace = $str;
             $str = (string) \preg_replace($non_displayables, $replacement, $str, -1, $count);
@@ -740,11 +739,9 @@ final class ASCII
             if ($str === $str_before_replace) {
                 return $str;
             }
+        } while ($count !== 0);
 
-            if ($count === 0) {
-                return $str;
-            }
-        } while (true);
+        return $str;
     }
 
     /**
