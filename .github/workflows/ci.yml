@@ -139,3 +139,43 @@ jobs:
       - name: Run PHPStan (PHP ${{ matrix.label }})
         run: |
           php vendor/bin/phpstan analyse -c ${{ matrix.phpstan-config }}
+
+  infection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@2.37.0
+        with:
+          php-version: 8.4
+          coverage: pcov
+          extensions: zip
+          tools: composer
+
+      - name: Determine composer cache directory
+        id: composer-cache
+        run: echo "directory=$(composer config cache-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v5.0.5
+        with:
+          path: ${{ steps.composer-cache.outputs.directory }}
+          key: infection-composer-${{ hashFiles('**/composer.json', 'infection.json5') }}
+          restore-keys: infection-composer-
+
+      - name: Install runtime dependencies
+        run: |
+          composer update --prefer-dist --no-interaction --no-dev
+          composer dump-autoload -o
+
+      - name: Install Infection and PHPStan
+        run: |
+          composer config --no-plugins allow-plugins.infection/extension-installer true
+          composer require --dev --no-interaction infection/infection:^0.32.7 phpstan/phpstan:^2.1 phpstan/phpstan-strict-rules:^2.0
+
+      - name: Run Infection with PHPStan integration
+        run: |
+          php vendor/bin/infection --configuration=infection.json5 --threads=max --min-msi=0 --min-covered-msi=0 --logger-github
