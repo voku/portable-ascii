@@ -384,6 +384,8 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         $this->assertRemoveInvisibleCharactersSame('κόσ?με 	%00 | tes%20öäü%20\u00edtest', "κόσ\0με 	%00 | tes%20öäü%20\u00edtest", false, '?');
         $this->assertRemoveInvisibleCharactersSame('κόσμε 	 | tes%20öäü%20\u00edtest', "κόσ\0με 	%00 | tes%20öäü%20\u00edtest", true, '');
+        static::assertSame('%00foo', ASCII::remove_invisible_characters('%00foo'));
+        static::assertSame('foo', ASCII::remove_invisible_characters('%00foo', true));
     }
 
     private function assertRemoveInvisibleCharactersSame(
@@ -789,6 +791,13 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         }
     }
 
+    public function testToSlugifyReplacesAtSignsWithSeparator()
+    {
+        static::assertSame('foo-bar', ASCII::to_slugify('foo@bar'));
+        static::assertSame('foo_bar', ASCII::to_slugify('foo@bar', '_'));
+        static::assertSame('zhong-wen', ASCII::to_slugify('中文', '-', 'en', [], false, true, true));
+    }
+
     public function testToAsciiWithExtraSymbols()
     {
         // This uses the new to_ascii_replace logic
@@ -848,6 +857,13 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame($invalidUtf8, ASCII::clean($invalidUtf8, true, false, true, true, false));
     }
 
+    public function testCleanRemovesInvisibleCharsByDefault()
+    {
+        static::assertSame('hello', ASCII::clean("\x01hello"));
+        static::assertSame('hello', ASCII::clean("hell\x00o", true, false, true));
+        static::assertSame("\x01hello", ASCII::clean("\x01hello", true, false, true, false));
+    }
+
     public function testToAsciiRemapStillWorks()
     {
         static::assertSame(['testi' . \chr(128) . 'g', 'testing'], ASCII::to_ascii_remap('testiñg', 'testing'));
@@ -869,6 +885,15 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame($input, $this->invokeToAsciiReplace($input, 'en', false, false, $isValidUtf8));
         static::assertFalse($isValidUtf8);
+    }
+
+    public function testToAsciiExactly64ByteBoundaryStaysCorrect()
+    {
+        $input64 = \str_repeat('a', 62) . 'ñ';
+        $input65 = \str_repeat('a', 63) . 'ñ';
+
+        static::assertSame(\str_repeat('a', 62) . 'n', ASCII::to_ascii($input64, 'en', true), '64-byte path');
+        static::assertSame(\str_repeat('a', 63) . 'n', ASCII::to_ascii($input65, 'en', true), '65-byte path');
     }
 
     public function testToTransliterateWithEmptyUnknown()

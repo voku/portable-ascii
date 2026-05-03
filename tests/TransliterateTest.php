@@ -159,6 +159,13 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         }
     }
 
+    public function testTransliteratePrintableAsciiBoundaryAndFourByteCodepoints()
+    {
+        static::assertSame(\str_repeat('A', 64), ASCII::to_transliterate(\str_repeat('A', 64), '?', false));
+        static::assertSame('A', ASCII::to_transliterate("\xF0\x9D\x90\x80", '?', false));
+        static::assertSame('nn', ASCII::to_transliterate('ññ', '?', false));
+    }
+
     public function testUnknownWithPregSpecialCharsIsLiteral()
     {
         static::assertSame('$0', ASCII::to_transliterate('😀', '$0', false));

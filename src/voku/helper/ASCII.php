@@ -311,7 +311,7 @@ final class ASCII
     public static function charsArrayWithMultiLanguageValues(bool $replace_extra_symbols = false): array
     {
         static $CHARS_ARRAY = [];
-        $cacheKey = '' . $replace_extra_symbols;
+        $cacheKey = (string) $replace_extra_symbols;
 
         if (isset($CHARS_ARRAY[$cacheKey])) {
             return $CHARS_ARRAY[$cacheKey];
@@ -331,7 +331,7 @@ final class ASCII
 
         $CHARS_ARRAY[$cacheKey] = $return;
 
-        return $return;
+        return $CHARS_ARRAY[$cacheKey];
     }
 
     /**
@@ -367,7 +367,7 @@ final class ASCII
 
         // init
         static $CHARS_ARRAY = [];
-        $cacheKey = '' . $replace_extra_symbols . '-' . $asOrigReplaceArray;
+        $cacheKey = (string) $replace_extra_symbols . '-' . (string) $asOrigReplaceArray;
 
         // check static cache
         if (isset($CHARS_ARRAY[$cacheKey][$language])) {
@@ -424,7 +424,7 @@ final class ASCII
             }
         }
 
-        return $CHARS_ARRAY[$cacheKey][$language] ?? ['orig' => [], 'replace' => []];
+        return $CHARS_ARRAY[$cacheKey][$language];
     }
 
     /**
@@ -450,7 +450,7 @@ final class ASCII
     ): array {
         // init
         static $CHARS_ARRAY = [];
-        $cacheKey = '' . $replace_extra_symbols . '-' . $asOrigReplaceArray;
+        $cacheKey = (string) $replace_extra_symbols . '-' . (string) $asOrigReplaceArray;
 
         if (isset($CHARS_ARRAY[$cacheKey])) {
             return $CHARS_ARRAY[$cacheKey];

@@ -51,6 +51,8 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
     {
         $array = ASCII::charsArrayWithMultiLanguageValues();
 
+        static::assertFalse(isset($array[' Euro ']), 'default should not include extra symbols');
+
         static::assertSame(
             [
                 0 => 'б',
@@ -169,6 +171,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         static::assertContains('Ae', $array['replace']);
         static::assertNotContains('yo', $array['replace']);
+        static::assertNotContains(' und ', $array['replace']);
 
         // ---
 
@@ -233,6 +236,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         static::assertContains('hnaik', $array['replace']);
         static::assertContains('yo', $array['replace']);
+        static::assertNotContains(' pound ', $array['replace']);
 
         $tmpKey = \array_search('hnaik', $array['replace'], true);
         static::assertSame('၌', $array['orig'][$tmpKey]);
@@ -303,6 +307,11 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         foreach ($testArray as $before => $after) {
             static::assertSame($after, ASCII::to_filename($before, true));
         }
+
+        static::assertSame('n', ASCII::to_filename('ñ'));
+        static::assertSame('', ASCII::to_filename('ñ', false));
+        static::assertSame("test\\file", ASCII::to_filename('test !!! file', false, '\\'));
+        static::assertSame('test', ASCII::to_filename('test...', false, '.'));
     }
 
     /**
