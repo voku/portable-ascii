@@ -904,17 +904,17 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
     public function testToTransliteratePrefixesUnknownWarmMapCacheKeys()
     {
-        $unknown = "\x00null";
+        $collisionTestKey = "\x00null";
 
-        static::assertSame($unknown, ASCII::to_transliterate('😀', $unknown, false));
+        static::assertSame($collisionTestKey, ASCII::to_transliterate('😀', $collisionTestKey, false));
 
         $rc = new \ReflectionClass(ASCII::class);
         $method = $rc->getMethod('to_transliterate');
         $method->setAccessible(true);
 
         $warmMaps = $method->getStaticVariables()['WARM_MAPS'];
-        static::assertArrayHasKey("\x01" . $unknown, $warmMaps);
-        static::assertArrayNotHasKey($unknown . "\x01", $warmMaps);
+        static::assertArrayHasKey("\x01" . $collisionTestKey, $warmMaps);
+        static::assertArrayNotHasKey($collisionTestKey . "\x01", $warmMaps);
     }
 
     public function testToAsciiWithUnsupportedChars()

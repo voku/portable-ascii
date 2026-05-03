@@ -1173,7 +1173,7 @@ final class ASCII
                 if (\preg_match_all(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str, $nonAsciiMatches)) {
                     $charMap = [];
 
-                    // Manual deduplication avoids copying the full match list like array_unique().
+                    // Manual deduplication preserves array_unique() behavior without an equivalent unwrap mutant.
                     $seenChars = [];
                     foreach ($nonAsciiMatches[0] as $c) {
                         if (isset($seenChars[$c])) {
@@ -1333,7 +1333,7 @@ final class ASCII
         if (
             !$replace_extra_symbols
             &&
-            // Same as strlen($str) < 65, but avoids function call overhead.
+            // Same as strlen($str) < 65, but avoids function call overhead in this hot replacement path.
             !isset($str[64])
         ) {
             $matchResult = \preg_match_all('/' . self::REGEX_PRINTABLE_ASCII . '/u', $str, $matches);
