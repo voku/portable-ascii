@@ -311,25 +311,23 @@ final class ASCII
     public static function charsArrayWithMultiLanguageValues(bool $replace_extra_symbols = false): array
     {
         static $CHARS_ARRAY = [];
-        $cacheKey = (string) $replace_extra_symbols;
+        $cacheKey = $replace_extra_symbols ? '1' : '0';
 
-        if (isset($CHARS_ARRAY[$cacheKey])) {
-            return $CHARS_ARRAY[$cacheKey];
+        if (!isset($CHARS_ARRAY[$cacheKey])) {
+            // init
+            $return = [];
+            $language_all_chars = self::charsArrayWithSingleLanguageValues(
+                $replace_extra_symbols,
+                false
+            );
+
+            /* @noinspection AlterInForeachInspection | ok here */
+            foreach ($language_all_chars as $key => &$value) {
+                $return[$value][] = $key;
+            }
+
+            $CHARS_ARRAY[$cacheKey] = $return;
         }
-
-        // init
-        $return = [];
-        $language_all_chars = self::charsArrayWithSingleLanguageValues(
-            $replace_extra_symbols,
-            false
-        );
-
-        /* @noinspection AlterInForeachInspection | ok here */
-        foreach ($language_all_chars as $key => &$value) {
-            $return[$value][] = $key;
-        }
-
-        $CHARS_ARRAY[$cacheKey] = $return;
 
         return $CHARS_ARRAY[$cacheKey];
     }
@@ -367,7 +365,7 @@ final class ASCII
 
         // init
         static $CHARS_ARRAY = [];
-        $cacheKey = (string) $replace_extra_symbols . '-' . (string) $asOrigReplaceArray;
+        $cacheKey = ($replace_extra_symbols ? '1' : '0') . '-' . ($asOrigReplaceArray ? '1' : '0');
 
         // check static cache
         if (isset($CHARS_ARRAY[$cacheKey][$language])) {
@@ -450,7 +448,7 @@ final class ASCII
     ): array {
         // init
         static $CHARS_ARRAY = [];
-        $cacheKey = (string) $replace_extra_symbols . '-' . (string) $asOrigReplaceArray;
+        $cacheKey = ($replace_extra_symbols ? '1' : '0') . '-' . ($asOrigReplaceArray ? '1' : '0');
 
         if (isset($CHARS_ARRAY[$cacheKey])) {
             return $CHARS_ARRAY[$cacheKey];
