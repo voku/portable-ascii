@@ -311,9 +311,8 @@ final class ASCII
     public static function charsArrayWithMultiLanguageValues(bool $replace_extra_symbols = false): array
     {
         static $CHARS_ARRAY = [];
-        $cacheKey = $replace_extra_symbols ? '1' : '0';
 
-        if (!isset($CHARS_ARRAY[$cacheKey])) {
+        if (!isset($CHARS_ARRAY[$replace_extra_symbols])) {
             // init
             $return = [];
             $language_all_chars = self::charsArrayWithSingleLanguageValues(
@@ -326,10 +325,10 @@ final class ASCII
                 $return[$value][] = $key;
             }
 
-            $CHARS_ARRAY[$cacheKey] = $return;
+            $CHARS_ARRAY[$replace_extra_symbols] = $return;
         }
 
-        return $CHARS_ARRAY[$cacheKey];
+        return $CHARS_ARRAY[$replace_extra_symbols];
     }
 
     /**
@@ -365,64 +364,61 @@ final class ASCII
 
         // init
         static $CHARS_ARRAY = [];
-        $cacheKey = ($replace_extra_symbols ? '1' : '0') . '-' . ($asOrigReplaceArray ? '1' : '0');
 
         // check static cache
-        if (isset($CHARS_ARRAY[$cacheKey][$language])) {
-            return $CHARS_ARRAY[$cacheKey][$language];
-        }
+        if (!isset($CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language])) {
+            if ($replace_extra_symbols) {
+                self::prepareAsciiAndExtrasMaps();
 
-        if ($replace_extra_symbols) {
-            self::prepareAsciiAndExtrasMaps();
+                if (isset(self::$ASCII_MAPS_AND_EXTRAS[$language])) {
+                    $tmpArray = self::$ASCII_MAPS_AND_EXTRAS[$language];
 
-            if (isset(self::$ASCII_MAPS_AND_EXTRAS[$language])) {
-                $tmpArray = self::$ASCII_MAPS_AND_EXTRAS[$language];
-
-                if ($asOrigReplaceArray) {
-                    $CHARS_ARRAY[$cacheKey][$language] = [
-                        'orig'    => \array_keys($tmpArray),
-                        'replace' => \array_values($tmpArray),
-                    ];
+                    if ($asOrigReplaceArray) {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = [
+                            'orig'    => \array_keys($tmpArray),
+                            'replace' => \array_values($tmpArray),
+                        ];
+                    } else {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = $tmpArray;
+                    }
                 } else {
-                    $CHARS_ARRAY[$cacheKey][$language] = $tmpArray;
+                    if ($asOrigReplaceArray) {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = [
+                            'orig'    => [],
+                            'replace' => [],
+                        ];
+                    } else {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = [];
+                    }
                 }
             } else {
-                if ($asOrigReplaceArray) {
-                    $CHARS_ARRAY[$cacheKey][$language] = [
-                        'orig'    => [],
-                        'replace' => [],
-                    ];
-                } else {
-                    $CHARS_ARRAY[$cacheKey][$language] = [];
-                }
-            }
-        } else {
-            self::prepareAsciiMaps();
+                self::prepareAsciiMaps();
 
-            if (isset(self::$ASCII_MAPS[$language])) {
-                $tmpArray = self::$ASCII_MAPS[$language];
+                if (isset(self::$ASCII_MAPS[$language])) {
+                    $tmpArray = self::$ASCII_MAPS[$language];
 
-                if ($asOrigReplaceArray) {
-                    $CHARS_ARRAY[$cacheKey][$language] = [
-                        'orig'    => \array_keys($tmpArray),
-                        'replace' => \array_values($tmpArray),
-                    ];
+                    if ($asOrigReplaceArray) {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = [
+                            'orig'    => \array_keys($tmpArray),
+                            'replace' => \array_values($tmpArray),
+                        ];
+                    } else {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = $tmpArray;
+                    }
                 } else {
-                    $CHARS_ARRAY[$cacheKey][$language] = $tmpArray;
-                }
-            } else {
-                if ($asOrigReplaceArray) {
-                    $CHARS_ARRAY[$cacheKey][$language] = [
-                        'orig'    => [],
-                        'replace' => [],
-                    ];
-                } else {
-                    $CHARS_ARRAY[$cacheKey][$language] = [];
+                    if ($asOrigReplaceArray) {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = [
+                            'orig'    => [],
+                            'replace' => [],
+                        ];
+                    } else {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = [];
+                    }
                 }
             }
         }
 
-        return $CHARS_ARRAY[$cacheKey][$language];
+        return $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language];
     }
 
     /**
@@ -448,38 +444,35 @@ final class ASCII
     ): array {
         // init
         static $CHARS_ARRAY = [];
-        $cacheKey = ($replace_extra_symbols ? '1' : '0') . '-' . ($asOrigReplaceArray ? '1' : '0');
 
-        if (isset($CHARS_ARRAY[$cacheKey])) {
-            return $CHARS_ARRAY[$cacheKey];
-        }
+        if (!isset($CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray])) {
+            if ($replace_extra_symbols) {
+                self::prepareAsciiAndExtrasMaps();
 
-        if ($replace_extra_symbols) {
-            self::prepareAsciiAndExtrasMaps();
+                /* @noinspection AlterInForeachInspection | ok here */
+                foreach (self::$ASCII_MAPS_AND_EXTRAS ?? [] as &$map) {
+                    $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][] = $map;
+                }
+            } else {
+                self::prepareAsciiMaps();
 
-            /* @noinspection AlterInForeachInspection | ok here */
-            foreach (self::$ASCII_MAPS_AND_EXTRAS ?? [] as &$map) {
-                $CHARS_ARRAY[$cacheKey][] = $map;
+                /* @noinspection AlterInForeachInspection | ok here */
+                foreach (self::$ASCII_MAPS ?? [] as &$map) {
+                    $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][] = $map;
+                }
             }
-        } else {
-            self::prepareAsciiMaps();
 
-            /* @noinspection AlterInForeachInspection | ok here */
-            foreach (self::$ASCII_MAPS ?? [] as &$map) {
-                $CHARS_ARRAY[$cacheKey][] = $map;
+            $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray] = \array_merge([], ...$CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray]);
+
+            if ($asOrigReplaceArray) {
+                $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray] = [
+                    'orig'    => \array_keys($CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray]),
+                    'replace' => \array_values($CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray]),
+                ];
             }
         }
 
-        $CHARS_ARRAY[$cacheKey] = \array_merge([], ...$CHARS_ARRAY[$cacheKey]);
-
-        if ($asOrigReplaceArray) {
-            $CHARS_ARRAY[$cacheKey] = [
-                'orig'    => \array_keys($CHARS_ARRAY[$cacheKey]),
-                'replace' => \array_values($CHARS_ARRAY[$cacheKey]),
-            ];
-        }
-
-        return $CHARS_ARRAY[$cacheKey];
+        return $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray];
     }
 
     /**
