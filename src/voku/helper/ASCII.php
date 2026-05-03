@@ -1101,154 +1101,130 @@ final class ASCII
         /** @var array<string, array<string, string>> */
         static $WARM_MAPS = [];
 
-        if ($str === '') {
-            return '';
-        }
+        if (!self::is_ascii($str)) {
+            $unknownCacheKey = \serialize($unknown);
 
-        // Long pure printable ASCII strings are common in benchmarks and can
-        // skip the broader ASCII/control-character validator entirely.
-        if (
-            isset($str[63])
-            &&
-            !\preg_match('/' . self::REGEX_PRINTABLE_ASCII . '/', $str)
-        ) {
-            return $str;
-        }
-
-        // check if we only have ASCII, first (better performance)
-        if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0) {
-            return $str;
-        }
-
-        // Prefix the cache key so unknown=null does not collide with an
-        // explicit fallback string such as "\x00".
-        $unknownCacheKey = $unknown === null
-            ? "\x00null"
-            : "\x01" . $unknown;
-
-        if ($SUPPORT_INTL === null) {
-            $SUPPORT_INTL = \extension_loaded('intl');
-        }
-
-        $warmPathAlreadyApplied = false;
-        if (
-            $unknown !== '?'
-            &&
-            isset($WARM_MAPS[$unknownCacheKey])
-            &&
-            \preg_match('//u', $str) === 1
-        ) {
-            $warmStr = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
-            if (!\preg_match('/[\x80-\xFF\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $warmStr)) {
-                return $warmStr;
+            if ($SUPPORT_INTL === null) {
+                $SUPPORT_INTL = \extension_loaded('intl');
             }
 
-            $str = $warmStr;
-            $warmPathAlreadyApplied = true;
-        }
-
-        // only run the heavy clean() regex when the string has invalid UTF-8
-        if (\preg_match('//u', $str) === 1) {
-            $str = self::pre_clean_transliteration_input($str, $unknown);
-        } else {
-            $str = self::clean($str);
-        }
-
-        if (
-            $strict
-            &&
-            $SUPPORT_INTL === true
-        ) {
-            if (!isset($TRANSLITERATOR)) {
-                // INFO: see "*-Latin" rules via "transliterator_list_ids()"
-                $TRANSLITERATOR = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII;');
+            $warmPathAlreadyApplied = false;
+            if (
+                $unknown !== '?'
+                &&
+                isset($WARM_MAPS[$unknownCacheKey])
+                &&
+                \preg_match('//u', $str) === 1
+            ) {
+                $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
+                $warmPathAlreadyApplied = true;
             }
 
-            // INFO: https://unicode.org/cldr/utility/character.jsp
-            $str_tmp = \transliterator_transliterate($TRANSLITERATOR, $str);
-
-            if ($str_tmp !== false) {
-                $str = $str_tmp;
-            }
-        }
-
-        if (self::$ORD === null) {
-            self::$ORD = self::getData('ascii_ord');
-        }
-
-        // Copy the memoized ORD table into a local non-null alias so the hot
-        // callback can read it without repeated nullable static-property checks.
-        /** @var array<string, int> $ordMap */
-        $ordMap = self::$ORD;
-
-        // warm path: if we already built a map for this $unknown value, try it first
-        if (
-            !$warmPathAlreadyApplied
-            &&
-            isset($WARM_MAPS[$unknownCacheKey])
-        ) {
-            $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
-        }
-
-        // collect unique non-ASCII characters and build a strtr map
-        if (\preg_match_all(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str, $nonAsciiMatches)) {
-            $charMap = [];
-
-            foreach (\array_unique($nonAsciiMatches[0]) as $c) {
-                if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
-                    $ordC0 = $ordMap[$c[0]];
-                    $ordC1 = $ordMap[$c[1]];
-
-                    if ($ordC0 < 224) {
-                        $ord = (($ordC0 - 192) << 6) + ($ordC1 - 128);
-                    } elseif ($ordC0 < 240) {
-                        $ord = (($ordC0 - 224) << 12) + (($ordC1 - 128) << 6) + ($ordMap[$c[2]] - 128);
-                    } else {
-                        $ord = (($ordC0 - 240) << 18) + (($ordC1 - 128) << 12) + (($ordMap[$c[2]] - 128) << 6) + ($ordMap[$c[3]] - 128);
-                    }
-
-                    $bank = $ord >> 8;
-                    if (!isset($UTF8_TO_TRANSLIT[$bank])) {
-                        $UTF8_TO_TRANSLIT[$bank] = self::getDataIfExists(\sprintf('x%03x', $bank));
-                    }
-
-                    $bankPos = $ord & 255;
-
-                    if (
-                        isset($UTF8_TO_TRANSLIT[$bank][$bankPos])
-                        &&
-                        !isset(self::UNKNOWN_TRANSLITERATION_MARKERS[$UTF8_TO_TRANSLIT[$bank][$bankPos]])
-                    ) {
-                        $TRANSLIT_CHAR_CACHE[$c] = $UTF8_TO_TRANSLIT[$bank][$bankPos];
-                    } else {
-                        $TRANSLIT_CHAR_CACHE[$c] = false;
-                    }
-                }
-
-                $cached = $TRANSLIT_CHAR_CACHE[$c];
-
-                if ($cached === false) {
-                    if ($unknown !== null) {
-                        $charMap[$c] = $unknown;
-                    }
-                } elseif ($cached === '' && $unknown === null) {
-                    // keep original char
+            if (!self::is_ascii($str)) {
+                // only run the heavy clean() regex when the string has invalid UTF-8
+                if (\preg_match('//u', $str) === 1) {
+                    $str = self::pre_clean_transliteration_input($str, $unknown);
                 } else {
-                    $charMap[$c] = $cached;
+                    $str = self::clean($str);
                 }
-            }
 
-            // merge new entries into the warm map for future calls
-            if ($charMap !== []) {
-                if (isset($WARM_MAPS[$unknownCacheKey])) {
-                    foreach ($charMap as $k => $v) {
-                        $WARM_MAPS[$unknownCacheKey][$k] = $v;
+                if (
+                    $strict
+                    &&
+                    $SUPPORT_INTL === true
+                ) {
+                    if (!isset($TRANSLITERATOR)) {
+                        // INFO: see "*-Latin" rules via "transliterator_list_ids()"
+                        $TRANSLITERATOR = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII;');
                     }
-                } else {
-                    $WARM_MAPS[$unknownCacheKey] = $charMap;
+
+                    // INFO: https://unicode.org/cldr/utility/character.jsp
+                    $str_tmp = \transliterator_transliterate($TRANSLITERATOR, $str);
+
+                    if ($str_tmp !== false) {
+                        $str = $str_tmp;
+                    }
                 }
 
-                return \strtr($str, $WARM_MAPS[$unknownCacheKey]);
+                if (self::$ORD === null) {
+                    self::$ORD = self::getData('ascii_ord');
+                }
+
+                // Copy the memoized ORD table into a local non-null alias so the hot
+                // callback can read it without repeated nullable static-property checks.
+                /** @var array<string, int> $ordMap */
+                $ordMap = self::$ORD;
+
+                // warm path: if we already built a map for this $unknown value, try it first
+                if (
+                    !$warmPathAlreadyApplied
+                    &&
+                    isset($WARM_MAPS[$unknownCacheKey])
+                ) {
+                    $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
+                }
+
+                // collect non-ASCII characters and build a strtr map
+                if (\preg_match_all(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str, $nonAsciiMatches)) {
+                    $charMap = [];
+
+                    foreach ($nonAsciiMatches[0] as $c) {
+                        if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
+                            $ordC0 = $ordMap[$c[0]];
+                            $ordC1 = $ordMap[$c[1]];
+
+                            if ($ordC0 < 224) {
+                                $ord = (($ordC0 - 192) << 6) + ($ordC1 - 128);
+                            } elseif ($ordC0 < 240) {
+                                $ord = (($ordC0 - 224) << 12) + (($ordC1 - 128) << 6) + ($ordMap[$c[2]] - 128);
+                            } else {
+                                $ord = (($ordC0 - 240) << 18) + (($ordC1 - 128) << 12) + (($ordMap[$c[2]] - 128) << 6) + ($ordMap[$c[3]] - 128);
+                            }
+
+                            $bank = $ord >> 8;
+                            if (!isset($UTF8_TO_TRANSLIT[$bank])) {
+                                $UTF8_TO_TRANSLIT[$bank] = self::getDataIfExists(\sprintf('x%03x', $bank));
+                            }
+
+                            $bankPos = $ord & 255;
+
+                            if (
+                                isset($UTF8_TO_TRANSLIT[$bank][$bankPos])
+                                &&
+                                !isset(self::UNKNOWN_TRANSLITERATION_MARKERS[$UTF8_TO_TRANSLIT[$bank][$bankPos]])
+                            ) {
+                                $TRANSLIT_CHAR_CACHE[$c] = $UTF8_TO_TRANSLIT[$bank][$bankPos];
+                            } else {
+                                $TRANSLIT_CHAR_CACHE[$c] = false;
+                            }
+                        }
+
+                        $cached = $TRANSLIT_CHAR_CACHE[$c];
+
+                        if ($cached === false) {
+                            if ($unknown !== null) {
+                                $charMap[$c] = $unknown;
+                            }
+                        } elseif ($cached === '' && $unknown === null) {
+                            // keep original char
+                        } else {
+                            $charMap[$c] = $cached;
+                        }
+                    }
+
+                    // merge new entries into the warm map for future calls
+                    if ($charMap !== []) {
+                        if (isset($WARM_MAPS[$unknownCacheKey])) {
+                            foreach ($charMap as $k => $v) {
+                                $WARM_MAPS[$unknownCacheKey][$k] = $v;
+                            }
+                        } else {
+                            $WARM_MAPS[$unknownCacheKey] = $charMap;
+                        }
+
+                        $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
+                    }
+                }
             }
         }
 
@@ -1345,7 +1321,7 @@ final class ASCII
         if (
             !$replace_extra_symbols
             &&
-            \strlen($str) < 65
+            !isset($str[64])
         ) {
             $matchResult = \preg_match_all('/' . self::REGEX_PRINTABLE_ASCII . '/u', $str, $matches);
             $isValidUtf8 = $matchResult !== false;
@@ -1572,14 +1548,14 @@ final class ASCII
     {
         // C2 and E2 are the leading bytes for the valid UTF-8 sequences that
         // normalize_whitespace() and normalize_msword() can collapse to ASCII.
-        if (\preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) !== 1) {
-            return $str;
+        if (\preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) === 1) {
+            $str = self::normalize_whitespace($str);
+            $str = self::normalize_msword($str);
+
+            $str = self::remove_invisible_characters($str);
         }
 
-        $str = self::normalize_whitespace($str);
-        $str = self::normalize_msword($str);
-
-        return self::remove_invisible_characters($str);
+        return $str;
     }
 
     /**
