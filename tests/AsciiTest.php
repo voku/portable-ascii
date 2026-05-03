@@ -18,6 +18,14 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame(['testi' . \chr(128) . 'g', 'testing'], ASCII::to_ascii_remap('testiñg', 'testing'));
     }
 
+    public function testToAsciiRemapAssignsDistinctBytesPerUniqueMultibyteCharacter()
+    {
+        static::assertSame(
+            ['a' . \chr(128) . \chr(129) . \chr(128), \chr(129) . \chr(128) . 'a'],
+            ASCII::to_ascii_remap('añ😀ñ', '😀ña')
+        );
+    }
+
     public function testUtf8()
     {
         $str = 'testiñg';
@@ -328,6 +336,18 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame($expected, ASCII::to_ascii($input, 'en', false), 'second retention call (warm)');
     }
 
+    public function testToAsciiUsesLanguageSpecificMultiCharacterMappings()
+    {
+        static::assertSame('EF', ASCII::to_ascii('ΕΥ', 'el', false), 'cold');
+        static::assertSame('EF', ASCII::to_ascii('ΕΥ', 'el', false), 'warm');
+    }
+
+    public function testToAsciiUsesFiveCodepointLanguageSpecificMappings()
+    {
+        static::assertSame('nub', ASCII::to_ascii('န်ုပ်', 'my', false), 'cold');
+        static::assertSame('nub', ASCII::to_ascii('န်ုပ်', 'my', false), 'warm');
+    }
+
     public function testRemoveInvisibleCharactersHandlesCleanStrings()
     {
         $this->assertRemoveInvisibleCharactersSame('already clean', 'already clean');
@@ -394,6 +414,20 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
                 \pcntl_async_signals(false);
             }
         }
+    }
+
+    private function invokeToAsciiReplace(
+        string $str,
+        string $language,
+        bool $replaceExtraSymbols,
+        bool $replaceSingleCharsOnly,
+        ?bool &$isValidUtf8
+    ): string {
+        $reflection = new \ReflectionClass(ASCII::class);
+        $method = $reflection->getMethod('to_ascii_replace');
+        $method->setAccessible(true);
+
+        return $method->invokeArgs(null, [$str, $language, $replaceExtraSymbols, $replaceSingleCharsOnly, &$isValidUtf8]);
     }
 
     private function isPcntlAvailable(): bool
@@ -826,6 +860,15 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         // to_ascii calls clean() by default if it's not pure ASCII.
         // \xC0\xAF is not pure ASCII.
         static::assertSame('ab', ASCII::to_ascii($invalidUtf8));
+    }
+
+    public function testToAsciiReplaceMarksInvalidUtf8InShortPath()
+    {
+        $isValidUtf8 = null;
+        $input = \str_repeat('a', 62) . "\xC0\xAF";
+
+        static::assertSame($input, $this->invokeToAsciiReplace($input, 'en', false, false, $isValidUtf8));
+        static::assertFalse($isValidUtf8);
     }
 
     public function testToTransliterateWithEmptyUnknown()

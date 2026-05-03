@@ -1158,25 +1158,9 @@ final class ASCII
 
         // only run the heavy clean() regex when the string has invalid UTF-8
         if (\preg_match('//u', $str) === 1) {
-            $str_before_clean = $str;
             $str = self::pre_clean_transliteration_input($str, $unknown);
-            if (
-                $str !== $str_before_clean
-                &&
-                \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
-            ) {
-                return $str;
-            }
         } else {
-            $str_before_clean = $str;
             $str = self::clean($str);
-            if (
-                $str !== $str_before_clean
-                &&
-                \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
-            ) {
-                return $str;
-            }
         }
 
         if (
@@ -1193,14 +1177,6 @@ final class ASCII
             $str_tmp = \transliterator_transliterate($TRANSLITERATOR, $str);
 
             if ($str_tmp !== false) {
-                if (
-                    $str_tmp !== $str
-                    &&
-                    \preg_match('/' . self::$REGEX_ASCII . '/', $str_tmp) === 0
-                ) {
-                    return $str_tmp;
-                }
-
                 $str = $str_tmp;
             }
         }
@@ -1221,10 +1197,6 @@ final class ASCII
             isset($WARM_MAPS[$unknownCacheKey])
         ) {
             $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
-
-            if (!\preg_match('/[\x80-\xFF]/', $str)) {
-                return $str;
-            }
         }
 
         // collect unique non-ASCII characters and build a strtr map
@@ -1236,18 +1208,18 @@ final class ASCII
                 if (isset($seen[$c])) {
                     continue;
                 }
-                $seen[$c] = true;
+                $seen[$c] = $c;
 
                 if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
                     $ordC0 = $ordMap[$c[0]];
                     $ordC1 = $ordMap[$c[1]];
 
-                    if ($ordC0 <= 223) {
-                        $ord = ($ordC0 - 192) * 64 + ($ordC1 - 128);
-                    } elseif ($ordC0 <= 239) {
-                        $ord = ($ordC0 - 224) * 4096 + ($ordC1 - 128) * 64 + ($ordMap[$c[2]] - 128);
+                    if ($ordC0 < 224) {
+                        $ord = (($ordC0 - 192) << 6) + ($ordC1 - 128);
+                    } elseif ($ordC0 < 240) {
+                        $ord = (($ordC0 - 224) << 12) + (($ordC1 - 128) << 6) + ($ordMap[$c[2]] - 128);
                     } else {
-                        $ord = ($ordC0 - 240) * 262144 + ($ordC1 - 128) * 4096 + ($ordMap[$c[2]] - 128) * 64 + ($ordMap[$c[3]] - 128);
+                        $ord = (($ordC0 - 240) << 18) + (($ordC1 - 128) << 12) + (($ordMap[$c[2]] - 128) << 6) + ($ordMap[$c[3]] - 128);
                     }
 
                     $bank = $ord >> 8;
@@ -1333,8 +1305,8 @@ final class ASCII
         $mapCount = \count($map);
         foreach ($matches[0] as $mbc) {
             if (!isset($map[$mbc])) {
-                $map[$mbc] = \chr(128 + $mapCount);
-                ++$mapCount;
+                $map[$mbc] = \chr(128 | $mapCount);
+                $mapCount = \count($map);
             }
         }
 
@@ -1388,105 +1360,90 @@ final class ASCII
         if (
             !$replace_extra_symbols
             &&
-            \strlen($str) <= 64
+            \strlen($str) < 65
         ) {
             $matchResult = \preg_match_all('/' . self::REGEX_PRINTABLE_ASCII . '/u', $str, $matches);
-            if ($matchResult === false) {
-                $isValidUtf8 = false;
+            $isValidUtf8 = $matchResult !== false;
 
-                return $str;
+            if ($matchResult) {
+                $cache = $REPLACE_HELPER_CACHE[$cacheKey];
+                $chars = $matches[0];
+                $shortCacheKey = $cacheKey . ':' . \implode('|', $chars);
+
+                if (isset($SHORT_FILTERED_MAP_CACHE[$shortCacheKey])) {
+                    $filteredMap = $SHORT_FILTERED_MAP_CACHE[$shortCacheKey];
+                } else {
+                    $filteredMap = [];
+                    $charCount = \count($chars);
+
+                    if (
+                        !$replace_single_chars_only
+                        &&
+                        \preg_match('/[A-Za-z][\x{0300}-\x{036F}]/u', $str) === 1
+                    ) {
+                        $filteredMap = $cache;
+                    } else {
+                        if (!$replace_single_chars_only) {
+                            foreach ([5, 4, 3, 2] as $span) {
+                                if ($charCount < $span) {
+                                    continue;
+                                }
+
+                                $lastIndex = $charCount - $span;
+                                for ($idx = 0; $idx <= $lastIndex; ++$idx) {
+                                    $candidate = '';
+                                    for ($offset = 0; $offset < $span; ++$offset) {
+                                        $candidate .= $chars[$idx + $offset];
+                                    }
+
+                                    if (isset($cache[$candidate])) {
+                                        $filteredMap[$candidate] = $cache[$candidate];
+                                    }
+                                }
+                            }
+                        }
+
+                        foreach ($chars as $char) {
+                            if (isset($cache[$char])) {
+                                $filteredMap[$char] = $cache[$char];
+                            }
+                        }
+                    }
+
+                    if ($filteredMap !== []) {
+                        $SHORT_FILTERED_MAP_CACHE[$shortCacheKey] = $filteredMap;
+                        $SHORT_FILTERED_MAP_CACHE_QUEUE[] = $shortCacheKey;
+                        if (\count($SHORT_FILTERED_MAP_CACHE_QUEUE) > 256) {
+                            $oldestKey = \array_shift($SHORT_FILTERED_MAP_CACHE_QUEUE);
+                            if ($oldestKey !== null) {
+                                unset($SHORT_FILTERED_MAP_CACHE[$oldestKey]);
+                            }
+                        }
+                    }
+                }
+
+                if ($filteredMap !== []) {
+                    $str = \strtr($str, $filteredMap);
+                }
             }
-
+        } else {
             $isValidUtf8 = true;
 
-            if (!$matchResult) {
-                return $str;
-            }
-
-            $cache = $REPLACE_HELPER_CACHE[$cacheKey];
-            $chars = $matches[0];
-            $charCount = \count($chars);
-
-            if ($charCount === 1 && isset($cache[$chars[0]])) {
-                return \str_replace($chars[0], $cache[$chars[0]], $str);
-            }
-
-            $shortCacheKey = $cacheKey . ':' . \implode('|', $chars);
-
-            if (isset($SHORT_FILTERED_MAP_CACHE[$shortCacheKey])) {
-                return \strtr($str, $SHORT_FILTERED_MAP_CACHE[$shortCacheKey]);
-            }
-
+            // Build a filtered map containing only entries whose
+            // leading byte is present in this specific input string.
+            $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
             $filteredMap = [];
-
-            if (
-                !$replace_single_chars_only
-                &&
-                $charCount >= 2
-            ) {
-                // Mixed keys like "A̧" (ASCII + combining mark) are rare; let
-                // strtr handle those with the full map to preserve correctness.
-                if (\preg_match('/[A-Za-z][\x{0300}-\x{036F}]/u', $str) === 1) {
-                    return \strtr($str, $cache);
-                }
-
-                for ($span = 5; $span >= 2; --$span) {
-                    if ($charCount < $span) {
-                        continue;
+            foreach (\str_split(\count_chars($str, 3)) as $fb) {
+                if (isset($indexedMap[$fb])) {
+                    foreach ($indexedMap[$fb] as $k => $v) {
+                        $filteredMap[$k] = $v;
                     }
-
-                    $lastIndex = $charCount - $span;
-                    for ($idx = 0; $idx <= $lastIndex; ++$idx) {
-                        $candidate = '';
-                        for ($offset = 0; $offset < $span; ++$offset) {
-                            $candidate .= $chars[$idx + $offset];
-                        }
-
-                        if (isset($cache[$candidate])) {
-                            $filteredMap[$candidate] = $cache[$candidate];
-                        }
-                    }
-                }
-            }
-
-            foreach ($chars as $char) {
-                if (isset($cache[$char])) {
-                    $filteredMap[$char] = $cache[$char];
                 }
             }
 
             if ($filteredMap !== []) {
-                $SHORT_FILTERED_MAP_CACHE[$shortCacheKey] = $filteredMap;
-                $SHORT_FILTERED_MAP_CACHE_QUEUE[] = $shortCacheKey;
-                if (\count($SHORT_FILTERED_MAP_CACHE_QUEUE) > 256) {
-                    $oldestKey = \array_shift($SHORT_FILTERED_MAP_CACHE_QUEUE);
-                    if ($oldestKey !== null) {
-                        unset($SHORT_FILTERED_MAP_CACHE[$oldestKey]);
-                    }
-                }
-
                 $str = \strtr($str, $filteredMap);
             }
-
-            return $str;
-        }
-
-        $isValidUtf8 = true;
-
-        // Build a filtered map containing only entries whose
-        // leading byte is present in this specific input string.
-        $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
-        $filteredMap = [];
-        foreach (\str_split(\count_chars($str, 3)) as $fb) {
-            if (isset($indexedMap[$fb])) {
-                foreach ($indexedMap[$fb] as $k => $v) {
-                    $filteredMap[$k] = $v;
-                }
-            }
-        }
-
-        if ($filteredMap !== []) {
-            $str = \strtr($str, $filteredMap);
         }
 
         return $str;
@@ -1521,7 +1478,8 @@ final class ASCII
 
                 $regex = '/(?<first>[a-z]+)_\g{first}/';
 
-                $LANGUAGE_CACHE[$language] = (string) \preg_replace($regex, '$1', $language_tmp);
+                $normalizedLanguage = \preg_replace($regex, '$1', $language_tmp);
+                $LANGUAGE_CACHE[$language] = $normalizedLanguage ?? $language_tmp;
             }
         }
 
@@ -1627,13 +1585,11 @@ final class ASCII
      */
     private static function pre_clean_transliteration_input(string $str, $unknown): string
     {
-        if (
-            $unknown !== '?'
-            &&
-            // C2 and E2 are the leading bytes for the valid UTF-8 sequences that
-            // normalize_whitespace() and normalize_msword() can collapse to ASCII.
-            \preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) !== 1
-        ) {
+        unset($unknown);
+
+        // C2 and E2 are the leading bytes for the valid UTF-8 sequences that
+        // normalize_whitespace() and normalize_msword() can collapse to ASCII.
+        if (\preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) !== 1) {
             return $str;
         }
 
