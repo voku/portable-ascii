@@ -1204,7 +1204,6 @@ final class ASCII
             $charMap = [];
 
             foreach (\array_unique($nonAsciiMatches[0]) as $c) {
-
                 if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
                     $ordC0 = $ordMap[$c[0]];
                     $ordC1 = $ordMap[$c[1]];
