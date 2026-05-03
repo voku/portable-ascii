@@ -247,18 +247,19 @@ final class ASCII
     public static function getAllLanguages(): array
     {
         // init
-        static $LANGUAGES = [];
+        static $LANGUAGES = null;
 
-        if ($LANGUAGES !== []) {
-            return $LANGUAGES;
-        }
+        if ($LANGUAGES === null) {
+            $LANGUAGES = [];
 
-        foreach ((new \ReflectionClass(__CLASS__))->getConstants() as $constant => $lang) {
-            if (\strpos($constant, 'EXTRA') !== false) {
-                $LANGUAGES[\strtolower($constant)] = $lang;
-            } else {
-                $LANGUAGES[\strtolower(\str_replace('_LANGUAGE_CODE', '', $constant))] = $lang;
+            foreach ((new \ReflectionClass(__CLASS__))->getConstants() as $constant => $lang) {
+                if (\strpos($constant, 'EXTRA') !== false) {
+                    $LANGUAGES[\strtolower($constant)] = $lang;
+                } else {
+                    $LANGUAGES[\strtolower(\str_replace('_LANGUAGE_CODE', '', $constant))] = $lang;
+                }
             }
+
         }
 
         return $LANGUAGES;

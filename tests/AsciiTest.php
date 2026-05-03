@@ -409,9 +409,12 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         static::assertArrayHasKey('german', $languages, \print_r($languages, true));
         static::assertSame('de', $languages['german']);
+        static::assertArrayHasKey('extra_latin_chars_language_code', $languages, \print_r($languages, true));
+        static::assertSame('latin', $languages['extra_latin_chars_language_code']);
 
         $languages = ASCII::getAllLanguages();
         static::assertSame('de', $languages['german']);
+        static::assertSame('latin', $languages['extra_latin_chars_language_code']);
     }
 
     public function testInvalidCharToAscii()
@@ -1188,6 +1191,60 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame('a', $dutch['ä']);
         static::assertSame(' oneindig ', $dutch['∞']);
+    }
+
+    public function testCharsArrayInitializesBaseMapsWhenEmpty()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $mapsProperty = $rc->getProperty('ASCII_MAPS');
+        $mapsProperty->setAccessible(true);
+
+        $originalMaps = $mapsProperty->getValue();
+        $mapsProperty->setValue(null, null);
+
+        try {
+            $maps = ASCII::charsArray();
+
+            static::assertIsArray($maps);
+            static::assertSame('b', $maps['ru']['б']);
+            static::assertIsArray($mapsProperty->getValue());
+        } finally {
+            $mapsProperty->setValue(null, $originalMaps);
+        }
+    }
+
+    public function testCharsArrayWithExtraSymbolsInitializesMergedMapsWhenEmpty()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $mapsProperty = $rc->getProperty('ASCII_MAPS');
+        $mapsAndExtrasProperty = $rc->getProperty('ASCII_MAPS_AND_EXTRAS');
+        $extrasProperty = $rc->getProperty('ASCII_EXTRAS');
+        $mapsProperty->setAccessible(true);
+        $mapsAndExtrasProperty->setAccessible(true);
+        $extrasProperty->setAccessible(true);
+
+        $originalMaps = $mapsProperty->getValue();
+        $originalMapsAndExtras = $mapsAndExtrasProperty->getValue();
+        $originalExtras = $extrasProperty->getValue();
+
+        $mapsProperty->setValue(null, null);
+        $mapsAndExtrasProperty->setValue(null, null);
+        $extrasProperty->setValue(null, null);
+
+        try {
+            $maps = ASCII::charsArray(true);
+
+            static::assertIsArray($maps);
+            static::assertSame('b', $maps['ru']['б']);
+            static::assertSame(' i ', $maps['ru']['&']);
+            static::assertIsArray($mapsProperty->getValue());
+            static::assertIsArray($mapsAndExtrasProperty->getValue());
+            static::assertIsArray($extrasProperty->getValue());
+        } finally {
+            $mapsProperty->setValue(null, $originalMaps);
+            $mapsAndExtrasProperty->setValue(null, $originalMapsAndExtras);
+            $extrasProperty->setValue(null, $originalExtras);
+        }
     }
 
     public function testToAsciiWithLanguageSpecificExtraSymbols()
