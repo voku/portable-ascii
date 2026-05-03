@@ -259,7 +259,6 @@ final class ASCII
                     $LANGUAGES[\strtolower(\str_replace('_LANGUAGE_CODE', '', $constant))] = $lang;
                 }
             }
-
         }
 
         return $LANGUAGES;
