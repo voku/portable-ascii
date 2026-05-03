@@ -310,7 +310,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
 
         static::assertSame('n', ASCII::to_filename('ñ'));
         static::assertSame('', ASCII::to_filename('ñ', false));
-        static::assertSame("test\\file", ASCII::to_filename('test !!! file', false, '\\'));
+        static::assertSame('test\\file', ASCII::to_filename('test !!! file', false, '\\'));
         static::assertSame('test', ASCII::to_filename('test...', false, '.'));
     }
 
