@@ -1109,7 +1109,7 @@ final class ASCII
             return $str;
         }
 
-        if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) !== 0) {
+        if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 1) {
             // Prefix the cache key so unknown=null does not collide with an
             // explicit fallback string such as "\x00".
             $unknownCacheKey = $unknown === null
@@ -1133,7 +1133,7 @@ final class ASCII
             }
 
             // Keep warm-path ASCII hits on the single return below for mutation stability.
-            if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) !== 0) {
+            if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 1) {
                 // only run the heavy clean() regex when the string has invalid UTF-8
                 if (\preg_match('//u', $str) === 1) {
                     $str = self::pre_clean_transliteration_input($str, $unknown);
