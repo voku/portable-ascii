@@ -1124,6 +1124,7 @@ final class ASCII
                 $warmPathAlreadyApplied = true;
             }
 
+            // Keep warm-path ASCII hits on the single return below for mutation stability.
             if (!self::is_ascii($str)) {
                 // only run the heavy clean() regex when the string has invalid UTF-8
                 if (\preg_match('//u', $str) === 1) {
@@ -1172,7 +1173,7 @@ final class ASCII
                 if (\preg_match_all(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str, $nonAsciiMatches)) {
                     $charMap = [];
 
-                    // Manual de-duplication avoids copying the full match list like array_unique().
+                    // Manual deduplication avoids copying the full match list like array_unique().
                     $seenChars = [];
                     foreach ($nonAsciiMatches[0] as $c) {
                         if (isset($seenChars[$c])) {
@@ -1332,7 +1333,7 @@ final class ASCII
         if (
             !$replace_extra_symbols
             &&
-            // Same as strlen($str) < 65, but avoids scanning the whole string.
+            // Same as strlen($str) < 65, but avoids function call overhead.
             !isset($str[64])
         ) {
             $matchResult = \preg_match_all('/' . self::REGEX_PRINTABLE_ASCII . '/u', $str, $matches);
