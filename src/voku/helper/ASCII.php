@@ -1102,7 +1102,11 @@ final class ASCII
         static $WARM_MAPS = [];
 
         if (!self::is_ascii($str)) {
-            $unknownCacheKey = \serialize($unknown);
+            // Prefix the cache key so unknown=null does not collide with an
+            // explicit fallback string such as "\x00".
+            $unknownCacheKey = $unknown === null
+                ? "\x00null"
+                : "\x01" . $unknown;
 
             if ($SUPPORT_INTL === null) {
                 $SUPPORT_INTL = \extension_loaded('intl');
@@ -1168,7 +1172,13 @@ final class ASCII
                 if (\preg_match_all(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str, $nonAsciiMatches)) {
                     $charMap = [];
 
+                    $seenChars = [];
                     foreach ($nonAsciiMatches[0] as $c) {
+                        if (isset($seenChars[$c])) {
+                            continue;
+                        }
+                        $seenChars[$c] = true;
+
                         if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
                             $ordC0 = $ordMap[$c[0]];
                             $ordC1 = $ordMap[$c[1]];

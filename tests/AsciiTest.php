@@ -902,6 +902,21 @@ final class AsciiTest extends \PHPUnit\Framework\TestCase
         static::assertSame('', ASCII::to_transliterate($str, '', false));
     }
 
+    public function testToTransliteratePrefixesUnknownWarmMapCacheKeys()
+    {
+        $unknown = "\x00null";
+
+        static::assertSame($unknown, ASCII::to_transliterate('😀', $unknown, false));
+
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('to_transliterate');
+        $method->setAccessible(true);
+
+        $warmMaps = $method->getStaticVariables()['WARM_MAPS'];
+        static::assertArrayHasKey("\x01" . $unknown, $warmMaps);
+        static::assertArrayNotHasKey($unknown . "\x01", $warmMaps);
+    }
+
     public function testToAsciiWithUnsupportedChars()
     {
         // Emoji is not in the 'en' replacement map.
