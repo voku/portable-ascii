@@ -1300,7 +1300,7 @@ final class ASCII
         $mapCount = \count($map);
         foreach ($matches[0] as $mbc) {
             if (!isset($map[$mbc])) {
-                $map[$mbc] = \chr(128 | $mapCount);
+                $map[$mbc] = \chr(128 + $mapCount);
                 $mapCount += 1;
             }
         }
