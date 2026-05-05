@@ -15,8 +15,6 @@ namespace voku\helper;
 final class TransliteratorId
 {
     private const UTF8_VALIDATION_PATTERN = '//u';
-    private const STEP_SEPARATOR_PATTERN = '/\s*;\s*/';
-    private const NONSPACING_MARK_REMOVE_PATTERN = '/\[\s*:?\s*Nonspacing\s*Mark\s*:?\s*\]\s*Remove/i';
 
     public static function isValidUtf8(string $string): bool
     {
@@ -25,15 +23,12 @@ final class TransliteratorId
 
     public static function normalize(string $id): string
     {
-        $id = \trim($id);
-        $id = \preg_replace(self::STEP_SEPARATOR_PATTERN, ';', $id) ?? $id;
-        $id = \rtrim($id, ';');
+        $steps = \array_map('trim', \explode(';', \trim($id)));
+        $steps = \array_values(\array_filter($steps, static function (string $step): bool {
+            return $step !== '';
+        }));
 
-        return \preg_replace(
-            self::NONSPACING_MARK_REMOVE_PATTERN,
-            '[:Nonspacing Mark:] Remove',
-            $id
-        ) ?? $id;
+        return \implode(';', $steps);
     }
 
     public static function containsUnsupportedRuleSyntax(string $id): bool

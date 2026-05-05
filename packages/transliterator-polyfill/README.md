@@ -2,7 +2,7 @@
 
 This directory is a scaffold for a future standalone repository around `TransliteratorPolyfill`.
 
-The current extraction step is intentionally thin: this package exposes a dedicated package surface while delegating behavior to `voku/portable-ascii`.
+The current extraction step is intentionally thin: it validates a package boundary while delegating behavior to `voku/portable-ascii`.
 
 ## Scope
 
@@ -10,12 +10,6 @@ The current extraction step is intentionally thin: this package exposes a dedica
 - Backing implementation: `voku\helper\TransliteratorPolyfill`
 - Backing object wrapper: `voku\helper\Transliterator`
 - Runtime dependency: `voku/portable-ascii`
-
-## What this scaffold proves
-
-- It proves the package boundary without copying the transliteration data tables yet
-- It keeps object-style transliteration support clearly limited instead of pretending to be native ext-intl
-- It leaves a clear path to a later standalone extraction if the `ASCII` data needs to move too
 
 ## Usage
 
@@ -34,14 +28,12 @@ echo $transliterator->transliterate('café');
 // "cafe"
 ```
 
-## Known limitations
+## Boundaries
 
-- This package is a limited compatibility layer, not a full ICU implementation
-- The object wrapper is intentionally limited and is not a drop-in replacement for native ext-intl `Transliterator`
-- `Transliterator::createFromRules()` returns `null` with a warning because there is no full ICU parser/executor here
-- `Transliterator::createInverse()` returns `null` with a warning because inverse transliterators are still out of scope
-- Offsets use the documented codepoint subset behavior from the root helper, not ICU UTF-16 code-unit semantics
-- For the full supported-step list and compatibility matrix, see the root `README.md` in this repository
+- This is still a limited compatibility layer, not a full ICU implementation
+- `Transliterator::createFromRules()` and `createInverse()` deliberately return `null` with warnings
+- Offsets keep the root helper's documented codepoint subset behavior, not ICU UTF-16 code-unit semantics
+- The full supported-step list and compatibility matrix stay in the root `README.md`
 
 ## Migration from `voku/portable-ascii`
 

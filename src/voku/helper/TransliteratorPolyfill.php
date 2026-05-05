@@ -454,6 +454,10 @@ final class TransliteratorPolyfill
      */
     private static function normalizeStep(string $step): ?array
     {
+        if (self::isNonspacingMarkRemovalStep($step)) {
+            return ['type' => 'step', 'value' => '[:Nonspacing Mark:] Remove'];
+        }
+
         foreach (self::SUPPORTED_STEPS as $supportedStep) {
             if (\strcasecmp($step, $supportedStep) === 0) {
                 return ['type' => 'step', 'value' => $supportedStep];
@@ -475,6 +479,13 @@ final class TransliteratorPolyfill
         }
 
         return null;
+    }
+
+    private static function isNonspacingMarkRemovalStep(string $step): bool
+    {
+        $normalized = \str_replace(['[', ']', ':', ' '], '', \strtolower($step));
+
+        return $normalized === 'nonspacingmarkremove';
     }
 
     /**
