@@ -1,15 +1,13 @@
 # Transliterator Polyfill
 
-This directory is a scaffold for a future standalone repository around `TransliteratorPolyfill`.
-
-The current extraction step is intentionally thin: it validates a package boundary while delegating behavior to `voku/portable-ascii`.
+This directory is prepared as a copy-ready basis for a future standalone repository around `TransliteratorPolyfill`.
 
 ## Scope
 
 - Public package surface: `Voku\Transliterator\TransliteratorPolyfill` and `Voku\Transliterator\Transliterator`
-- Backing implementation: `voku\helper\TransliteratorPolyfill`
-- Backing object wrapper: `voku\helper\Transliterator`
-- Runtime dependency: `voku/portable-ascii`
+- Package-owned implementation files: `src/TransliteratorPolyfill.php`, `src/Transliterator.php`, `src/TransliteratorId.php`
+- Runtime dependency retained on `voku/portable-ascii` for the underlying `voku\helper\ASCII` transliteration data and helpers
+- Package test coverage includes package-surface smoke tests plus the php-src / ICU compatibility subset
 
 ## Usage
 
@@ -32,15 +30,16 @@ echo $transliterator->transliterate('café');
 
 - This is still a limited compatibility layer, not a full ICU implementation
 - `Transliterator::createFromRules()` and `createInverse()` deliberately return `null` with warnings
-- Offsets keep the root helper's documented codepoint subset behavior, not ICU UTF-16 code-unit semantics
-- The full supported-step list and compatibility matrix stay in the root `README.md`
+- Offsets keep the documented codepoint subset behavior, not ICU UTF-16 code-unit semantics
+- The package tests include the extracted php-src / ICU compatibility subset so they can move with the code
 
 ## Migration from `voku/portable-ascii`
 
 - Replace imports of `voku\helper\TransliteratorPolyfill` with `Voku\Transliterator\TransliteratorPolyfill`
 - Keep the same `transliterate()` arguments and behavior
-- This thin package still depends on `voku/portable-ascii` until a later full extraction
+- Keep `voku/portable-ascii` as a dependency until the ASCII data and helper layer are extracted too
 
-## Notes for this in-repo scaffold
+## Notes for manual extraction
 
-`composer.json` includes a local path repository so this scaffold can be validated inside the current repository before being split into its own repository.
+- `composer.json` still includes a local path repository so this package can be validated inside the current repository before it is copied into its own repository
+- The copy set is this directory’s `src/`, `tests/`, `composer.json`, `phpunit.xml`, `phpstan.neon`, `README.md`, and `LICENSE.txt`
