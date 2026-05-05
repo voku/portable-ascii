@@ -41,7 +41,7 @@ final class Transliterator
             return null;
         }
 
-        if (\preg_match('//u', $id) !== 1) {
+        if (!TransliteratorId::isValidUtf8($id)) {
             \trigger_error(
                 'transliterator_create(): invalid UTF-8 in transliterator ID. Transliterator IDs must be valid UTF-8 strings.',
                 \E_USER_WARNING
@@ -50,9 +50,7 @@ final class Transliterator
             return null;
         }
 
-        $id = \trim($id);
-        $id = \preg_replace('/\s*;\s*/', ';', $id) ?? $id;
-        $id = \rtrim($id, ';');
+        $id = TransliteratorId::normalize($id);
 
         if ($id === '') {
             \trigger_error(
@@ -63,7 +61,7 @@ final class Transliterator
             return null;
         }
 
-        if (\strpos($id, '>') !== false || \strpos($id, '<') !== false) {
+        if (TransliteratorId::containsUnsupportedRuleSyntax($id)) {
             \trigger_error(
                 'transliterator_create(): polyfill does not support custom ICU rules',
                 \E_USER_WARNING

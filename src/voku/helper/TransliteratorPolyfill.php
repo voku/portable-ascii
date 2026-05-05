@@ -33,6 +33,10 @@ namespace voku\helper;
  */
 final class TransliteratorPolyfill
 {
+    private const CODEPOINT_SPLIT_PATTERN = '/./us';
+    private const NONSPACING_MARK_PATTERN = '/\p{Mn}/u';
+    private const TITLECASE_UMLAUT_PATTERN = '/[ÄÖÜ](?=\p{Ll})/u';
+
     /**
      * Supported canonical transliterator pipeline steps.
      *
@@ -115,7 +119,7 @@ final class TransliteratorPolyfill
             return false;
         }
 
-        if (!self::isValidUtf8($transliterator)) {
+        if (!TransliteratorId::isValidUtf8($transliterator)) {
             \trigger_error(
                 'transliterator_transliterate(): invalid UTF-8 in transliterator ID. Transliterator IDs must be valid UTF-8 strings.',
                 \E_USER_WARNING
@@ -124,7 +128,7 @@ final class TransliteratorPolyfill
             return false;
         }
 
-        if (!self::isValidUtf8($string)) {
+        if (!TransliteratorId::isValidUtf8($string)) {
             \trigger_error(
                 'transliterator_transliterate(): invalid UTF-8 in input string. Input strings must be valid UTF-8.',
                 \E_USER_WARNING
@@ -137,10 +141,10 @@ final class TransliteratorPolyfill
             return false;
         }
 
-        $transliterator = self::cleanId($transliterator);
+        $transliterator = TransliteratorId::normalize($transliterator);
 
-        // Reject custom ICU rules (contain transformation operators)
-        if (\strpos($transliterator, '>') !== false || \strpos($transliterator, '<') !== false) {
+        // Reject custom ICU rules before parsing any steps.
+        if (TransliteratorId::containsUnsupportedRuleSyntax($transliterator)) {
             \trigger_error(
                 'transliterator_transliterate(): polyfill does not support custom ICU rules',
                 \E_USER_WARNING
@@ -209,8 +213,8 @@ final class TransliteratorPolyfill
      */
     private static function transliterateSlice(array $steps, string $string, int $start, int $end): string
     {
-        // Split into codepoints using PCRE (works without ext-mbstring)
-        \preg_match_all('/./us', $string, $matches);
+        // The pattern is static and the string was validated as UTF-8 before this call.
+        \preg_match_all(self::CODEPOINT_SPLIT_PATTERN, $string, $matches);
         $codepoints = $matches[0];
         $len = \count($codepoints);
 
@@ -349,7 +353,7 @@ final class TransliteratorPolyfill
      */
     private static function removeNonspacingMarks(string $string): string
     {
-        $result = \preg_replace('/\p{Mn}/u', '', $string);
+        $result = \preg_replace(self::NONSPACING_MARK_PATTERN, '', $string);
 
         return ($result !== null) ? $result : $string;
     }
@@ -369,11 +373,6 @@ final class TransliteratorPolyfill
         }
 
         return true;
-    }
-
-    private static function isValidUtf8(string $string): bool
-    {
-        return \preg_match('//u', $string) === 1;
     }
 
     private static function failForInvalidOffsets(string $message): bool
@@ -410,7 +409,7 @@ final class TransliteratorPolyfill
     {
         if ($expandUmlauts) {
             $string = \preg_replace_callback(
-                '/[ÄÖÜ](?=\p{Ll})/u',
+                self::TITLECASE_UMLAUT_PATTERN,
                 static function (array $matches): string {
                     switch ($matches[0]) {
                         case 'Ä':
@@ -448,20 +447,6 @@ final class TransliteratorPolyfill
         }
 
         return ASCII::to_transliterate($string, null, false);
-    }
-
-    private static function cleanId(string $id): string
-    {
-        $id = \trim($id);
-        $id = \preg_replace('/\s*;\s*/', ';', $id) ?? $id;
-        $id = \rtrim($id, ';');
-        $id = \preg_replace(
-            '/\[\s*:?\s*Nonspacing\s*Mark\s*:?\s*\]\s*Remove/i',
-            '[:Nonspacing Mark:] Remove',
-            $id
-        ) ?? $id;
-
-        return $id;
     }
 
     /**

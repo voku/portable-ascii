@@ -4,19 +4,25 @@ declare(strict_types=1);
 
 namespace Voku\Transliterator;
 
+/**
+ * Thin package-surface delegate around the root limited object polyfill.
+ *
+ * This scaffold intentionally reuses the root behavior so the in-repo package
+ * boundary can be validated without copying the implementation a second time.
+ */
 final class Transliterator
 {
-    public const FORWARD = 0;
-    public const REVERSE = 1;
+    public const FORWARD = \voku\helper\Transliterator::FORWARD;
+    public const REVERSE = \voku\helper\Transliterator::REVERSE;
 
     /**
-     * @var string
+     * @var \voku\helper\Transliterator
      */
-    private $id;
+    private $inner;
 
-    private function __construct(string $id)
+    private function __construct(\voku\helper\Transliterator $inner)
     {
-        $this->id = $id;
+        $this->inner = $inner;
     }
 
     /**
@@ -24,47 +30,12 @@ final class Transliterator
      */
     public static function create(string $id, int $direction = self::FORWARD)
     {
-        if ($direction !== self::FORWARD) {
-            \trigger_error(
-                'transliterator_create(): polyfill only supports forward transliteration direction',
-                \E_USER_WARNING
-            );
-
+        $inner = \voku\helper\Transliterator::create($id, $direction);
+        if ($inner === null) {
             return null;
         }
 
-        if (\preg_match('//u', $id) !== 1) {
-            \trigger_error(
-                'transliterator_create(): invalid UTF-8 in transliterator ID. Transliterator IDs must be valid UTF-8 strings.',
-                \E_USER_WARNING
-            );
-
-            return null;
-        }
-
-        $id = \trim($id);
-        $id = \preg_replace('/\s*;\s*/', ';', $id) ?? $id;
-        $id = \rtrim($id, ';');
-
-        if ($id === '') {
-            \trigger_error(
-                'transliterator_create(): polyfill received empty transliterator ID',
-                \E_USER_WARNING
-            );
-
-            return null;
-        }
-
-        if (\strpos($id, '>') !== false || \strpos($id, '<') !== false) {
-            \trigger_error(
-                'transliterator_create(): polyfill does not support custom ICU rules',
-                \E_USER_WARNING
-            );
-
-            return null;
-        }
-
-        return new self($id);
+        return new self($inner);
     }
 
     /**
@@ -72,12 +43,7 @@ final class Transliterator
      */
     public static function createFromRules(string $rules, int $direction = self::FORWARD)
     {
-        unset($rules, $direction);
-
-        \trigger_error(
-            'transliterator_create_from_rules(): polyfill does not support the full ICU rule parser/executor',
-            \E_USER_WARNING
-        );
+        \voku\helper\Transliterator::createFromRules($rules, $direction);
 
         return null;
     }
@@ -87,10 +53,7 @@ final class Transliterator
      */
     public function createInverse()
     {
-        \trigger_error(
-            'Transliterator::createInverse(): polyfill does not support inverse transliterators',
-            \E_USER_WARNING
-        );
+        $this->inner->createInverse();
 
         return null;
     }
@@ -100,11 +63,11 @@ final class Transliterator
      */
     public function transliterate(string $string, int $start = 0, int $end = -1)
     {
-        return \voku\helper\TransliteratorPolyfill::transliterate($this->id, $string, $start, $end);
+        return $this->inner->transliterate($string, $start, $end);
     }
 
     public function getId(): string
     {
-        return $this->id;
+        return $this->inner->getId();
     }
 }

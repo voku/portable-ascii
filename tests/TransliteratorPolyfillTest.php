@@ -570,7 +570,7 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
 
     // ─── Data provider for batch transliteration checks ─────────────────
 
-    public static function transliterationProvider(): array
+    public static function transliterationBatchCases(): array
     {
         return [
             'simple accents'  => ['Any-Latin; Latin-ASCII', 'àáâãäåèéêëìíîïòóôõöùúûüýñ', 'aaaaaaeeeeiiiiooooouuuuyn'],
@@ -584,12 +584,13 @@ final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * @dataProvider transliterationProvider
-     */
-    public function testTransliterationBatch(string $id, string $input, string $expected): void
+    public function testTransliterationBatch(): void
     {
-        $result = TransliteratorPolyfill::transliterate($id, $input);
-        static::assertSame($expected, $result);
+        foreach (self::transliterationBatchCases() as $label => $case) {
+            [$id, $input, $expected] = $case;
+
+            $result = TransliteratorPolyfill::transliterate($id, $input);
+            static::assertSame($expected, $result, $label);
+        }
     }
 }

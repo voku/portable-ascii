@@ -2,19 +2,19 @@
 
 This directory is a scaffold for a future standalone repository around `TransliteratorPolyfill`.
 
-The first extraction step is intentionally thin: this package exposes a dedicated package surface while delegating behavior to `voku/portable-ascii`.
+The current extraction step is intentionally thin: this package exposes a dedicated package surface while delegating behavior to `voku/portable-ascii`.
 
 ## Scope
 
 - Public package surface: `Voku\Transliterator\TransliteratorPolyfill` and `Voku\Transliterator\Transliterator`
 - Backing implementation: `voku\helper\TransliteratorPolyfill`
+- Backing object wrapper: `voku\helper\Transliterator`
 - Runtime dependency: `voku/portable-ascii`
-- Optional normalization support remains optional through `Normalizer`
 
-## Why this shape first
+## What this scaffold proves
 
 - It proves the package boundary without copying the transliteration data tables yet
-- It preserves current behavior while keeping the new package small
+- It keeps object-style transliteration support clearly limited instead of pretending to be native ext-intl
 - It leaves a clear path to a later standalone extraction if the `ASCII` data needs to move too
 
 ## Usage
@@ -34,43 +34,14 @@ echo $transliterator->transliterate('café');
 // "cafe"
 ```
 
-## Supported pipeline steps
-
-- `NFC`, `NFD`, `NFKC`, `NFKD`
-- `[:Nonspacing Mark:] Remove`
-- `Any-Latin`, `Latin-ASCII`, `Any-ASCII`
-- `Any-Upper`, `Any-Lower`
-- Limited language aliases such as `de-ASCII`, `de_AT-ASCII`, `de_CH-ASCII`, and `Turkmen-Latin/BGN`
-
-## Upstream-derived compatibility contract
-
-The tests in this scaffold are adapted from PHP's own `ext/intl` transliterator PHPT tests:
-
-- `ext/intl/tests/transliterator_transliterate_basic.phpt`
-- `ext/intl/tests/transliterator_transliterate_error.phpt`
-- `ext/intl/tests/transliterator_transliterate_variant1.phpt`
-
-This package is a limited compatibility helper, not full ICU.
-
-| Upstream PHPT case | Expected package behavior |
-| --- | --- |
-| object-style transliteration for supported IDs | limited `Transliterator` wrapper works for supported IDs |
-| `Latin; Title` transliteration | `false` + warning |
-| Supported offset slicing | transliterates only the selected slice |
-| Invalid UTF-8 string or ID | `false` + warning |
-| ICU rule strings | `false` + warning |
-| Stringable object first argument | `false` + warning |
-
 ## Known limitations
 
-- This package does not register a global `transliterator_transliterate()` function
-- The object wrapper is intentionally limited and does not try to reproduce the full native ext-intl API
-- Custom ICU rules using `>` / `<` operators are not supported
-- `Transliterator::createFromRules()` intentionally returns `null` with a warning because there is no full ICU parser/executor
-- Some mappings still differ from ICU data for selected scripts
-- Null bytes are stripped by the underlying ASCII transliteration logic
-- Unsupported ICU rules intentionally return `false`
-- Offsets are counted in Unicode codepoints here, not ICU UTF-16 code units
+- This package is a limited compatibility layer, not a full ICU implementation
+- The object wrapper is intentionally limited and is not a drop-in replacement for native ext-intl `Transliterator`
+- `Transliterator::createFromRules()` returns `null` with a warning because there is no full ICU parser/executor here
+- `Transliterator::createInverse()` returns `null` with a warning because inverse transliterators are still out of scope
+- Offsets use the documented codepoint subset behavior from the root helper, not ICU UTF-16 code-unit semantics
+- For the full supported-step list and compatibility matrix, see the root `README.md` in this repository
 
 ## Migration from `voku/portable-ascii`
 
