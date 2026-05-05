@@ -92,7 +92,7 @@ final class TransliteratorPolyfill
      * This method matches the signature of PHP's transliterator_transliterate(),
      * but only supports the pipeline steps listed in SUPPORTED_STEPS.
      *
-     * @param mixed  $transliterator transliterator ID string (Transliterator objects are not supported)
+     * @param mixed  $transliterator transliterator ID string or limited Transliterator object polyfill
      * @param string $string         the string to transliterate
      * @param int    $start          start offset in codepoints (not bytes); default 0
      * @param int    $end            end offset in codepoints (not bytes); -1 means end of string
@@ -101,6 +101,10 @@ final class TransliteratorPolyfill
      */
     public static function transliterate($transliterator, string $string, int $start = 0, int $end = -1)
     {
+        if ($transliterator instanceof Transliterator) {
+            $transliterator = $transliterator->getId();
+        }
+
         if (!\is_string($transliterator)) {
             \trigger_error(
                 'transliterator_transliterate(): Argument #1 ($transliterator) must be of type Transliterator|string, '

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Voku\Transliterator\Tests;
 
+use Voku\Transliterator\Transliterator;
 use Voku\Transliterator\TransliteratorPolyfill;
 
 /**
@@ -43,6 +44,33 @@ final class TransliteratorPolyfillUpstreamCompatibilityTest extends \PHPUnit\Fra
         return ['result' => $result, 'warning' => $warning];
     }
 
+    /**
+     * @param callable $callback
+     *
+     * @return array{result: mixed, warning: string|null}
+     */
+    private static function callCapturingWarning(callable $callback): array
+    {
+        $warning = null;
+        \set_error_handler(static function (int $errno, string $errstr) use (&$warning): bool {
+            if ($errno !== \E_USER_WARNING) {
+                return false;
+            }
+
+            $warning = $errstr;
+
+            return true;
+        }, \E_USER_WARNING);
+
+        try {
+            $result = $callback();
+        } finally {
+            \restore_error_handler();
+        }
+
+        return ['result' => $result, 'warning' => $warning];
+    }
+
     public function testFacadeRejectsUnsupportedLatinTitleFromUpstreamBasicCase(): void
     {
         $captured = self::transliterateCapturingWarning('Latin; Title', 'Κοντογιαννάτος, Βασίλης');
@@ -57,6 +85,15 @@ final class TransliteratorPolyfillUpstreamCompatibilityTest extends \PHPUnit\Fra
         $result = TransliteratorPolyfill::transliterate('Latin-ASCII', 'déjà vu résumé', 8, 14);
 
         static::assertSame('déjà vu resume', $result);
+    }
+
+    public function testFacadeObjectWrapperSupportsMethodAndStaticUsage(): void
+    {
+        $transliterator = Transliterator::create('Latin-ASCII');
+
+        static::assertInstanceOf(Transliterator::class, $transliterator);
+        static::assertSame('cafe', $transliterator->transliterate('café'));
+        static::assertSame('cafe', TransliteratorPolyfill::transliterate($transliterator, 'café'));
     }
 
     public function testFacadeRejectsInvalidUtf8Input(): void
@@ -91,5 +128,16 @@ final class TransliteratorPolyfillUpstreamCompatibilityTest extends \PHPUnit\Fra
         static::assertFalse($captured['result']);
         static::assertNotNull($captured['warning']);
         static::assertStringContainsString('object', $captured['warning']);
+    }
+
+    public function testFacadeRejectsCreateFromRulesBecauseThereIsNoFullIcuParserExecutor(): void
+    {
+        $captured = self::callCapturingWarning(static function () {
+            return Transliterator::createFromRules('[\p{White_Space}] hex');
+        });
+
+        static::assertNull($captured['result']);
+        static::assertNotNull($captured['warning']);
+        static::assertStringContainsString('full ICU rule parser/executor', $captured['warning']);
     }
 }

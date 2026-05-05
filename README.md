@@ -86,9 +86,11 @@ Example: ASCII::to_ascii()
 ### `TransliteratorPolyfill`
 
 This package includes `voku\helper\TransliteratorPolyfill`, a helper that can be
-reused by a dedicated `transliterator_transliterate()` polyfill.
+reused by a dedicated `transliterator_transliterate()` polyfill, plus a limited
+`voku\helper\Transliterator` object wrapper for method-style usage.
 
 ```php
+use voku\helper\Transliterator;
 use voku\helper\TransliteratorPolyfill;
 
 echo TransliteratorPolyfill::transliterate('Any-Latin; Latin-ASCII', 'déjà vu');
@@ -96,6 +98,10 @@ echo TransliteratorPolyfill::transliterate('Any-Latin; Latin-ASCII', 'déjà vu'
 
 echo TransliteratorPolyfill::transliterate('de-ASCII', 'Ä Ö Ü ä ö ü ß');
 // "AE OE UE ae oe ue ss"
+
+$transliterator = Transliterator::create('Latin-ASCII');
+echo $transliterator->transliterate('café');
+// "cafe"
 ```
 
 Supported pipeline steps:
@@ -118,6 +124,7 @@ Compatibility matrix:
 
 | Upstream PHPT case | Supported here? | Expected polyfill behavior | Reason |
 | --- | --- | --- | --- |
+| object-style transliteration for supported IDs | Yes | limited `Transliterator` wrapper exposes `create()` + `transliterate()` | enough to cover the supported subset without faking full ext-intl |
 | `Latin; Title` Greek transliteration | No | returns `false` + warning | full ICU `Title` step is out of scope |
 | Supported offset slicing | Yes, for limited IDs | transliterates only the requested codepoint slice | useful subset of upstream offset behavior |
 | Start offset beyond string length | Diverges | returns the input unchanged | this helper uses bounded codepoint slicing instead of ICU UTF-16 offset errors |
@@ -129,10 +136,13 @@ Compatibility matrix:
 Known limitations:
 
 - This package does not register a global `transliterator_transliterate()` function
+- The object wrapper is limited and is not a drop-in replacement for native ext-intl `Transliterator`
 - Custom ICU rules using `>` / `<` operators are not supported
+- `Transliterator::createFromRules()` intentionally returns `null` with a warning because there is no full ICU parser/executor here
 - Some mappings still differ from ICU data for selected scripts
 - Null bytes are stripped by the underlying ASCII transliteration logic
 - Unsupported ICU rules intentionally return `false` instead of being executed
+- Offsets are counted in Unicode codepoints here, not ICU UTF-16 code units
 
 # Portable ASCII | API
 

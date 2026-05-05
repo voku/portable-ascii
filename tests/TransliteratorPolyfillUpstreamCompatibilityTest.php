@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace voku\tests;
 
+use voku\helper\Transliterator;
 use voku\helper\TransliteratorPolyfill;
 
 /**
@@ -17,6 +18,7 @@ use voku\helper\TransliteratorPolyfill;
  *
  * Matrix:
  * - basic.phpt / "Latin; Title" Greek transliteration => unsupported here; warn + false.
+ * - basic.phpt / object-style transliteration => supported for the limited object polyfill wrapper.
  * - basic.phpt / start+end offsets => supported for limited IDs; codepoint slicing is tested here.
  * - error.phpt / start past end of string => divergence; upstream intl errors, polyfill returns input unchanged.
  * - error.phpt / invalid UTF-8 input => supported safety behavior; warn + false.
@@ -74,6 +76,33 @@ final class TransliteratorPolyfillUpstreamCompatibilityTest extends \PHPUnit\Fra
         static::assertNotNull($captured['warning']);
     }
 
+    /**
+     * @param callable $callback
+     *
+     * @return array{result: mixed, warning: string|null}
+     */
+    private static function callCapturingWarning(callable $callback): array
+    {
+        $warning = null;
+        \set_error_handler(static function (int $errno, string $errstr) use (&$warning): bool {
+            if ($errno !== \E_USER_WARNING) {
+                return false;
+            }
+
+            $warning = $errstr;
+
+            return true;
+        }, \E_USER_WARNING);
+
+        try {
+            $result = $callback();
+        } finally {
+            \restore_error_handler();
+        }
+
+        return ['result' => $result, 'warning' => $warning];
+    }
+
     public function testBasicPhptLatinTitleIsExplicitlyUnsupported(): void
     {
         $captured = self::transliterateCapturingWarning('Latin; Title', 'Κοντογιαννάτος, Βασίλης');
@@ -88,6 +117,16 @@ final class TransliteratorPolyfillUpstreamCompatibilityTest extends \PHPUnit\Fra
         $result = TransliteratorPolyfill::transliterate('Latin-ASCII', 'déjà vu résumé', 8, 14);
 
         static::assertSame('déjà vu resume', $result);
+    }
+
+    public function testBasicPhptObjectMethodStyleTransliterationWorksForSupportedIds(): void
+    {
+        $transliterator = Transliterator::create('Latin-ASCII');
+
+        static::assertInstanceOf(Transliterator::class, $transliterator);
+        static::assertSame('Latin-ASCII', $transliterator->getId());
+        static::assertSame('cafe', $transliterator->transliterate('café'));
+        static::assertSame('cafe', TransliteratorPolyfill::transliterate($transliterator, 'café'));
     }
 
     public function testErrorPhptStartPastStringLengthReturnsInputUnchanged(): void
@@ -110,6 +149,13 @@ final class TransliteratorPolyfillUpstreamCompatibilityTest extends \PHPUnit\Fra
         static::assertFalse($captured['result']);
         static::assertNotNull($captured['warning']);
         static::assertStringContainsString('invalid UTF-8', $captured['warning']);
+    }
+
+    public function testOffsetSemanticsAreCodepointBasedInsteadOfUtf16Units(): void
+    {
+        $result = TransliteratorPolyfill::transliterate('Latin-ASCII', '😀café', 1);
+
+        static::assertSame('😀cafe', $result);
     }
 
     public function testVariant1PhptIcuRuleStringsAreRejectedInsteadOfExecuted(): void
@@ -144,5 +190,16 @@ final class TransliteratorPolyfillUpstreamCompatibilityTest extends \PHPUnit\Fra
         static::assertFalse($captured['result']);
         static::assertNotNull($captured['warning']);
         static::assertStringContainsString('object', $captured['warning']);
+    }
+
+    public function testCreateFromRulesIsRejectedBecauseThereIsNoFullIcuParserExecutor(): void
+    {
+        $captured = self::callCapturingWarning(static function () {
+            return Transliterator::createFromRules('[\p{White_Space}] hex');
+        });
+
+        static::assertNull($captured['result']);
+        static::assertNotNull($captured['warning']);
+        static::assertStringContainsString('full ICU rule parser/executor', $captured['warning']);
     }
 }

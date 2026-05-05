@@ -6,7 +6,7 @@ The first extraction step is intentionally thin: this package exposes a dedicate
 
 ## Scope
 
-- Public package surface: `Voku\Transliterator\TransliteratorPolyfill`
+- Public package surface: `Voku\Transliterator\TransliteratorPolyfill` and `Voku\Transliterator\Transliterator`
 - Backing implementation: `voku\helper\TransliteratorPolyfill`
 - Runtime dependency: `voku/portable-ascii`
 - Optional normalization support remains optional through `Normalizer`
@@ -20,6 +20,7 @@ The first extraction step is intentionally thin: this package exposes a dedicate
 ## Usage
 
 ```php
+use Voku\Transliterator\Transliterator;
 use Voku\Transliterator\TransliteratorPolyfill;
 
 echo TransliteratorPolyfill::transliterate('Any-Latin; Latin-ASCII', 'déjà vu');
@@ -27,6 +28,10 @@ echo TransliteratorPolyfill::transliterate('Any-Latin; Latin-ASCII', 'déjà vu'
 
 echo TransliteratorPolyfill::transliterate('de-ASCII', 'Ä Ö Ü ä ö ü ß');
 // "AE OE UE ae oe ue ss"
+
+$transliterator = Transliterator::create('Latin-ASCII');
+echo $transliterator->transliterate('café');
+// "cafe"
 ```
 
 ## Supported pipeline steps
@@ -49,6 +54,7 @@ This package is a limited compatibility helper, not full ICU.
 
 | Upstream PHPT case | Expected package behavior |
 | --- | --- |
+| object-style transliteration for supported IDs | limited `Transliterator` wrapper works for supported IDs |
 | `Latin; Title` transliteration | `false` + warning |
 | Supported offset slicing | transliterates only the selected slice |
 | Invalid UTF-8 string or ID | `false` + warning |
@@ -58,10 +64,13 @@ This package is a limited compatibility helper, not full ICU.
 ## Known limitations
 
 - This package does not register a global `transliterator_transliterate()` function
+- The object wrapper is intentionally limited and does not try to reproduce the full native ext-intl API
 - Custom ICU rules using `>` / `<` operators are not supported
+- `Transliterator::createFromRules()` intentionally returns `null` with a warning because there is no full ICU parser/executor
 - Some mappings still differ from ICU data for selected scripts
 - Null bytes are stripped by the underlying ASCII transliteration logic
 - Unsupported ICU rules intentionally return `false`
+- Offsets are counted in Unicode codepoints here, not ICU UTF-16 code units
 
 ## Migration from `voku/portable-ascii`
 
