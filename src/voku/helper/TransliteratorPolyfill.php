@@ -27,6 +27,9 @@ namespace voku\helper;
  *   Normalizer class is not available.
  * - Character mappings may differ from ICU data (e.g., Cyrillic, CJK, currency symbols).
  * - The full ICU rule-based transliteration syntax is not supported.
+ *
+ * @phpstan-type SupportedLanguageAlias 'am'|'ar'|'az'|'be'|'bg'|'bn'|'de'|'de_at'|'de_ch'|'el'|'fa'|'hy'|'ka'|'kk'|'ko'|'ky'|'mk'|'mn'|'or'|'ps'|'ru'|'sr'|'th'|'tk'|'uk'|'uz'|'zh'
+ * @phpstan-type NormalizedStep array{type: 'step', value: string}|array{type: 'language', value: SupportedLanguageAlias}
  */
 final class TransliteratorPolyfill
 {
@@ -51,7 +54,7 @@ final class TransliteratorPolyfill
     /**
      * Limited language aliases adapted from the referenced Symfony polyfill work.
      *
-     * @var array<string, string>
+     * @var array<string, SupportedLanguageAlias>
      */
     private const LANGUAGE_STEP_ALIASES = [
         'amharic' => 'am',
@@ -62,7 +65,6 @@ final class TransliteratorPolyfill
         'bengali' => 'bn',
         'greek' => 'el',
         'persian' => 'fa',
-        'hebrew' => 'he',
         'armenian' => 'hy',
         'georgian' => 'ka',
         'kazakh' => 'kk',
@@ -194,7 +196,7 @@ final class TransliteratorPolyfill
      *
      * Characters outside the [start, end) range are preserved unchanged.
      *
-     * @param list<array{type: string, value: string}> $steps validated pipeline steps
+     * @param list<NormalizedStep> $steps validated pipeline steps
      * @param string       $string input string
      * @param int          $start  start codepoint offset
      * @param int          $end    end codepoint offset (-1 = end of string)
@@ -228,7 +230,7 @@ final class TransliteratorPolyfill
     /**
      * Apply the validated pipeline steps to the string sequentially.
      *
-     * @param list<array{type: string, value: string}> $steps validated pipeline steps
+     * @param list<NormalizedStep> $steps validated pipeline steps
      * @param string       $string input string
      *
      * @return string the transliterated string
@@ -240,7 +242,9 @@ final class TransliteratorPolyfill
         foreach ($steps as $step) {
             switch ($step['type']) {
                 case 'language':
-                    $result = self::applyLanguageStep($result, $step['value']);
+                    /** @phpstan-var SupportedLanguageAlias $language */
+                    $language = $step['value'];
+                    $result = self::applyLanguageStep($result, $language);
 
                     break;
 
@@ -381,6 +385,9 @@ final class TransliteratorPolyfill
         return false;
     }
 
+    /**
+     * @phpstan-param SupportedLanguageAlias $language
+     */
     private static function applyLanguageStep(string $string, string $language): string
     {
         switch ($language) {
@@ -454,7 +461,7 @@ final class TransliteratorPolyfill
     }
 
     /**
-     * @return array{type: string, value: string}|null
+     * @return NormalizedStep|null
      */
     private static function normalizeStep(string $step): ?array
     {
@@ -481,6 +488,9 @@ final class TransliteratorPolyfill
         return null;
     }
 
+    /**
+     * @phpstan-return SupportedLanguageAlias|null
+     */
     private static function resolveLanguageAlias(string $language): ?string
     {
         $language = \strtolower($language);
