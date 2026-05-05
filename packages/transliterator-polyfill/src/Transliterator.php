@@ -68,7 +68,7 @@ final class Transliterator
     }
 
     /**
-     * @return self|null
+     * @return null
      */
     public static function createFromRules(string $rules, int $direction = self::FORWARD)
     {
@@ -83,7 +83,7 @@ final class Transliterator
     }
 
     /**
-     * @return self|null
+     * @return null
      */
     public function createInverse()
     {
