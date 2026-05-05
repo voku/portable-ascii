@@ -16,6 +16,16 @@ use Voku\Transliterator\TransliteratorPolyfill;
  * - ext/intl/tests/transliterator_transliterate_variant1.phpt
  * - ext/intl/transliterator/transliterator.stub.php
  *
+ * Matrix:
+ * - basic.phpt / "Latin; Title" Greek transliteration => unsupported here; warn + false.
+ * - basic.phpt / object-style transliteration => supported for the limited object polyfill wrapper.
+ * - basic.phpt / start+end offsets => supported for limited IDs; codepoint slicing is tested here.
+ * - error.phpt / start past end of string => divergence; upstream intl errors, polyfill returns input unchanged.
+ * - error.phpt / invalid UTF-8 input => supported safety behavior; warn + false.
+ * - variant1.phpt / ICU rule-string ID => divergence; upstream executes ICU rule, polyfill rejects it.
+ * - variant1.phpt / invalid UTF-8 ID => supported safety behavior; warn + false.
+ * - variant1.phpt / object with __toString() => divergence; upstream string-casts, polyfill rejects objects.
+ *
  * @internal
  */
 final class TransliteratorPolyfillUpstreamCompatibilityTest extends \PHPUnit\Framework\TestCase

@@ -6,8 +6,9 @@ This directory is prepared as a copy-ready basis for a future standalone reposit
 
 - Public package surface: `Voku\Transliterator\TransliteratorPolyfill` and `Voku\Transliterator\Transliterator`
 - Package-owned implementation files: `src/TransliteratorPolyfill.php`, `src/Transliterator.php`, `src/TransliteratorId.php`
+- Root `src/voku/helper/*Transliterator*` files in `voku/portable-ascii` are compatibility shims; the package files are the implementation source of truth
 - Runtime dependency retained on `voku/portable-ascii` for the underlying `voku\helper\ASCII` transliteration data and helpers
-- Package test coverage includes package-surface smoke tests plus the php-src / ICU compatibility subset
+- Package test coverage includes the full transliterator-specific suite plus the php-src / ICU compatibility matrix
 
 ## Usage
 
@@ -31,7 +32,7 @@ echo $transliterator->transliterate('café');
 - This is still a limited compatibility layer, not a full ICU implementation
 - `Transliterator::createFromRules()` and `createInverse()` deliberately return `null` with warnings
 - Offsets keep the documented codepoint subset behavior, not ICU UTF-16 code-unit semantics
-- The package tests include the extracted php-src / ICU compatibility subset so they can move with the code
+- The package tests include the extracted php-src / ICU compatibility cases plus the broader polyfill behavior suite so they can move with the code
 
 ## Migration from `voku/portable-ascii`
 

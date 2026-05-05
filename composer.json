@@ -26,7 +26,8 @@
     },
     "autoload": {
         "psr-4": {
-            "voku\\": "src/voku/"
+            "voku\\": "src/voku/",
+            "Voku\\Transliterator\\": "packages/transliterator-polyfill/src/"
         }
     },
     "autoload-dev": {

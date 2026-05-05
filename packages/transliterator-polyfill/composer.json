@@ -39,7 +39,7 @@
             "type": "path",
             "url": "../../",
             "options": {
-                "symlink": false,
+                "symlink": true,
                 "versions": {
                     "voku/portable-ascii": "2.1.99"
                 }
