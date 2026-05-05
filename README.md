@@ -106,12 +106,33 @@ Supported pipeline steps:
 - `Any-Upper`, `Any-Lower`
 - Limited language aliases such as `de-ASCII`, `de_AT-ASCII`, `de_CH-ASCII`, and `Turkmen-Latin/BGN`
 
+Upstream test basis:
+
+- The transliterator compatibility tests are adapted from PHP's `ext/intl` PHPT suite:
+  - `ext/intl/tests/transliterator_transliterate_basic.phpt`
+  - `ext/intl/tests/transliterator_transliterate_error.phpt`
+  - `ext/intl/tests/transliterator_transliterate_variant1.phpt`
+- This helper is a limited compatibility layer, not a full ICU implementation.
+
+Compatibility matrix:
+
+| Upstream PHPT case | Supported here? | Expected polyfill behavior | Reason |
+| --- | --- | --- | --- |
+| `Latin; Title` Greek transliteration | No | returns `false` + warning | full ICU `Title` step is out of scope |
+| Supported offset slicing | Yes, for limited IDs | transliterates only the requested codepoint slice | useful subset of upstream offset behavior |
+| Start offset beyond string length | Diverges | returns the input unchanged | this helper uses bounded codepoint slicing instead of ICU UTF-16 offset errors |
+| Invalid UTF-8 input string | Yes | returns `false` + warning | malformed UTF-8 is rejected safely |
+| ICU rule-string ID like `[\p{White_Space}] hex` | No | returns `false` + warning | custom ICU rules are intentionally unsupported |
+| Invalid UTF-8 transliterator ID | Yes | returns `false` + warning | malformed IDs are rejected safely |
+| Object with `__toString()` as first argument | No | returns `false` + warning | no ext-intl object API or implicit string-cast support |
+
 Known limitations:
 
 - This package does not register a global `transliterator_transliterate()` function
 - Custom ICU rules using `>` / `<` operators are not supported
 - Some mappings still differ from ICU data for selected scripts
 - Null bytes are stripped by the underlying ASCII transliteration logic
+- Unsupported ICU rules intentionally return `false` instead of being executed
 
 # Portable ASCII | API
 

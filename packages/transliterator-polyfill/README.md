@@ -37,12 +37,31 @@ echo TransliteratorPolyfill::transliterate('de-ASCII', 'Ä Ö Ü ä ö ü ß');
 - `Any-Upper`, `Any-Lower`
 - Limited language aliases such as `de-ASCII`, `de_AT-ASCII`, `de_CH-ASCII`, and `Turkmen-Latin/BGN`
 
+## Upstream-derived compatibility contract
+
+The tests in this scaffold are adapted from PHP's own `ext/intl` transliterator PHPT tests:
+
+- `ext/intl/tests/transliterator_transliterate_basic.phpt`
+- `ext/intl/tests/transliterator_transliterate_error.phpt`
+- `ext/intl/tests/transliterator_transliterate_variant1.phpt`
+
+This package is a limited compatibility helper, not full ICU.
+
+| Upstream PHPT case | Expected package behavior |
+| --- | --- |
+| `Latin; Title` transliteration | `false` + warning |
+| Supported offset slicing | transliterates only the selected slice |
+| Invalid UTF-8 string or ID | `false` + warning |
+| ICU rule strings | `false` + warning |
+| Stringable object first argument | `false` + warning |
+
 ## Known limitations
 
 - This package does not register a global `transliterator_transliterate()` function
 - Custom ICU rules using `>` / `<` operators are not supported
 - Some mappings still differ from ICU data for selected scripts
 - Null bytes are stripped by the underlying ASCII transliteration logic
+- Unsupported ICU rules intentionally return `false`
 
 ## Migration from `voku/portable-ascii`
 

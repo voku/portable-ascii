@@ -21,21 +21,30 @@ use voku\helper\TransliteratorPolyfill;
 final class TransliteratorPolyfillTest extends \PHPUnit\Framework\TestCase
 {
     /**
+     * @param mixed $transliterator
+     *
      * Call TransliteratorPolyfill::transliterate() and capture any E_USER_WARNING.
      *
      * @return array{result: string|false, warning: string|null}
      */
-    private static function transliterateCapturingWarning(mixed $transliterator, string $string, int $start = 0, int $end = -1): array
+    private static function transliterateCapturingWarning($transliterator, string $string, int $start = 0, int $end = -1): array
     {
         $warning = null;
         \set_error_handler(static function (int $errno, string $errstr) use (&$warning): bool {
+            if ($errno !== \E_USER_WARNING) {
+                return false;
+            }
+
             $warning = $errstr;
 
             return true;
         }, \E_USER_WARNING);
 
-        $result = TransliteratorPolyfill::transliterate($transliterator, $string, $start, $end);
-        \restore_error_handler();
+        try {
+            $result = TransliteratorPolyfill::transliterate($transliterator, $string, $start, $end);
+        } finally {
+            \restore_error_handler();
+        }
 
         return ['result' => $result, 'warning' => $warning];
     }
