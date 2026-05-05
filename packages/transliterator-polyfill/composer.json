@@ -1,6 +1,6 @@
 {
     "name": "voku/transliterator-polyfill",
-    "description": "Thin transliterator_transliterate() polyfill package backed by voku/portable-ascii.",
+    "description": "Limited transliterator_transliterate() polyfill package backed by voku/portable-ascii.",
     "type": "library",
     "keywords": [
         "php",
