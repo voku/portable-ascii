@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace voku\tests;
 
-use voku\helper\TransliteratorPolyfill;
+use Voku\Transliterator\TransliteratorPolyfill;
 
 /**
  * Tests for the transliterator_transliterate() polyfill.

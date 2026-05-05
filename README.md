@@ -85,13 +85,13 @@ Example: ASCII::to_ascii()
 
 ### `TransliteratorPolyfill`
 
-This package includes `voku\helper\TransliteratorPolyfill`, a helper that can be
-reused by a dedicated `transliterator_transliterate()` polyfill, plus a limited
-`voku\helper\Transliterator` object wrapper for method-style usage.
+This package includes the `Voku\Transliterator\TransliteratorPolyfill` polyfill
+and the limited `Voku\Transliterator\Transliterator` object wrapper for
+method-style usage.
 
 ```php
-use voku\helper\Transliterator;
-use voku\helper\TransliteratorPolyfill;
+use Voku\Transliterator\Transliterator;
+use Voku\Transliterator\TransliteratorPolyfill;
 
 echo TransliteratorPolyfill::transliterate('Any-Latin; Latin-ASCII', 'déjà vu');
 // "deja vu"

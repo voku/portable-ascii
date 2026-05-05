@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace voku\tests;
 
-use voku\helper\Transliterator;
-use voku\helper\TransliteratorPolyfill;
+use Voku\Transliterator\Transliterator;
+use Voku\Transliterator\TransliteratorPolyfill;
 
 /**
  * Upstream compatibility matrix adapted from PHP's ext/intl PHPT tests.

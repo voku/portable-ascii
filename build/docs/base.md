@@ -84,11 +84,11 @@ Example: ASCII::to_ascii()
 
 ### `TransliteratorPolyfill`
 
-This package includes `voku\helper\TransliteratorPolyfill`, a helper that can be
-reused by a dedicated `transliterator_transliterate()` polyfill.
+This package includes the `Voku\Transliterator\TransliteratorPolyfill`
+polyfill.
 
 ```php
-use voku\helper\TransliteratorPolyfill;
+use Voku\Transliterator\TransliteratorPolyfill;
 
 echo TransliteratorPolyfill::transliterate('Any-Latin; Latin-ASCII', 'déjà vu');
 // "deja vu"

@@ -6,7 +6,7 @@ This directory is prepared as a copy-ready basis for a future standalone reposit
 
 - Public package surface: `Voku\Transliterator\TransliteratorPolyfill` and `Voku\Transliterator\Transliterator`
 - Package-owned implementation files: `src/TransliteratorPolyfill.php`, `src/Transliterator.php`, `src/TransliteratorId.php`
-- Root `src/voku/helper/*Transliterator*` files in `voku/portable-ascii` are compatibility shims; the package files are the implementation source of truth
+- `voku/portable-ascii` exposes the transliterator functionality via this package namespace; the package files are the implementation source of truth
 - Runtime dependency retained on `voku/portable-ascii` for the underlying `voku\helper\ASCII` transliteration data and helpers
 - Package test coverage includes the full transliterator-specific suite plus the php-src / ICU compatibility matrix
 
