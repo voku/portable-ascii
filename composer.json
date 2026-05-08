@@ -1,5 +1,5 @@
 {
-    "name": "voku/portable-ascii",
+    "name": "cpeople-team/portable-ascii",
     "description": "Fork of Portable ASCII library - performance optimized (ascii) string functions for PHP by CreativePeople.",
     "type": "library",
     "keywords": [
