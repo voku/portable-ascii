@@ -128,10 +128,25 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         $method->setAccessible(true);
 
         static::assertSame('x y', $method->invoke(null, "x\xC2\xA0y", '?'));
-        static::assertSame('x y', $method->invoke(null, "x\xE1\x9A\x80y", '?'));
-        static::assertSame('x y', $method->invoke(null, "x\xE3\x80\x80y", '?'));
-        static::assertSame('x y', $method->invoke(null, "x\xEF\xBE\xA0y", '?'));
         static::assertSame('xy', $method->invoke(null, "x\x01y", '?'));
+    }
+
+    public function testAdditionalWhitespaceLeadingBytesStayOutsideTransliterationPreCleanGate()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('pre_clean_transliteration_input');
+        $method->setAccessible(true);
+
+        $cases = [
+            'ogham space mark' => "x\xE1\x9A\x80y",
+            'ideographic space' => "x\xE3\x80\x80y",
+            'halfwidth hangul filler' => "x\xEF\xBE\xA0y",
+        ];
+
+        foreach ($cases as $label => $input) {
+            static::assertSame('x y', ASCII::normalize_whitespace($input), $label);
+            static::assertSame($input, $method->invoke(null, $input, '?'), $label);
+        }
     }
 
     public function testTransliterateShortcutBranchesStayCorrectAcrossRepeatedCalls()
