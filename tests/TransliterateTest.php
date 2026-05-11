@@ -128,6 +128,9 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         $method->setAccessible(true);
 
         static::assertSame('x y', $method->invoke(null, "x\xC2\xA0y", '?'));
+        static::assertSame('x y', $method->invoke(null, "x\xE1\x9A\x80y", '?'));
+        static::assertSame('x y', $method->invoke(null, "x\xE3\x80\x80y", '?'));
+        static::assertSame('x y', $method->invoke(null, "x\xEF\xBE\xA0y", '?'));
         static::assertSame('xy', $method->invoke(null, "x\x01y", '?'));
     }
 
