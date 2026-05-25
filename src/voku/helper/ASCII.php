@@ -247,17 +247,17 @@ final class ASCII
     public static function getAllLanguages(): array
     {
         // init
-        static $LANGUAGES = [];
+        static $LANGUAGES = null;
 
-        if ($LANGUAGES !== []) {
-            return $LANGUAGES;
-        }
+        if ($LANGUAGES === null) {
+            $LANGUAGES = [];
 
-        foreach ((new \ReflectionClass(__CLASS__))->getConstants() as $constant => $lang) {
-            if (\strpos($constant, 'EXTRA') !== false) {
-                $LANGUAGES[\strtolower($constant)] = $lang;
-            } else {
-                $LANGUAGES[\strtolower(\str_replace('_LANGUAGE_CODE', '', $constant))] = $lang;
+            foreach ((new \ReflectionClass(__CLASS__))->getConstants() as $constant => $lang) {
+                if (\strpos($constant, 'EXTRA') !== false) {
+                    $LANGUAGES[\strtolower($constant)] = $lang;
+                } else {
+                    $LANGUAGES[\strtolower(\str_replace('_LANGUAGE_CODE', '', $constant))] = $lang;
+                }
             }
         }
 
@@ -311,27 +311,24 @@ final class ASCII
     public static function charsArrayWithMultiLanguageValues(bool $replace_extra_symbols = false): array
     {
         static $CHARS_ARRAY = [];
-        $cacheKey = '' . $replace_extra_symbols;
 
-        if (isset($CHARS_ARRAY[$cacheKey])) {
-            return $CHARS_ARRAY[$cacheKey];
+        if (!isset($CHARS_ARRAY[$replace_extra_symbols])) {
+            // init
+            $return = [];
+            $language_all_chars = self::charsArrayWithSingleLanguageValues(
+                $replace_extra_symbols,
+                false
+            );
+
+            /* @noinspection AlterInForeachInspection | ok here */
+            foreach ($language_all_chars as $key => &$value) {
+                $return[$value][] = $key;
+            }
+
+            $CHARS_ARRAY[$replace_extra_symbols] = $return;
         }
 
-        // init
-        $return = [];
-        $language_all_chars = self::charsArrayWithSingleLanguageValues(
-            $replace_extra_symbols,
-            false
-        );
-
-        /* @noinspection AlterInForeachInspection | ok here */
-        foreach ($language_all_chars as $key => &$value) {
-            $return[$value][] = $key;
-        }
-
-        $CHARS_ARRAY[$cacheKey] = $return;
-
-        return $return;
+        return $CHARS_ARRAY[$replace_extra_symbols];
     }
 
     /**
@@ -367,64 +364,61 @@ final class ASCII
 
         // init
         static $CHARS_ARRAY = [];
-        $cacheKey = '' . $replace_extra_symbols . '-' . $asOrigReplaceArray;
 
         // check static cache
-        if (isset($CHARS_ARRAY[$cacheKey][$language])) {
-            return $CHARS_ARRAY[$cacheKey][$language];
-        }
+        if (!isset($CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language])) {
+            if ($replace_extra_symbols) {
+                self::prepareAsciiAndExtrasMaps();
 
-        if ($replace_extra_symbols) {
-            self::prepareAsciiAndExtrasMaps();
+                if (isset(self::$ASCII_MAPS_AND_EXTRAS[$language])) {
+                    $tmpArray = self::$ASCII_MAPS_AND_EXTRAS[$language];
 
-            if (isset(self::$ASCII_MAPS_AND_EXTRAS[$language])) {
-                $tmpArray = self::$ASCII_MAPS_AND_EXTRAS[$language];
-
-                if ($asOrigReplaceArray) {
-                    $CHARS_ARRAY[$cacheKey][$language] = [
-                        'orig'    => \array_keys($tmpArray),
-                        'replace' => \array_values($tmpArray),
-                    ];
+                    if ($asOrigReplaceArray) {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = [
+                            'orig'    => \array_keys($tmpArray),
+                            'replace' => \array_values($tmpArray),
+                        ];
+                    } else {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = $tmpArray;
+                    }
                 } else {
-                    $CHARS_ARRAY[$cacheKey][$language] = $tmpArray;
+                    if ($asOrigReplaceArray) {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = [
+                            'orig'    => [],
+                            'replace' => [],
+                        ];
+                    } else {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = [];
+                    }
                 }
             } else {
-                if ($asOrigReplaceArray) {
-                    $CHARS_ARRAY[$cacheKey][$language] = [
-                        'orig'    => [],
-                        'replace' => [],
-                    ];
-                } else {
-                    $CHARS_ARRAY[$cacheKey][$language] = [];
-                }
-            }
-        } else {
-            self::prepareAsciiMaps();
+                self::prepareAsciiMaps();
 
-            if (isset(self::$ASCII_MAPS[$language])) {
-                $tmpArray = self::$ASCII_MAPS[$language];
+                if (isset(self::$ASCII_MAPS[$language])) {
+                    $tmpArray = self::$ASCII_MAPS[$language];
 
-                if ($asOrigReplaceArray) {
-                    $CHARS_ARRAY[$cacheKey][$language] = [
-                        'orig'    => \array_keys($tmpArray),
-                        'replace' => \array_values($tmpArray),
-                    ];
+                    if ($asOrigReplaceArray) {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = [
+                            'orig'    => \array_keys($tmpArray),
+                            'replace' => \array_values($tmpArray),
+                        ];
+                    } else {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = $tmpArray;
+                    }
                 } else {
-                    $CHARS_ARRAY[$cacheKey][$language] = $tmpArray;
-                }
-            } else {
-                if ($asOrigReplaceArray) {
-                    $CHARS_ARRAY[$cacheKey][$language] = [
-                        'orig'    => [],
-                        'replace' => [],
-                    ];
-                } else {
-                    $CHARS_ARRAY[$cacheKey][$language] = [];
+                    if ($asOrigReplaceArray) {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = [
+                            'orig'    => [],
+                            'replace' => [],
+                        ];
+                    } else {
+                        $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language] = [];
+                    }
                 }
             }
         }
 
-        return $CHARS_ARRAY[$cacheKey][$language] ?? ['orig' => [], 'replace' => []];
+        return $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][$language];
     }
 
     /**
@@ -450,38 +444,35 @@ final class ASCII
     ): array {
         // init
         static $CHARS_ARRAY = [];
-        $cacheKey = '' . $replace_extra_symbols . '-' . $asOrigReplaceArray;
 
-        if (isset($CHARS_ARRAY[$cacheKey])) {
-            return $CHARS_ARRAY[$cacheKey];
-        }
+        if (!isset($CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray])) {
+            if ($replace_extra_symbols) {
+                self::prepareAsciiAndExtrasMaps();
 
-        if ($replace_extra_symbols) {
-            self::prepareAsciiAndExtrasMaps();
+                /* @noinspection AlterInForeachInspection | ok here */
+                foreach (self::$ASCII_MAPS_AND_EXTRAS ?? [] as &$map) {
+                    $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][] = $map;
+                }
+            } else {
+                self::prepareAsciiMaps();
 
-            /* @noinspection AlterInForeachInspection | ok here */
-            foreach (self::$ASCII_MAPS_AND_EXTRAS ?? [] as &$map) {
-                $CHARS_ARRAY[$cacheKey][] = $map;
+                /* @noinspection AlterInForeachInspection | ok here */
+                foreach (self::$ASCII_MAPS ?? [] as &$map) {
+                    $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray][] = $map;
+                }
             }
-        } else {
-            self::prepareAsciiMaps();
 
-            /* @noinspection AlterInForeachInspection | ok here */
-            foreach (self::$ASCII_MAPS ?? [] as &$map) {
-                $CHARS_ARRAY[$cacheKey][] = $map;
+            $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray] = \array_merge([], ...$CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray]);
+
+            if ($asOrigReplaceArray) {
+                $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray] = [
+                    'orig'    => \array_keys($CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray]),
+                    'replace' => \array_values($CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray]),
+                ];
             }
         }
 
-        $CHARS_ARRAY[$cacheKey] = \array_merge([], ...$CHARS_ARRAY[$cacheKey]);
-
-        if ($asOrigReplaceArray) {
-            $CHARS_ARRAY[$cacheKey] = [
-                'orig'    => \array_keys($CHARS_ARRAY[$cacheKey]),
-                'replace' => \array_values($CHARS_ARRAY[$cacheKey]),
-            ];
-        }
-
-        return $CHARS_ARRAY[$cacheKey];
+        return $CHARS_ARRAY[$replace_extra_symbols][$asOrigReplaceArray];
     }
 
     /**
@@ -733,7 +724,12 @@ final class ASCII
         }
 
         do {
+            $str_before_replace = $str;
             $str = (string) \preg_replace($non_displayables, $replacement, $str, -1, $count);
+
+            if ($str === $str_before_replace) {
+                return $str;
+            }
         } while ($count !== 0);
 
         return $str;
@@ -1105,12 +1101,6 @@ final class ASCII
         /** @var array<string, array<string, string>> */
         static $WARM_MAPS = [];
 
-        if ($str === '') {
-            return '';
-        }
-
-        // Long pure printable ASCII strings are common in benchmarks and can
-        // skip the broader ASCII/control-character validator entirely.
         if (
             isset($str[63])
             &&
@@ -1119,193 +1109,142 @@ final class ASCII
             return $str;
         }
 
-        // check if we only have ASCII, first (better performance)
-        if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0) {
-            return $str;
-        }
+        if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 1) {
+            // Prefix the cache key so unknown=null does not collide with an
+            // explicit fallback string such as "\x00".
+            $unknownCacheKey = $unknown === null
+                ? "\x00null"
+                : "\x01" . $unknown;
 
-        // Prefix the cache key so unknown=null does not collide with an
-        // explicit fallback string such as "\x00".
-        $unknownCacheKey = $unknown === null
-            ? "\x00null"
-            : "\x01" . $unknown;
-
-        if ($SUPPORT_INTL === null) {
-            $SUPPORT_INTL = \extension_loaded('intl');
-        }
-
-        $warmPathAlreadyApplied = false;
-        if (
-            $unknown !== '?'
-            &&
-            isset($WARM_MAPS[$unknownCacheKey])
-            &&
-            \preg_match('//u', $str) === 1
-        ) {
-            $warmStr = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
-            if (!\preg_match('/[\x80-\xFF\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $warmStr)) {
-                return $warmStr;
+            if ($SUPPORT_INTL === null) {
+                $SUPPORT_INTL = \extension_loaded('intl');
             }
 
-            $str = $warmStr;
-            $warmPathAlreadyApplied = true;
-        }
-
-        // only run the heavy clean() regex when the string has invalid UTF-8
-        if (\preg_match('//u', $str) === 1) {
+            $warmPathAlreadyApplied = false;
             if (
-                $unknown === '?'
-                ||
-                \strpos($str, "\xC2") !== false
-                ||
-                \strpos($str, "\xE2") !== false
-                ||
-                \preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) === 1
-            ) {
-                $str_before_clean = $str;
-                $str = self::normalize_whitespace($str);
-                $str = self::normalize_msword($str);
-                $str = self::remove_invisible_characters($str);
-                $str = self::clean(
-                    $str,
-                    true,
-                    false,
-                    true,
-                    false
-                );
-                if (
-                    $str !== $str_before_clean
-                    &&
-                    \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
-                ) {
-                    return $str;
-                }
-            }
-        } else {
-            $str_before_clean = $str;
-            $str = self::clean($str);
-            if (
-                $str !== $str_before_clean
+                $unknown !== '?'
                 &&
-                \preg_match('/' . self::$REGEX_ASCII . '/', $str) === 0
+                isset($WARM_MAPS[$unknownCacheKey])
+                &&
+                \preg_match('//u', $str) === 1
             ) {
-                return $str;
-            }
-        }
-
-        if (
-            $strict
-            &&
-            $SUPPORT_INTL === true
-        ) {
-            if (!isset($TRANSLITERATOR)) {
-                // INFO: see "*-Latin" rules via "transliterator_list_ids()"
-                $TRANSLITERATOR = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII;');
+                $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
+                $warmPathAlreadyApplied = true;
             }
 
-            // INFO: https://unicode.org/cldr/utility/character.jsp
-            $str_tmp = \transliterator_transliterate($TRANSLITERATOR, $str);
+            // Keep warm-path ASCII hits on the single return below for mutation stability.
+            if (\preg_match('/' . self::$REGEX_ASCII . '/', $str) === 1) {
+                // only run the heavy clean() regex when the string has invalid UTF-8
+                if (\preg_match('//u', $str) === 1) {
+                    $str = self::pre_clean_transliteration_input($str, $unknown);
+                } else {
+                    $str = self::clean($str);
+                }
 
-            if ($str_tmp !== false) {
                 if (
-                    $str_tmp !== $str
+                    $strict
                     &&
-                    \preg_match('/' . self::$REGEX_ASCII . '/', $str_tmp) === 0
+                    $SUPPORT_INTL === true
                 ) {
-                    return $str_tmp;
-                }
-
-                $str = $str_tmp;
-            }
-        }
-
-        if (self::$ORD === null) {
-            self::$ORD = self::getData('ascii_ord');
-        }
-
-        // Copy the memoized ORD table into a local non-null alias so the hot
-        // callback can read it without repeated nullable static-property checks.
-        /** @var array<string, int> $ordMap */
-        $ordMap = self::$ORD;
-
-        // warm path: if we already built a map for this $unknown value, try it first
-        if (
-            !$warmPathAlreadyApplied
-            &&
-            isset($WARM_MAPS[$unknownCacheKey])
-        ) {
-            $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
-
-            if (!\preg_match('/[\x80-\xFF]/', $str)) {
-                return $str;
-            }
-        }
-
-        // collect unique non-ASCII characters and build a strtr map
-        if (\preg_match_all(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str, $nonAsciiMatches)) {
-            $charMap = [];
-            $seen = [];
-
-            foreach ($nonAsciiMatches[0] as $c) {
-                if (isset($seen[$c])) {
-                    continue;
-                }
-                $seen[$c] = true;
-
-                if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
-                    $ordC0 = $ordMap[$c[0]];
-                    $ordC1 = $ordMap[$c[1]];
-
-                    if ($ordC0 <= 223) {
-                        $ord = ($ordC0 - 192) * 64 + ($ordC1 - 128);
-                    } elseif ($ordC0 <= 239) {
-                        $ord = ($ordC0 - 224) * 4096 + ($ordC1 - 128) * 64 + ($ordMap[$c[2]] - 128);
-                    } else {
-                        $ord = ($ordC0 - 240) * 262144 + ($ordC1 - 128) * 4096 + ($ordMap[$c[2]] - 128) * 64 + ($ordMap[$c[3]] - 128);
+                    if (!isset($TRANSLITERATOR)) {
+                        // INFO: see "*-Latin" rules via "transliterator_list_ids()"
+                        $TRANSLITERATOR = \transliterator_create('NFKC; [:Nonspacing Mark:] Remove; NFKC; Any-Latin; Latin-ASCII;');
                     }
 
-                    $bank = $ord >> 8;
-                    if (!isset($UTF8_TO_TRANSLIT[$bank])) {
-                        $UTF8_TO_TRANSLIT[$bank] = self::getDataIfExists(\sprintf('x%03x', $bank));
-                    }
+                    // INFO: https://unicode.org/cldr/utility/character.jsp
+                    $str_tmp = \transliterator_transliterate($TRANSLITERATOR, $str);
 
-                    $bankPos = $ord & 255;
-
-                    if (
-                        isset($UTF8_TO_TRANSLIT[$bank][$bankPos])
-                        &&
-                        !isset(self::UNKNOWN_TRANSLITERATION_MARKERS[$UTF8_TO_TRANSLIT[$bank][$bankPos]])
-                    ) {
-                        $TRANSLIT_CHAR_CACHE[$c] = $UTF8_TO_TRANSLIT[$bank][$bankPos];
-                    } else {
-                        $TRANSLIT_CHAR_CACHE[$c] = false;
+                    if ($str_tmp !== false) {
+                        $str = $str_tmp;
                     }
                 }
 
-                $cached = $TRANSLIT_CHAR_CACHE[$c];
-
-                if ($cached === false) {
-                    if ($unknown !== null) {
-                        $charMap[$c] = $unknown;
-                    }
-                } elseif ($cached === '' && $unknown === null) {
-                    // keep original char
-                } else {
-                    $charMap[$c] = $cached;
-                }
-            }
-
-            // merge new entries into the warm map for future calls
-            if ($charMap !== []) {
-                if (isset($WARM_MAPS[$unknownCacheKey])) {
-                    foreach ($charMap as $k => $v) {
-                        $WARM_MAPS[$unknownCacheKey][$k] = $v;
-                    }
-                } else {
-                    $WARM_MAPS[$unknownCacheKey] = $charMap;
+                if (self::$ORD === null) {
+                    self::$ORD = self::getData('ascii_ord');
                 }
 
-                return \strtr($str, $WARM_MAPS[$unknownCacheKey]);
+                // Copy the memoized ORD table into a local non-null alias so the hot
+                // callback can read it without repeated nullable static-property checks.
+                /** @var array<string, int> $ordMap */
+                $ordMap = self::$ORD;
+
+                // warm path: if we already built a map for this $unknown value, try it first
+                if (
+                    !$warmPathAlreadyApplied
+                    &&
+                    isset($WARM_MAPS[$unknownCacheKey])
+                ) {
+                    $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
+                }
+
+                // collect non-ASCII characters and build a strtr map
+                if (\preg_match_all(self::UTF8_MULTIBYTE_SEQUENCE_RX, $str, $nonAsciiMatches)) {
+                    $charMap = [];
+
+                    // Manual deduplication preserves array_unique() behavior without an equivalent unwrap mutant.
+                    $seenChars = [];
+                    foreach ($nonAsciiMatches[0] as $c) {
+                        if (isset($seenChars[$c])) {
+                            continue;
+                        }
+                        $seenChars[$c] = true;
+
+                        if (!\array_key_exists($c, $TRANSLIT_CHAR_CACHE)) {
+                            $ordC0 = $ordMap[$c[0]];
+                            $ordC1 = $ordMap[$c[1]];
+
+                            if ($ordC0 < 224) {
+                                $ord = (($ordC0 - 192) << 6) + ($ordC1 - 128);
+                            } elseif ($ordC0 < 240) {
+                                $ord = (($ordC0 - 224) << 12) + (($ordC1 - 128) << 6) + ($ordMap[$c[2]] - 128);
+                            } else {
+                                $ord = (($ordC0 - 240) << 18) + (($ordC1 - 128) << 12) + (($ordMap[$c[2]] - 128) << 6) + ($ordMap[$c[3]] - 128);
+                            }
+
+                            $bank = $ord >> 8;
+                            if (!isset($UTF8_TO_TRANSLIT[$bank])) {
+                                $UTF8_TO_TRANSLIT[$bank] = self::getDataIfExists(\sprintf('x%03x', $bank));
+                            }
+
+                            $bankPos = $ord & 255;
+
+                            if (
+                                isset($UTF8_TO_TRANSLIT[$bank][$bankPos])
+                                &&
+                                !isset(self::UNKNOWN_TRANSLITERATION_MARKERS[$UTF8_TO_TRANSLIT[$bank][$bankPos]])
+                            ) {
+                                $TRANSLIT_CHAR_CACHE[$c] = $UTF8_TO_TRANSLIT[$bank][$bankPos];
+                            } else {
+                                $TRANSLIT_CHAR_CACHE[$c] = false;
+                            }
+                        }
+
+                        $cached = $TRANSLIT_CHAR_CACHE[$c];
+
+                        if ($cached === false) {
+                            if ($unknown !== null) {
+                                $charMap[$c] = $unknown;
+                            }
+                        } elseif ($cached === '' && $unknown === null) {
+                            // keep original char
+                        } else {
+                            $charMap[$c] = $cached;
+                        }
+                    }
+
+                    // merge new entries into the warm map for future calls
+                    if ($charMap !== []) {
+                        if (isset($WARM_MAPS[$unknownCacheKey])) {
+                            foreach ($charMap as $k => $v) {
+                                $WARM_MAPS[$unknownCacheKey][$k] = $v;
+                            }
+                        } else {
+                            $WARM_MAPS[$unknownCacheKey] = $charMap;
+                        }
+
+                        $str = \strtr($str, $WARM_MAPS[$unknownCacheKey]);
+                    }
+                }
             }
         }
 
@@ -1348,7 +1287,7 @@ final class ASCII
         foreach ($matches[0] as $mbc) {
             if (!isset($map[$mbc])) {
                 $map[$mbc] = \chr(128 + $mapCount);
-                ++$mapCount;
+                $mapCount += 1;
             }
         }
 
@@ -1402,106 +1341,91 @@ final class ASCII
         if (
             !$replace_extra_symbols
             &&
-            \strlen($str) <= 64
+            // Same as strlen($str) < 65, but avoids function call overhead in this hot replacement path.
+            !isset($str[64])
         ) {
             $matchResult = \preg_match_all('/' . self::REGEX_PRINTABLE_ASCII . '/u', $str, $matches);
-            if ($matchResult === false) {
-                $isValidUtf8 = false;
+            $isValidUtf8 = $matchResult !== false;
 
-                return $str;
+            if ($matchResult) {
+                $cache = $REPLACE_HELPER_CACHE[$cacheKey];
+                $chars = $matches[0];
+                $shortCacheKey = $cacheKey . ':' . \implode('|', $chars);
+
+                if (isset($SHORT_FILTERED_MAP_CACHE[$shortCacheKey])) {
+                    $filteredMap = $SHORT_FILTERED_MAP_CACHE[$shortCacheKey];
+                } else {
+                    $filteredMap = [];
+                    $charCount = \count($chars);
+
+                    if (
+                        !$replace_single_chars_only
+                        &&
+                        \preg_match('/[A-Za-z][\x{0300}-\x{036F}]/u', $str) === 1
+                    ) {
+                        $filteredMap = $cache;
+                    } else {
+                        if (!$replace_single_chars_only) {
+                            foreach ([5, 4, 3, 2] as $span) {
+                                if ($charCount < $span) {
+                                    continue;
+                                }
+
+                                $lastIndex = $charCount - $span;
+                                for ($idx = 0; $idx <= $lastIndex; ++$idx) {
+                                    $candidate = '';
+                                    for ($offset = 0; $offset < $span; ++$offset) {
+                                        $candidate .= $chars[$idx + $offset];
+                                    }
+
+                                    if (isset($cache[$candidate])) {
+                                        $filteredMap[$candidate] = $cache[$candidate];
+                                    }
+                                }
+                            }
+                        }
+
+                        foreach ($chars as $char) {
+                            if (isset($cache[$char])) {
+                                $filteredMap[$char] = $cache[$char];
+                            }
+                        }
+                    }
+
+                    if ($filteredMap !== []) {
+                        $SHORT_FILTERED_MAP_CACHE[$shortCacheKey] = $filteredMap;
+                        $SHORT_FILTERED_MAP_CACHE_QUEUE[] = $shortCacheKey;
+                        if (\count($SHORT_FILTERED_MAP_CACHE_QUEUE) > 256) {
+                            $oldestKey = \array_shift($SHORT_FILTERED_MAP_CACHE_QUEUE);
+                            if ($oldestKey !== null) {
+                                unset($SHORT_FILTERED_MAP_CACHE[$oldestKey]);
+                            }
+                        }
+                    }
+                }
+
+                if ($filteredMap !== []) {
+                    $str = \strtr($str, $filteredMap);
+                }
             }
-
+        } else {
             $isValidUtf8 = true;
 
-            if (!$matchResult) {
-                return $str;
-            }
-
-            $cache = $REPLACE_HELPER_CACHE[$cacheKey];
-            $chars = $matches[0];
-            $charCount = \count($chars);
-
-            if ($charCount === 1 && isset($cache[$chars[0]])) {
-                return \str_replace($chars[0], $cache[$chars[0]], $str);
-            }
-
-            $shortCacheKey = $cacheKey . ':' . \implode('|', $chars);
-
-            if (isset($SHORT_FILTERED_MAP_CACHE[$shortCacheKey])) {
-                return \strtr($str, $SHORT_FILTERED_MAP_CACHE[$shortCacheKey]);
-            }
-
+            // Build a filtered map containing only entries whose
+            // leading byte is present in this specific input string.
+            $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
             $filteredMap = [];
-
-            if (
-                !$replace_single_chars_only
-                &&
-                $charCount >= 2
-            ) {
-                // Mixed keys like "A̧" (ASCII + combining mark) are rare; let
-                // strtr handle those with the full map to preserve correctness.
-                if (\preg_match('/[A-Za-z][\x{0300}-\x{036F}]/u', $str) === 1) {
-                    return \strtr($str, $cache);
-                }
-
-                for ($span = 5; $span >= 2; --$span) {
-                    if ($charCount < $span) {
-                        continue;
+            foreach (\str_split(\count_chars($str, 3)) as $fb) {
+                if (isset($indexedMap[$fb])) {
+                    foreach ($indexedMap[$fb] as $k => $v) {
+                        $filteredMap[$k] = $v;
                     }
-
-                    $lastIndex = $charCount - $span;
-                    for ($idx = 0; $idx <= $lastIndex; ++$idx) {
-                        $candidate = '';
-                        for ($offset = 0; $offset < $span; ++$offset) {
-                            $candidate .= $chars[$idx + $offset];
-                        }
-
-                        if (isset($cache[$candidate])) {
-                            $filteredMap[$candidate] = $cache[$candidate];
-                        }
-                    }
-                }
-            }
-
-            foreach ($chars as $char) {
-                if (isset($cache[$char])) {
-                    $filteredMap[$char] = $cache[$char];
                 }
             }
 
             if ($filteredMap !== []) {
-                $SHORT_FILTERED_MAP_CACHE[$shortCacheKey] = $filteredMap;
-                $SHORT_FILTERED_MAP_CACHE_QUEUE[] = $shortCacheKey;
-                if (\count($SHORT_FILTERED_MAP_CACHE_QUEUE) > 256) {
-                    $oldestKey = \array_shift($SHORT_FILTERED_MAP_CACHE_QUEUE);
-                    if ($oldestKey !== null) {
-                        unset($SHORT_FILTERED_MAP_CACHE[$oldestKey]);
-                    }
-                }
-
-                return \strtr($str, $filteredMap);
+                $str = \strtr($str, $filteredMap);
             }
-
-            return $str;
-        }
-
-        $isValidUtf8 = true;
-
-        // Build a filtered map containing only entries whose
-        // leading byte is present in this specific input string.
-        $indexedMap = &$MAP_BY_FIRST_BYTE[$cacheKey];
-        $filteredMap = [];
-        foreach (\count_chars($str, 1) as $byte => $count) {
-            $fb = \chr($byte);
-            if (isset($indexedMap[$fb])) {
-                foreach ($indexedMap[$fb] as $k => $v) {
-                    $filteredMap[$k] = $v;
-                }
-            }
-        }
-
-        if ($filteredMap !== []) {
-            $str = \strtr($str, $filteredMap);
         }
 
         return $str;
@@ -1524,23 +1448,24 @@ final class ASCII
         }
 
         static $LANGUAGE_CACHE = [];
-        if (isset($LANGUAGE_CACHE[$language])) {
-            return $LANGUAGE_CACHE[$language];
+        if (!isset($LANGUAGE_CACHE[$language])) {
+            if (
+                \strpos($language, '_') === false
+                &&
+                \strpos($language, '-') === false
+            ) {
+                $LANGUAGE_CACHE[$language] = \strtolower($language);
+            } else {
+                $language_tmp = \str_replace('-', '_', \strtolower($language));
+
+                $regex = '/(?<first>[a-z]+)_\g{first}/';
+
+                $normalizedLanguage = \preg_replace($regex, '$1', $language_tmp);
+                $LANGUAGE_CACHE[$language] = $normalizedLanguage ?? $language_tmp;
+            }
         }
 
-        if (
-            \strpos($language, '_') === false
-            &&
-            \strpos($language, '-') === false
-        ) {
-            return $LANGUAGE_CACHE[$language] = \strtolower($language);
-        }
-
-        $language_tmp = \str_replace('-', '_', \strtolower($language));
-
-        $regex = '/(?<first>[a-z]+)_\g{first}/';
-
-        return $LANGUAGE_CACHE[$language] = (string) \preg_replace($regex, '$1', $language_tmp);
+        return $LANGUAGE_CACHE[$language];
     }
 
     /**
@@ -1553,14 +1478,12 @@ final class ASCII
         static $CACHE = [];
         $cacheKey = (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
 
-        if (isset($CACHE[$cacheKey])) {
-            return $CACHE[$cacheKey];
+        if (!isset($CACHE[$cacheKey])) {
+            $CACHE[$cacheKey] = self::filterAsciiReplacementMap(
+                self::charsArrayWithSingleLanguageValues($replace_extra_symbols, false),
+                $replace_single_chars_only
+            );
         }
-
-        $CACHE[$cacheKey] = self::filterAsciiReplacementMap(
-            self::charsArrayWithSingleLanguageValues($replace_extra_symbols, false),
-            $replace_single_chars_only
-        );
 
         return $CACHE[$cacheKey];
     }
@@ -1578,14 +1501,12 @@ final class ASCII
         static $CACHE = [];
         $cacheKey = $language . '-' . (int) $replace_extra_symbols . '-' . (int) $replace_single_chars_only;
 
-        if (isset($CACHE[$cacheKey])) {
-            return $CACHE[$cacheKey];
+        if (!isset($CACHE[$cacheKey])) {
+            $CACHE[$cacheKey] = self::filterAsciiReplacementMap(
+                self::charsArrayWithOneLanguage($language, $replace_extra_symbols, false),
+                $replace_single_chars_only
+            );
         }
-
-        $CACHE[$cacheKey] = self::filterAsciiReplacementMap(
-            self::charsArrayWithOneLanguage($language, $replace_extra_symbols, false),
-            $replace_single_chars_only
-        );
 
         return $CACHE[$cacheKey];
     }
@@ -1639,6 +1560,23 @@ final class ASCII
         }
 
         return $map;
+    }
+
+    /**
+     * @param string|null $_unknown
+     */
+    private static function pre_clean_transliteration_input(string $str, ?string $_unknown): string
+    {
+        // \xC2 and \xE2 are the leading bytes for the valid UTF-8 sequences that
+        // normalize_whitespace() and normalize_msword() can collapse to ASCII.
+        if (\preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) === 1) {
+            $str = self::normalize_whitespace($str);
+            $str = self::normalize_msword($str);
+
+            $str = self::remove_invisible_characters($str);
+        }
+
+        return $str;
     }
 
     /**

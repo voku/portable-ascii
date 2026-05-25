@@ -109,6 +109,46 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame("X\n", ASCII::to_transliterate("😀\n", 'X', false));
     }
 
+    public function testCleanupSkippedForCustomUnknownWithoutMarkers()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('pre_clean_transliteration_input');
+        $method->setAccessible(true);
+
+        static::assertSame('déjà', $method->invoke(null, 'déjà', 'X'));
+        static::assertSame('x y', $method->invoke(null, "x\xC2\xA0y", 'X'));
+        static::assertSame("x'y", $method->invoke(null, "x\xE2\x80\x99y", 'X'));
+        static::assertSame('xy', $method->invoke(null, "x\x01y", 'X'));
+    }
+
+    public function testCleanupAlwaysRunsForQuestionMarkUnknown()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('pre_clean_transliteration_input');
+        $method->setAccessible(true);
+
+        static::assertSame('x y', $method->invoke(null, "x\xC2\xA0y", '?'));
+        static::assertSame('xy', $method->invoke(null, "x\x01y", '?'));
+    }
+
+    public function testAdditionalWhitespaceLeadingBytesStayOutsideTransliterationPreCleanGate()
+    {
+        $rc = new \ReflectionClass(ASCII::class);
+        $method = $rc->getMethod('pre_clean_transliteration_input');
+        $method->setAccessible(true);
+
+        $cases = [
+            'ogham space mark' => "x\xE1\x9A\x80y",
+            'ideographic space' => "x\xE3\x80\x80y",
+            'halfwidth hangul filler' => "x\xEF\xBE\xA0y",
+        ];
+
+        foreach ($cases as $label => $input) {
+            static::assertSame('x y', ASCII::normalize_whitespace($input), $label);
+            static::assertSame($input, $method->invoke(null, $input, '?'), $label);
+        }
+    }
+
     public function testTransliterateShortcutBranchesStayCorrectAcrossRepeatedCalls()
     {
         $cases = [
@@ -135,6 +175,13 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
                 );
             }
         }
+    }
+
+    public function testTransliteratePrintableAsciiBoundaryAndFourByteCodepoints()
+    {
+        static::assertSame(\str_repeat('A', 64), ASCII::to_transliterate(\str_repeat('A', 64), '?', false));
+        static::assertSame('A', ASCII::to_transliterate("\xF0\x9D\x90\x80", '?', false));
+        static::assertSame('nn', ASCII::to_transliterate('ññ', '?', false));
     }
 
     public function testUnknownWithPregSpecialCharsIsLiteral()

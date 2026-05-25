@@ -68,7 +68,20 @@ jobs:
       - name: Run tests
         run: |
           mkdir -p build/logs
-          php vendor/bin/phpunit -c phpunit.xml --coverage-clover=build/logs/clover.xml
+          phpunit_version="$(php vendor/bin/phpunit --version | awk 'NR == 1 { print $2 }')"
+          phpunit_major="${phpunit_version%%.*}"
+          phpunit_config="phpunit.xml"
+
+          if [[ ! "$phpunit_major" =~ ^[0-9]+$ ]]; then
+            echo "Unable to detect PHPUnit major version from: $phpunit_version" >&2
+            exit 1
+          fi
+
+          if [[ "$phpunit_major" -lt 10 ]]; then
+            phpunit_config="phpunit-legacy.xml"
+          fi
+
+          php vendor/bin/phpunit -c "$phpunit_config" --coverage-clover=build/logs/clover.xml
 
       - name: Upload coverage results to Coveralls
         continue-on-error: true
@@ -139,3 +152,43 @@ jobs:
       - name: Run PHPStan (PHP ${{ matrix.label }})
         run: |
           php vendor/bin/phpstan analyse -c ${{ matrix.phpstan-config }}
+
+  infection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@2.37.0
+        with:
+          php-version: 8.3
+          coverage: xdebug
+          extensions: zip
+          tools: composer
+
+      - name: Determine composer cache directory
+        id: composer-cache
+        run: echo "directory=$(composer config cache-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v5.0.5
+        with:
+          path: ${{ steps.composer-cache.outputs.directory }}
+          key: infection-composer-${{ hashFiles('composer.json', '.github/workflows/ci.yml') }}
+          restore-keys: infection-composer-
+
+      - name: Install runtime dependencies
+        run: |
+          composer update --prefer-dist --no-interaction --no-dev
+          composer dump-autoload -o
+
+      - name: Install Infection and PHPStan
+        run: |
+          composer config --no-plugins allow-plugins.infection/extension-installer true
+          composer require --dev --no-interaction infection/infection:^0.32.7 phpstan/phpstan:^2.1 phpstan/phpstan-strict-rules:^2.0
+
+      - name: Run Infection with PHPStan integration
+        run: |
+          php vendor/bin/infection --configuration=infection.json5 --logger-github
