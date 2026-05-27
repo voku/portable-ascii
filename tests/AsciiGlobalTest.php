@@ -37,7 +37,7 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['an_odd_string', '--   An odd__   string-_', '_'],
             ['Stoynostta-tryabva-da-bade-lazha', 'Стойността трябва да бъде лъжа', '-', 'bg', false],
             ['Dieser-Wert-sollte-groesser-oder-gleich', 'Dieser Wert sollte größer oder gleich', '-', 'de', false],
-            ['Dieser-Wert-sollte-groeszer-oder-gleich', 'Dieser Wert sollte größer oder gleich', '-', 'de_AT', false],
+            ['Dieser-Wert-sollte-groesser-oder-gleich', 'Dieser Wert sollte größer oder gleich', '-', 'de_AT', false],
             ['Auti-i-timi-prepi-na-inai-psefdis', 'Αυτή η τιμή πρέπει να είναι ψευδής', '-', 'el', false],
             ['Gai-Bian-Liang-De-Zhi-Ying-Wei', '该变量的值应为', '-', ASCII::CHINESE_LANGUAGE_CODE, false, false, true],
             ['Gai-Bian-Shu-De-Zhi-Ying-Wei', '該變數的值應為', '-', 'zh_TW', false, false, true],
@@ -150,8 +150,8 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         $array = ASCII::charsArrayWithOneLanguage('de_at');
 
         static::assertContains('Ae', $array['replace']);
-        static::assertContains('sz', $array['replace']);
-        static::assertNotContains('ss', $array['replace']);
+        static::assertContains('ss', $array['replace']);
+        static::assertNotContains('sz', $array['replace']);
         static::assertContains('ß', $array['orig']);
 
         // ---
@@ -562,10 +562,10 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
             ['aeoeueAeOeUess (r)', 'äöüÄÖÜß ®', 'de_DE', true, false, true],
             ['aeoeueAeOeUess (r)', 'äöüÄÖÜß ®', 'de_DE', false, false, true],
             ['aeoeueAeOeUess', 'äöüÄÖÜß', ASCII::GERMAN_LANGUAGE_CODE],
-            ['aeoeueAeOeUesz', 'äöüÄÖÜß', ASCII::GERMAN_AUSTRIAN_LANGUAGE_CODE],
+            ['aeoeueAeOeUess', 'äöüÄÖÜß', ASCII::GERMAN_AUSTRIAN_LANGUAGE_CODE],
             ['aeoeueAeOeUess', 'äöüÄÖÜß', ASCII::GERMAN_SWITZERLAND_LANGUAGE_CODE],
             ['aouAOUss', 'äöüÄÖÜß', ASCII::FRENCH_LANGUAGE_CODE],
-            ['aouAOUsz', 'äöüÄÖÜß', ASCII::FRENCH_AUSTRIAN_LANGUAGE_CODE],
+            ['aouAOUss', 'äöüÄÖÜß', ASCII::FRENCH_AUSTRIAN_LANGUAGE_CODE],
             ['aouAOUss', 'äöüÄÖÜß', ASCII::FRENCH_SWITZERLAND_LANGUAGE_CODE],
             ['h H sht Sht a A ia yo', 'х Х щ Щ ъ Ъ иа йо', 'bg'],
             // Valid ASCII + Invalid Chars

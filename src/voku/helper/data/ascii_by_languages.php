@@ -1953,8 +1953,8 @@ return [
     ],
     // Austrian (French)
     'fr_at' => [
-        'ß' => 'sz',
-        'ẞ' => 'SZ',
+        'ß' => 'ss',
+        'ẞ' => 'SS',
         'Æ' => 'AE',
         'æ' => 'ae',
         'Œ' => 'OE',
@@ -2052,8 +2052,8 @@ return [
         'ä' => 'ae',
         'ö' => 'oe',
         'ü' => 'ue',
-        'ß' => 'sz',
-        'ẞ' => 'SZ',
+        'ß' => 'ss',
+        'ẞ' => 'SS',
     ],
     // Switzerland (German)
     'de_ch' => [
