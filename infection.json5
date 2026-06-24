@@ -1,0 +1,20 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": [
+            "src/voku/helper"
+        ],
+        "excludes": [
+            "src/voku/helper/data"
+        ]
+    },
+    "threads": "max",
+    "minMsi": 100,
+    "minCoveredMsi": 100,
+    "timeoutsAsEscaped": true,
+    "maxTimeouts": 0,
+    "phpUnit": {
+        "configDir": "."
+    },
+    "staticAnalysisTool": "phpstan"
+}
