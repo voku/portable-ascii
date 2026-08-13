@@ -1,0 +1,83 @@
+name: Issue 62 Map Diagnosis
+
+on:
+  push:
+    branches:
+      - agent/issue-62-map-diagnosis
+    paths:
+      - '.github/workflows/issue-62-map-diagnosis.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@2.37.2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: json, mbstring, pdo_sqlite, sqlite3
+          tools: composer:v2
+
+      - name: Install released map control
+        run: composer install --working-dir=tools/agent-loop --prefer-dist --no-interaction --no-progress
+
+      - name: Measure exact frozen issue query beyond top 15
+        run: |
+          set -euo pipefail
+          tool='tools/agent-loop/vendor/bin/agent-map'
+          query="$(jq -r '.issue | .title + "\n\n" + .body' tools/agent-loop/dogfood/issue-62.json)"
+          mkdir -p .agent-loop/map .agent-loop/dogfood/issue-62-map-diagnosis
+
+          "${tool}" build \
+            --root=. \
+            --paths=src,tests \
+            --out=.agent-loop/map/php-symbols.json
+          "${tool}" search-index build \
+            --root=. \
+            --index=.agent-loop/map/php-symbols.json \
+            --database=.agent-loop/map/search.sqlite
+          "${tool}" search "${query}" \
+            --root=. \
+            --index=.agent-loop/map/php-symbols.json \
+            --database=.agent-loop/map/search.sqlite \
+            --limit=100 \
+            --format=json > .agent-loop/dogfood/issue-62-map-diagnosis/search-100.json
+
+          jq -r '
+            .results
+            | to_entries[]
+            | select(.value.file_path | endswith("ascii_by_languages.php"))
+            | {rank: (.key + 1), file_path: .value.file_path, symbol_id: .value.symbol_id, score: .value.score}
+          ' .agent-loop/dogfood/issue-62-map-diagnosis/search-100.json \
+            | tee .agent-loop/dogfood/issue-62-map-diagnosis/data-file-rank.json
+
+          count="$(jq '[.results[].file_path | select(endswith("ascii_by_languages.php"))] | length' .agent-loop/dogfood/issue-62-map-diagnosis/search-100.json)"
+          if [[ "${count}" == '0' ]]; then
+            echo 'DATA_FILE_NOT_IN_TOP_100'
+          fi
+
+      - name: Test direct file-name discoverability separately
+        run: |
+          set -euo pipefail
+          tool='tools/agent-loop/vendor/bin/agent-map'
+          "${tool}" search 'ascii_by_languages German umlaut' \
+            --root=. \
+            --index=.agent-loop/map/php-symbols.json \
+            --database=.agent-loop/map/search.sqlite \
+            --limit=20 \
+            --format=json > .agent-loop/dogfood/issue-62-map-diagnosis/direct-data-query.json
+          jq -r '.results[] | [.file_path, .symbol_id, .score] | @tsv' .agent-loop/dogfood/issue-62-map-diagnosis/direct-data-query.json
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: issue-62-map-diagnosis-${{ github.sha }}
+          include-hidden-files: true
+          path: .agent-loop/dogfood/issue-62-map-diagnosis
