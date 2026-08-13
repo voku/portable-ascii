@@ -130,7 +130,7 @@ jobs:
           tool='../harness/tools/agent-loop/vendor/bin'
           issue='../harness/tools/agent-loop/dogfood/issue-62.json'
           out='.agent-loop/dogfood/issue-62'
-          learning="${out}/learning"
+          learning='.agent-loop/learning'
           recall="${out}/recall"
           query="$(jq -r '.issue | .title + "\n\n" + .body' "${issue}")"
           mkdir -p "${learning}" "${recall}"
