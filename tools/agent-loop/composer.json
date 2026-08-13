@@ -1,0 +1,15 @@
+{
+  "name": "voku/portable-ascii-agent-loop-dogfood",
+  "description": "Isolated real-issue dogfood toolchain for portable-ascii.",
+  "type": "project",
+  "require-dev": {
+    "voku/agent-loop": "0.15.0"
+  },
+  "config": {
+    "platform": {
+      "php": "8.3.0"
+    },
+    "allow-plugins": false,
+    "sort-packages": true
+  }
+}
