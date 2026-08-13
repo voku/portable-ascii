@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: voku/agent-map
-          ref: 89acad72e75c2bcedbb1e6fb28acbb03a907e043
+          ref: 9ccc8678fb9ae6a41384f3051d413d4741dcfcc2
           path: candidate/agent-map
           persist-credentials: false
 
@@ -42,8 +42,8 @@ jobs:
           test "$(composer show --working-dir=tools/agent-loop voku/agent-loop --format=json | jq -r '.versions[0]')" = '0.15.0'
           test "$(composer show --working-dir=tools/agent-loop voku/agent-map --format=json | jq -r '.versions[0]')" = '0.7.0'
           test "$(composer show --working-dir=tools/agent-loop voku/agent-recall-compiler --format=json | jq -r '.versions[0]')" = '0.11.0'
-          test "$(git rev-parse HEAD)" = '78f085a2bfdb1c456995e44478c68c4592ede800'
-          test "$(git -C candidate/agent-map rev-parse HEAD)" = '89acad72e75c2bcedbb1e6fb28acbb03a907e043'
+          git diff --quiet c5aede519cc55833267bcbb421b222d7aacfaa06 -- src tests composer.json phpunit.xml phpstan.neon .github/workflows/ci.yml
+          test "$(git -C candidate/agent-map rev-parse HEAD)" = '9ccc8678fb9ae6a41384f3051d413d4741dcfcc2'
 
       - name: Capture released control with exact frozen issue query
         run: |
@@ -133,7 +133,8 @@ jobs:
         run: |
           set -euo pipefail
           out='.agent-loop/dogfood/issue-62-map-candidate'
-          git rev-parse HEAD > "${out}/target-commit.txt"
+          printf '%s\n' 'c5aede519cc55833267bcbb421b222d7aacfaa06' > "${out}/target-base-commit.txt"
+          git rev-parse HEAD > "${out}/harness-commit.txt"
           git -C candidate/agent-map rev-parse HEAD > "${out}/agent-map-candidate-commit.txt"
           composer show --working-dir=tools/agent-loop --format=json > "${out}/candidate-tool-packages.json" 2>/dev/null || true
           cp tools/agent-loop/composer.lock "${out}/candidate-tool-composer.lock" 2>/dev/null || true
