@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: voku/agent-map
-          ref: 9f90d48b3f8da3709d9a778d4126c91a3026f3d6
+          ref: 36e9907760e07f1e89dfa11c015c96ac260cbff3
           path: candidate/agent-map
           persist-credentials: false
 
@@ -44,7 +44,7 @@ jobs:
           test "$(composer show --working-dir=tools/agent-loop voku/agent-map --format=json | jq -r '.versions[0]')" = '0.7.0'
           test "$(composer show --working-dir=tools/agent-loop voku/agent-recall-compiler --format=json | jq -r '.versions[0]')" = '0.11.0'
           git diff --quiet c5aede519cc55833267bcbb421b222d7aacfaa06 -- src tests composer.json phpunit.xml phpstan.neon .github/workflows/ci.yml
-          test "$(git -C candidate/agent-map rev-parse HEAD)" = '9f90d48b3f8da3709d9a778d4126c91a3026f3d6'
+          test "$(git -C candidate/agent-map rev-parse HEAD)" = '36e9907760e07f1e89dfa11c015c96ac260cbff3'
 
       - name: Capture released control with exact frozen issue query
         run: |
