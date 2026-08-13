@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "issue": {
+    "url": "https://github.com/voku/portable-ascii/issues/62",
+    "number": 62,
+    "title": "[DE] MacOS (Big Sur or M1) uses multi character German umlaute",
+    "body": "#### What is this feature about (expected vs actual behaviour)?\n\nMacOS filesystem replaces German (single character) umlaute with a two characters since Big Sur or only on M1 machines.\nThese are replaced with a simple `a` instead of `ae`. Expected behavior would be to replace these combined characters the same way as the single character umlaute are treated.\n\n#### How can I reproduce it?\n\n* create a new file or folder with `ä`, `ö` or `ü` - persist the filename (ENTER)\n* open the filename change dialog and copy the shown `ä/ö/ü` character\n* run it through the ASCII class\n\nThe real-world scenario would be to sanitize an uploaded filename.\n\n#### Does it take minutes, hours or days to fix?\n\nThe local fix took minutes (added a `str_replace()` before running the ASCII conversion) but no idea how much it will take to properly add it to the package.\n\n#### Any additional information?\n\nIn hope that GitHub doesn't replace the characters - here it is `ä` - the codepoints are `U+61 U+308`.\nhttps://www.fileformat.info/info/unicode/char/61/index.htm\nhttps://www.fileformat.info/info/unicode/char/308/index.htm\n\nI'm not sure if this would be the expected behavior of the package or I want it to do something that's not in the scope of that package. We have a working solution right now - so it's in no way urgent."
+  },
+  "target_base_commit": "c5aede519cc55833267bcbb421b222d7aacfaa06",
+  "toolchain": {
+    "agent_loop_version": "0.15.0",
+    "agent_loop_commit": "3641665fafcb668dcffd759dc88169f13ec40663",
+    "expected_agent_map_constraint": "^0.7.0",
+    "expected_agent_recall_compiler_constraint": "^0.11.0"
+  },
+  "pre_screen": {
+    "real_issue": true,
+    "no_known_merged_fix": true,
+    "expected_reproduction": {
+      "composed_de": "ae",
+      "decomposed_de_current": "a",
+      "decomposed_de_expected": "ae"
+    }
+  }
+}
