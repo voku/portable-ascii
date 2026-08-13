@@ -1,0 +1,147 @@
+name: Issue 62 Map Candidate Replay
+
+on:
+  push:
+    branches:
+      - agent/issue-62-map-candidate
+    paths:
+      - '.github/workflows/issue-62-map-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Checkout exact agent-map candidate
+        uses: actions/checkout@v7
+        with:
+          repository: voku/agent-map
+          ref: 89acad72e75c2bcedbb1e6fb28acbb03a907e043
+          path: candidate/agent-map
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@2.37.2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: json, mbstring, pdo_sqlite, sqlite3
+          tools: composer:v2
+
+      - name: Install released control
+        run: |
+          set -euo pipefail
+          composer install --working-dir=tools/agent-loop --prefer-dist --no-interaction --no-progress
+          test "$(composer show --working-dir=tools/agent-loop voku/agent-loop --format=json | jq -r '.versions[0]')" = '0.15.0'
+          test "$(composer show --working-dir=tools/agent-loop voku/agent-map --format=json | jq -r '.versions[0]')" = '0.7.0'
+          test "$(composer show --working-dir=tools/agent-loop voku/agent-recall-compiler --format=json | jq -r '.versions[0]')" = '0.11.0'
+          test "$(git rev-parse HEAD)" = '78f085a2bfdb1c456995e44478c68c4592ede800'
+          test "$(git -C candidate/agent-map rev-parse HEAD)" = '89acad72e75c2bcedbb1e6fb28acbb03a907e043'
+
+      - name: Capture released control with exact frozen issue query
+        run: |
+          set -euo pipefail
+          out='.agent-loop/dogfood/issue-62-map-candidate'
+          mkdir -p "${out}/control" .agent-loop/map-control
+          query="$(jq -r '.issue | .title + "\n\n" + .body' tools/agent-loop/dogfood/issue-62.json)"
+          printf '%s\n' "${query}" > "${out}/query.txt"
+          tool='tools/agent-loop/vendor/bin/agent-map'
+
+          "${tool}" build \
+            --root=. \
+            --paths=src,tests \
+            --out=.agent-loop/map-control/php-symbols.json
+          "${tool}" search-index build \
+            --root=. \
+            --index=.agent-loop/map-control/php-symbols.json \
+            --database=.agent-loop/map-control/search.sqlite
+          "${tool}" search "${query}" \
+            --root=. \
+            --index=.agent-loop/map-control/php-symbols.json \
+            --database=.agent-loop/map-control/search.sqlite \
+            --limit=100 \
+            --format=json > "${out}/control/search-100.json"
+
+          control_count="$(jq '[.results[].file_path | select(endswith("ascii_by_languages.php"))] | length' "${out}/control/search-100.json")"
+          test "${control_count}" = '0'
+
+      - name: Install only the agent-map candidate
+        run: |
+          set -euo pipefail
+          php -r '
+          $path = "tools/agent-loop/composer.json";
+          $data = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+          $data["repositories"] = [[
+              "type" => "path",
+              "url" => "../../candidate/agent-map",
+              "options" => [
+                  "symlink" => false,
+                  "versions" => ["voku/agent-map" => "0.7.99"],
+              ],
+          ]];
+          $data["require-dev"]["voku/agent-map"] = "0.7.99";
+          file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . PHP_EOL);
+          '
+          composer update --working-dir=tools/agent-loop voku/agent-map --with-dependencies --prefer-dist --no-interaction --no-progress
+          test "$(composer show --working-dir=tools/agent-loop voku/agent-loop --format=json | jq -r '.versions[0]')" = '0.15.0'
+          test "$(composer show --working-dir=tools/agent-loop voku/agent-map --format=json | jq -r '.versions[0]')" = '0.7.99'
+          test "$(composer show --working-dir=tools/agent-loop voku/agent-recall-compiler --format=json | jq -r '.versions[0]')" = '0.11.0'
+
+      - name: Replay unchanged issue query against candidate
+        run: |
+          set -euo pipefail
+          out='.agent-loop/dogfood/issue-62-map-candidate'
+          mkdir -p "${out}/candidate" .agent-loop/map-candidate
+          query="$(cat "${out}/query.txt")"
+          tool='tools/agent-loop/vendor/bin/agent-map'
+
+          "${tool}" build \
+            --root=. \
+            --paths=src,tests \
+            --out=.agent-loop/map-candidate/php-symbols.json
+          "${tool}" search-index build \
+            --root=. \
+            --index=.agent-loop/map-candidate/php-symbols.json \
+            --database=.agent-loop/map-candidate/search.sqlite
+          "${tool}" search "${query}" \
+            --root=. \
+            --index=.agent-loop/map-candidate/php-symbols.json \
+            --database=.agent-loop/map-candidate/search.sqlite \
+            --limit=100 \
+            --format=json > "${out}/candidate/search-100.json"
+
+          rank="$(jq -r '.results | to_entries[] | select(.value.file_path | endswith("ascii_by_languages.php")) | (.key + 1)' "${out}/candidate/search-100.json" | head -n1)"
+          if [[ -z "${rank}" ]]; then
+            echo 'CANDIDATE_MISS: unchanged issue query still cannot retrieve ascii_by_languages.php' >&2
+            exit 1
+          fi
+          printf '%s\n' "${rank}" > "${out}/candidate/ascii-by-languages-rank.txt"
+          echo "CANDIDATE_HIT rank=${rank}"
+          jq -r '.results | to_entries[] | select(.value.file_path | endswith("ascii_by_languages.php")) | {rank: (.key + 1), file_path: .value.file_path, symbol_id: .value.symbol_id, start_line: .value.start_line, end_line: .value.end_line, score: .value.score}' "${out}/candidate/search-100.json" \
+            > "${out}/candidate/ascii-by-languages-hit.json"
+          cat "${out}/candidate/ascii-by-languages-hit.json"
+
+      - name: Archive exact A/B provenance
+        if: always()
+        run: |
+          set -euo pipefail
+          out='.agent-loop/dogfood/issue-62-map-candidate'
+          git rev-parse HEAD > "${out}/target-commit.txt"
+          git -C candidate/agent-map rev-parse HEAD > "${out}/agent-map-candidate-commit.txt"
+          composer show --working-dir=tools/agent-loop --format=json > "${out}/candidate-tool-packages.json" 2>/dev/null || true
+          cp tools/agent-loop/composer.lock "${out}/candidate-tool-composer.lock" 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: issue-62-map-candidate-${{ github.sha }}
+          include-hidden-files: true
+          if-no-files-found: error
+          path: .agent-loop/dogfood/issue-62-map-candidate
