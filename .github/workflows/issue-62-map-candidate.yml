@@ -18,6 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Checkout exact agent-map candidate
@@ -133,6 +134,7 @@ jobs:
         run: |
           set -euo pipefail
           out='.agent-loop/dogfood/issue-62-map-candidate'
+          mkdir -p "${out}"
           printf '%s\n' 'c5aede519cc55833267bcbb421b222d7aacfaa06' > "${out}/target-base-commit.txt"
           git rev-parse HEAD > "${out}/harness-commit.txt"
           git -C candidate/agent-map rev-parse HEAD > "${out}/agent-map-candidate-commit.txt"
