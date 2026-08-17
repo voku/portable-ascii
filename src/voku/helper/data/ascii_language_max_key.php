@@ -33,7 +33,7 @@ return [
     'ru'                => 1,
     'ru__gost_2000_b'   => 1,
     'ru__passport_2013' => 1,
-    'uk'                => 1,
+    'uk'                => 2,
     'kk'                => 1,
     'cs'                => 1,
     'da'                => 1,
