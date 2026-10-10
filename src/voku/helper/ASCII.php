@@ -1567,9 +1567,18 @@ final class ASCII
      */
     private static function pre_clean_transliteration_input(string $str, ?string $_unknown): string
     {
-        // \xC2 and \xE2 are the leading bytes for the valid UTF-8 sequences that
-        // normalize_whitespace() and normalize_msword() can collapse to ASCII.
-        if (\preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) === 1) {
+        // Preserve the common C2/E2 cleanup fast path. For the default fallback,
+        // restore the three additional whitespace sequences normalized in 2.1.1,
+        // without triggering the full cleanup for unrelated E1/E3/EF text.
+        if (
+            \preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) === 1
+            ||
+            (
+                $_unknown === '?'
+                &&
+                \preg_match('/\xE1\x9A\x80|\xE3\x80\x80|\xEF\xBE\xA0/', $str) === 1
+            )
+        ) {
             $str = self::normalize_whitespace($str);
             $str = self::normalize_msword($str);
 

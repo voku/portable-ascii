@@ -131,7 +131,7 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
         static::assertSame('xy', $method->invoke(null, "x\x01y", '?'));
     }
 
-    public function testAdditionalWhitespaceLeadingBytesStayOutsideTransliterationPreCleanGate()
+    public function testAdditionalWhitespaceLeadingBytesPreserveDefaultFallbackSemantics()
     {
         $rc = new \ReflectionClass(ASCII::class);
         $method = $rc->getMethod('pre_clean_transliteration_input');
@@ -145,7 +145,9 @@ final class TransliterateTest extends \PHPUnit\Framework\TestCase
 
         foreach ($cases as $label => $input) {
             static::assertSame('x y', ASCII::normalize_whitespace($input), $label);
-            static::assertSame($input, $method->invoke(null, $input, '?'), $label);
+            static::assertSame('x y', $method->invoke(null, $input, '?'), $label);
+            // Custom fallbacks retain the existing fast path and do not widen normalization.
+            static::assertSame($input, $method->invoke(null, $input, 'X'), $label);
         }
     }
 
