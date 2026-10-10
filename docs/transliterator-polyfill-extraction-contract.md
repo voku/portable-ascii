@@ -78,7 +78,7 @@ Evidence: [package composer.json](https://github.com/voku/portable-ascii/blob/f2
 - Proposed Composer package: `voku/transliterator-polyfill`, PSR-4 `Voku\Transliterator\` under `src/`, with an explicit runtime dependency on `voku/portable-ascii:^2.1`. It calls `voku\helper\ASCII::to_ascii()` and `ASCII::to_transliterate()`. A separate package name is **not** an independent transliteration engine or extracted ASCII data owner.
 - The draft child `composer.json` adds a `repositories: [{type: path, url: ../../, options: {symlink: true, versions: {voku/portable-ascii: 2.1.99}}}]` entry. This is **test-harness only**. A published `composer.json` must not depend on a local path or synthetic release; test a separate release manifest against actual published `voku/portable-ascii` versions.
 - Safe approach: keep the publishable child manifest free of `repositories`; inject a path-repository override only in isolated CI/test Composer configuration, and verify the copied/dist package manifest has no `../../` or `2.1.99`. Record the exact path-vs-published dependency-resolution evidence.
-- Confirm dependency direction remains child -> portable-ascii. Do not introduce a portable-ascii runtime requirement on the child (cycle), and do not move `voku\helper\ASCII` accidentally.
+- Confirm dependency direction remains child -> portable-ascii. `voku/portable-ascii` must not require `voku/transliterator-polyfill` at runtime (cycle), and do not move `voku\helper\ASCII` accidentally.
 
 ## Tests: one owner, executable verification
 
