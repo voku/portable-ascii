@@ -1,0 +1,213 @@
+name: Transliterator polyfill CI
+
+# Child-only checks are triggered from the repository root.
+# Separate published-dependency coverage from the CI-only root path proof.
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/transliterator-polyfill.yml
+      - packages/transliterator-polyfill/**
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/workflows/transliterator-polyfill.yml
+      - packages/transliterator-polyfill/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  child-tests:
+    name: Child PHPUnit (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+    defaults:
+      run:
+        working-directory: packages/transliterator-polyfill
+    env:
+      POLYFILL_EXPECT_INTL: '1'
+      POLYFILL_EXPECT_MBSTRING: '1'
+    steps:
+      - name: Checkout the PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Configure PHP and extensions
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          extensions: intl, mbstring, zip
+          tools: composer
+
+      - name: Check publishable package manifest
+        run: |
+          composer validate --strict --no-check-publish
+          php -r '$manifest = json_decode(file_get_contents("composer.json"), true); if (isset($manifest["repositories"])) { fwrite(STDERR, "Runtime manifest must not contain repository overrides\n"); exit(1); }'
+
+      - name: Resolve and install child dependencies
+        run: |
+          # A library's dev matrix resolves the newest compatible versions
+          # for each PHP runtime. Installation itself obeys the generated lock.
+          composer update --no-install --prefer-dist --no-interaction --no-progress
+          composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run child PHPUnit suite
+        run: |
+          phpunit_major="$(php vendor/bin/phpunit --version | awk 'NR == 1 { print $2 }' | cut -d. -f1)"
+          if [[ ! "$phpunit_major" =~ ^[0-9]+$ ]]; then
+            echo "Unable to detect PHPUnit major version" >&2
+            exit 1
+          fi
+          config="phpunit.xml"
+          if (( phpunit_major < 10 )); then
+            config="phpunit-legacy.xml"
+          fi
+          php vendor/bin/phpunit --configuration "$config"
+
+  child-php71-smoke:
+    name: PHP 7.1 declared-floor smoke (no dev PHPUnit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: packages/transliterator-polyfill
+    steps:
+      - name: Checkout the PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup PHP 7.1 and compatible Composer
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '7.1'
+          coverage: none
+          extensions: intl, mbstring, zip
+          tools: composer:v2.2
+      - name: Resolve and install production-only dependencies
+        run: |
+          composer validate --strict --no-check-publish
+          composer update --no-dev --no-install --prefer-dist --no-interaction --no-progress
+          composer install --no-dev --prefer-dist --no-interaction --no-progress
+      - name: Verify minimal runtime contract on PHP 7.1
+        run: |
+          php -r 'require "vendor/autoload.php"; $result = \Voku\Transliterator\TransliteratorPolyfill::transliterate("Latin-ASCII", "café"); if ($result !== "cafe") { fwrite(STDERR, "PHP 7.1 transliteration smoke failed\n"); exit(1); } echo "PHP 7.1 runtime smoke passed\n";'
+
+  extension-modes:
+    name: Child extension mode (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: without-intl
+            extensions: ':intl, mbstring, zip'
+            intl: '0'
+            mbstring: '1'
+          - name: without-mbstring
+            extensions: 'intl, :mbstring, zip'
+            intl: '1'
+            mbstring: '0'
+          - name: without-both
+            extensions: ':intl, :mbstring, zip'
+            intl: '0'
+            mbstring: '0'
+    defaults:
+      run:
+        working-directory: packages/transliterator-polyfill
+    env:
+      POLYFILL_EXPECT_INTL: ${{ matrix.intl }}
+      POLYFILL_EXPECT_MBSTRING: ${{ matrix.mbstring }}
+    steps:
+      - name: Checkout the PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup PHP with controlled extension mode
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: ${{ matrix.extensions }}
+          tools: composer
+      - name: Assert PHP extension mode
+        run: |
+          php -r '$intl = class_exists("Normalizer", true); $mb = function_exists("mb_strtoupper"); if ($intl !== (getenv("POLYFILL_EXPECT_INTL") === "1") || $mb !== (getenv("POLYFILL_EXPECT_MBSTRING") === "1")) { fwrite(STDERR, "Unexpected PHP extension mode\n"); exit(1); }'
+      - name: Resolve and install child dependencies
+        run: |
+          composer update --no-install --prefer-dist --no-interaction --no-progress
+          composer install --prefer-dist --no-interaction --no-progress
+      - name: Execute all child contract tests
+        run: php vendor/bin/phpunit --configuration phpunit.xml
+
+  current-root-integration:
+    name: Child against current root checkout (CI override only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: packages/transliterator-polyfill
+    steps:
+      - name: Checkout the PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: intl, mbstring, zip
+          tools: composer
+      - name: Check publishable manifest, then inject local dependency in CI
+        run: |
+          php -r '$manifest = json_decode(file_get_contents("composer.json"), true); if (isset($manifest["repositories"])) { fwrite(STDERR, "Release manifest contains repository override\n"); exit(1); }'
+          # The synthetic version and ../../ path live in this runner only.
+          composer config --json repositories.current-root '{"type":"path","url":"../../","options":{"symlink":true,"versions":{"voku/portable-ascii":"2.1.99"}}}'
+      - name: Install current checkout as runtime dependency
+        run: |
+          composer update --no-install --prefer-dist --no-interaction --no-progress
+          composer install --prefer-dist --no-interaction --no-progress
+          composer show voku/portable-ascii | grep -F '2.1.99'
+      - name: Execute child tests against current root
+        run: php vendor/bin/phpunit --configuration phpunit.xml
+
+  child-phpstan:
+    name: Child PHPStan (level 8)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: packages/transliterator-polyfill
+    steps:
+      - name: Checkout the PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: intl, mbstring, zip
+          tools: composer
+      - name: Install and analyze the child
+        run: |
+          composer update --no-install --prefer-dist --no-interaction --no-progress
+          composer install --prefer-dist --no-interaction --no-progress
+          composer require --dev --no-interaction --no-progress 'phpstan/phpstan:^2.1'
+          php vendor/bin/phpstan analyse --configuration phpstan.neon --no-progress
