@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PHPUnit 8/9: the PHP 7.x compatible configuration. -->
+<phpunit backupGlobals="false"
+         colors="true"
+         processIsolation="false"
+         stopOnFailure="false"
+         bootstrap="tests/bootstrap.php"
+>
+    <testsuites>
+        <testsuite name="Transliterator Polyfill Test Suite">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>
