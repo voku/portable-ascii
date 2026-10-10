@@ -8,6 +8,7 @@ on:
       - master
     paths:
       - .github/workflows/transliterator-polyfill-baseline.yml
+      - packages/transliterator-polyfill/**
   workflow_dispatch:
 
 permissions:
@@ -52,6 +53,37 @@ jobs:
         run: php vendor/bin/phpunit --configuration phpunit.xml
 
       - name: Run child PHPStan level 8
+        run: |
+          composer require --dev --no-interaction --no-progress 'phpstan/phpstan:^2.1'
+          php vendor/bin/phpstan analyse --configuration phpstan.neon --no-progress
+
+  current-master-child-composer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: packages/transliterator-polyfill
+    steps:
+      - name: Checkout current PR
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@2.37.2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer
+      - name: Validate publishable manifest
+        run: composer validate --strict --no-check-publish
+      - name: Install child dependencies without local path override
+        run: composer update --prefer-dist --no-interaction --no-progress
+      - name: Execute canonical child tests
+        run: php vendor/bin/phpunit --configuration phpunit.xml
+      - name: Analyze canonical child code
         run: |
           composer require --dev --no-interaction --no-progress 'phpstan/phpstan:^2.1'
           php vendor/bin/phpstan analyse --configuration phpstan.neon --no-progress
