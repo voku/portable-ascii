@@ -16,6 +16,9 @@ foreach (glob($root . 'x*.php') as $file) {
         }
     }
     $packed = str_replace(['\\', "'"], ['\\\\', "\\'"], implode("\t", $map));
+    // Escape actual line breaks so Git/editor newline normalization cannot
+    // change mapping values inside the generated PHP string.
+    $packed = str_replace(["\r", "\n"], ["' . \"\\r\" . '", "' . \"\\n\" . '"], $packed);
     $output = '<?php return \\explode("\\t", \'' . $packed . "');\n";
     if ($output !== file_get_contents($file)) {
         ++$changed;
