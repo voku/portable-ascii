@@ -1,0 +1,57 @@
+name: Transliterator frozen child baseline
+
+# Discovery-only proof for #162. This executes the frozen #132 child package
+# without merging its implementation or test duplicates into current master.
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/workflows/transliterator-polyfill-baseline.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-child-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+        working-directory: historical/packages/transliterator-polyfill
+    steps:
+      - name: Checkout frozen #132 without persisted credentials
+        uses: actions/checkout@v7
+        with:
+          ref: f2bebb5677fe2dc978f799838c33968beeace338
+          path: historical
+          persist-credentials: false
+
+      - name: Verify historical source revision
+        working-directory: historical
+        run: |
+          test "$(git rev-parse HEAD)" = "f2bebb5677fe2dc978f799838c33968beeace338"
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@2.37.2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer
+
+      - name: Install historical child dependencies
+        run: |
+          # The frozen child manifest intentionally uses ../../ and 2.1.99
+          # for this isolated checkout. Neither may enter a release manifest.
+          composer update --prefer-dist --no-interaction --no-progress
+          composer dump-autoload --optimize
+
+      - name: Execute the child PHPUnit suite
+        run: php vendor/bin/phpunit --configuration phpunit.xml
+
+      - name: Run child PHPStan level 8
+        run: |
+          composer require --dev --no-interaction --no-progress 'phpstan/phpstan:^2.1'
+          php vendor/bin/phpstan analyse --configuration phpstan.neon --no-progress
