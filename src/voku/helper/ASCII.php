@@ -1569,7 +1569,12 @@ final class ASCII
     {
         // \xC2 and \xE2 are the leading bytes for the valid UTF-8 sequences that
         // normalize_whitespace() and normalize_msword() can collapse to ASCII.
-        if (\preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) === 1) {
+        if (
+            \preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) === 1
+            ||
+            // 2.1.1 also normalized E1/E3/EF Unicode whitespace with the default fallback.
+            ($_unknown === '?' && \preg_match('/[\xE1\xE3\xEF]/', $str) === 1)
+        ) {
             $str = self::normalize_whitespace($str);
             $str = self::normalize_msword($str);
 
