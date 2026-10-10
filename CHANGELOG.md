@@ -1,5 +1,17 @@
 # Changelog
 
+### 2.1.2 (unreleased)
+
+- fix `ASCII::to_transliterate()` dropping certain Unicode word separators (U+1680, U+3000, U+FFA0) with the default fallback; retain 2.1.1 whitespace semantics without changing custom fallback behavior (#166, #165)
+- fix `ASCII::remove_invisible_characters()` potentially repeating forever when a replacement does not change the input (#138)
+- fix `ASCII::to_ascii()` with language `de` so decomposed German umlauts (`a` + combining diaeresis, etc.) transliterate like their precomposed equivalents; note that the resulting output for these inputs changes (#156)
+- optimize and refactor `ASCII::to_ascii()` replacement-map caches and multicharacter matching, with additional cold/warm-call, combining-mark, and language-specific regression tests
+- optimize `ASCII::to_transliterate()` for ASCII input and cached transliteration maps, with expanded tests for malformed UTF-8, control bytes, and unknown-character fallbacks
+- add Infection mutation testing with PHPStan integration and an 85% minimum MSI/covered MSI, preserving recent PHPStan support (#138, #160, #163)
+- add legacy PHPUnit coverage configuration for PHPUnit 8/9 and refresh CI actions (checkout, cache, setup-php, Codecov)
+- migrate Renovate configuration to the recommended preset (#137)
+- document a bounded, proposed `TransliteratorPolyfill` package contract; no new polyfill runtime API is included in this release (#159)
+
 ### 2.1.1 (2026-04-24)
 
 - fix long-string `ASCII::to_ascii()` regression coverage to match current degree-sign handling and lock in cache-order behavior across cleanup, transliteration, and retention modes
