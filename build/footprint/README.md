@@ -19,7 +19,7 @@ Every bank/family, including unused legacy language-max-key metadata, is account
 
 Coordinated real Composer Dist/Source installs, eight extension-profile differential tests,
 byte/Unicode/error contracts, API signatures, and the decision/release report live in the
-sibling `portable-utf8-benchmark/tools/footprint/` checkout. ASCII Dist saves 145,941 logical
+sibling `portable-utf8-benchmark/tools/footprint/` checkout. ASCII Dist saves 145,908 logical
 bytes; allocated size/file count are unchanged. ICU replacement and mandatory split packages
 are NO-GO. Strict ICU behavior, default table behavior and all language overrides are retained.
 
