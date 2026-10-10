@@ -187,7 +187,7 @@ jobs:
       - name: Install Infection and PHPStan
         run: |
           composer config --no-plugins allow-plugins.infection/extension-installer true
-          composer require --dev --no-interaction infection/infection:^0.32.7 phpstan/phpstan:^2.1 phpstan/phpstan-strict-rules:^2.0
+          composer require --dev --no-interaction infection/infection:^0.32.7 phpstan/phpstan:2.2.8 phpstan/phpstan-strict-rules:^2.0
 
       - name: Run Infection with PHPStan integration
         run: |
