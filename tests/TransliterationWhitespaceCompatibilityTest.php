@@ -22,9 +22,9 @@ final class TransliterationWhitespaceCompatibilityTest extends TestCase
 
         foreach ($cases as $label => $input) {
             static::assertSame('x y', ASCII::normalize_whitespace($input), $label);
-            // Both cold and warm calls must retain the same word separator.
-            static::assertSame('x y', ASCII::to_transliterate($input), $label . ' cold');
-            static::assertSame('x y', ASCII::to_transliterate($input), $label . ' warm');
+            // First and repeated calls must retain the same word separator.
+            static::assertSame('x y', ASCII::to_transliterate($input), $label . ' first');
+            static::assertSame('x y', ASCII::to_transliterate($input), $label . ' repeat');
         }
     }
 
