@@ -1567,18 +1567,13 @@ final class ASCII
      */
     private static function pre_clean_transliteration_input(string $str, ?string $_unknown): string
     {
-        // Preserve the common C2/E2 cleanup fast path. For the default fallback,
-        // restore the three additional whitespace sequences normalized in 2.1.1,
-        // without triggering the full cleanup for unrelated E1/E3/EF text.
-        if (
-            \preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) === 1
-            ||
-            (
-                $_unknown === '?'
-                &&
-                \preg_match('/\xE1\x9A\x80|\xE3\x80\x80|\xEF\xBE\xA0/', $str) === 1
-            )
-        ) {
+        // 2.1.1 normalized these three extra Unicode whitespace sequences for
+        // the default fallback. Keep custom fallbacks on the original fast path.
+        // Select a cached PCRE pattern instead of scanning the input twice.
+        $cleanupPattern = $_unknown === '?'
+            ? '/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]|\xE1\x9A\x80|\xE3\x80\x80|\xEF\xBE\xA0/'
+            : '/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/';
+        if (\preg_match($cleanupPattern, $str) === 1) {
             $str = self::normalize_whitespace($str);
             $str = self::normalize_msword($str);
 
