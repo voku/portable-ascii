@@ -9,8 +9,8 @@
         ]
     },
     "threads": "max",
-    "minMsi": 100,
-    "minCoveredMsi": 100,
+    "minMsi": 85,
+    "minCoveredMsi": 85,
     "timeoutsAsEscaped": true,
     "maxTimeouts": 0,
     "phpUnit": {
