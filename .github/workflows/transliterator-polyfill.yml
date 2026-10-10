@@ -147,12 +147,24 @@ jobs:
       - name: Assert PHP extension mode
         run: |
           php -r '$intl = class_exists("Normalizer", true); $mb = function_exists("mb_strtoupper"); if ($intl !== (getenv("POLYFILL_EXPECT_INTL") === "1") || $mb !== (getenv("POLYFILL_EXPECT_MBSTRING") === "1")) { fwrite(STDERR, "Unexpected PHP extension mode\n"); exit(1); }'
-      - name: Resolve and install child dependencies
+      - name: Resolve dependencies for the active extension mode
         run: |
-          composer update --no-install --prefer-dist --no-interaction --no-progress
-          composer install --prefer-dist --no-interaction --no-progress
-      - name: Execute all child contract tests
-        run: php vendor/bin/phpunit --configuration phpunit.xml
+          if [[ "${{ matrix.mbstring }}" == "0" ]]; then
+            # PHPUnit itself requires mbstring. For the no-mbstring branch,
+            # install only production dependencies and execute a CLI contract.
+            composer update --no-dev --ignore-platform-req=ext-mbstring --no-install --prefer-dist --no-interaction --no-progress
+            composer install --no-dev --ignore-platform-req=ext-mbstring --prefer-dist --no-interaction --no-progress
+          else
+            composer update --no-install --prefer-dist --no-interaction --no-progress
+            composer install --prefer-dist --no-interaction --no-progress
+          fi
+      - name: Execute extension-mode contracts
+        run: |
+          if [[ "${{ matrix.mbstring }}" == "0" ]]; then
+            php -r 'require "vendor/autoload.php"; if (function_exists("mb_strtoupper")) { fwrite(STDERR, "mbstring unexpectedly loaded\n"); exit(1); } $upper = \Voku\Transliterator\TransliteratorPolyfill::transliterate("Any-Upper", "ä"); if ($upper !== "ä") { fwrite(STDERR, "No-mbstring fallback failed\n"); exit(1); } $input = "e\u{0301}"; $expected = class_exists("Normalizer", true) ? "é" : $input; if (\Voku\Transliterator\TransliteratorPolyfill::transliterate("NFC", $input) !== $expected) { fwrite(STDERR, "Normalizer fallback failed\n"); exit(1); } echo "No-mbstring runtime contract passed\n";'
+          else
+            php vendor/bin/phpunit --configuration phpunit.xml
+          fi
 
   current-root-integration:
     name: Child against current root checkout (CI override only)
