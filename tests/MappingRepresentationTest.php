@@ -7,7 +7,11 @@ namespace voku\tests;
 /** @internal */
 final class MappingRepresentationTest extends \PHPUnit\Framework\TestCase
 {
-    /** Verify every baseline mapping, including key order and numeric key types. */
+    /**
+     * Verify every baseline mapping using the provider's deliberately static contract.
+     *
+     * @SuppressWarnings(PHPMD.StaticAccess)
+     */
     public function testEveryMappingRetainsItsExactKeyValueAndOrderContract(): void
     {
         $contracts = \json_decode((string) \file_get_contents(__DIR__ . '/fixtures/mapping-contract.json'), true);

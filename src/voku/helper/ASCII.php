@@ -1524,6 +1524,10 @@ final class ASCII
     /**
      * Get data from "/data/*.php".
      *
+     * The data provider deliberately exposes a stateless, static loader.
+     *
+     * @SuppressWarnings(PHPMD.StaticAccess)
+     *
      * @return array<array-key,mixed>
      */
     private static function getDataIfExists(string $file): array
