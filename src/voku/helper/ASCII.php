@@ -1526,7 +1526,7 @@ final class ASCII
      *
      * The data provider deliberately exposes a stateless, static loader.
      *
-     * @SuppressWarnings(PHPMD.StaticAccess)
+     * @SuppressWarnings("PHPMD.StaticAccess")
      *
      * @return array<array-key,mixed>
      */

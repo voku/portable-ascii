@@ -10,7 +10,7 @@ final class MappingRepresentationTest extends \PHPUnit\Framework\TestCase
     /**
      * Verify every baseline mapping using the provider's deliberately static contract.
      *
-     * @SuppressWarnings(PHPMD.StaticAccess)
+     * @SuppressWarnings("PHPMD.StaticAccess")
      */
     public function testEveryMappingRetainsItsExactKeyValueAndOrderContract(): void
     {
