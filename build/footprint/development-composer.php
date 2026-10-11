@@ -8,7 +8,6 @@ $providers = [
 ];
 foreach ($providers as $name => $reference) {
     $manifest['require'][$name] = 'dev-main#' . $reference . ' as 1.0.0';
-    $manifest['repositories'][] = ['type' => 'vcs', 'url' => 'https://github.com/' . $name];
 }
 foreach (['autoload', 'autoload-dev'] as $section) {
     foreach ($manifest[$section]['psr-4'] as &$path) {

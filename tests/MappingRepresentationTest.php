@@ -12,7 +12,9 @@ final class MappingRepresentationTest extends \PHPUnit\Framework\TestCase
     {
         $contracts = \json_decode((string) \file_get_contents(__DIR__ . '/fixtures/mapping-contract.json'), true);
         $files = \glob(__DIR__ . '/../src/voku/helper/data/*.php');
-        $extracted = \array_filter(\array_keys($contracts), static function (string $name): bool { return $name[0] === 'x'; });
+        $extracted = \array_filter(\array_keys($contracts), static function (string $name): bool {
+            return $name[0] === 'x';
+        });
         static::assertCount(\count($contracts) - \count($extracted), $files);
         foreach ($files as $file) {
             $map = include $file; // NOSONAR: reload array data; include_once returns true after another test loads it.
