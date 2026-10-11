@@ -300,11 +300,13 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
             $this->markTestSkipped('Set PORTABLE_ASCII_RUN_PERFORMANCE_TESTS=1 to run mapping benchmarks.');
         }
 
-        $root = \getenv('PORTABLE_ASCII_MAPPING_ROOT') ?: __DIR__ . '/../src/voku/helper/data';
+        $override = \getenv('PORTABLE_ASCII_MAPPING_ROOT');
+        $root = $override ?: __DIR__ . '/../src/voku/helper/data';
+        $bankRoot = $override ?: \dirname((string) (new \ReflectionClass(\Voku\PortableAsciiMappingData\BankMap::class))->getFileName()) . '/../data';
         $contracts = \json_decode((string) \file_get_contents(__DIR__ . '/fixtures/mapping-contract.json'), true);
         $benchmarks = [];
         foreach (['ascii_ord.php', 'x000.php', 'x04e.php', 'x1f1.php'] as $name) {
-            $file = $root . '/' . $name;
+            $file = ($name[0] === 'x' ? $bankRoot : $root) . '/' . $name;
             $map = include $file; // NOSONAR: each timed iteration must decode a fresh array, not include_once metadata.
             static::assertSame($contracts[$name]['sha256'], \hash('sha256', \serialize($map)));
             $benchmarks['mapping_decode_' . $name] = $this->benchmarkScenario(

@@ -1524,16 +1524,19 @@ final class ASCII
     /**
      * Get data from "/data/*.php".
      *
+     * The data provider deliberately exposes a stateless, static loader.
+     *
+     * @SuppressWarnings("PHPMD.StaticAccess")
+     *
      * @return array<array-key,mixed>
      */
     private static function getDataIfExists(string $file): array
     {
-        $file = __DIR__ . '/data/' . $file . '.php';
-        if (\is_file($file)) {
-            return include $file;
+        if (!\class_exists(\Voku\PortableAsciiMappingData\BankMap::class)) {
+            throw new \RuntimeException('Mappings are unavailable. Install voku/portable-ascii-mapping-data and remove its replacement declaration from your root composer.json.');
         }
 
-        return [];
+        return \Voku\PortableAsciiMappingData\BankMap::load($file);
     }
 
     /**
