@@ -16,7 +16,8 @@
         }
     ],
     "require": {
-        "php": ">=7.1.0"
+        "php": ">=7.1.0",
+        "voku/portable-ascii-mapping-data": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "~8.5 || ~9.6 || ~10.5 || ~11.5"
