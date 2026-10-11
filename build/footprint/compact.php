@@ -5,14 +5,14 @@ $write = in_array('--write', $argv, true);
 $root = dirname(__DIR__, 2) . '/src/voku/helper/data/';
 $changed = 0;
 foreach (glob($root . 'x*.php') as $file) {
-    $map = include $file;
+    $map = include_once $file;
     // Preserve sparse key domains, including the supplementary-plane x1f1 bank.
     if (array_keys($map) !== range(0, count($map) - 1)) {
         continue;
     }
     foreach ($map as $value) {
         if (strpos($value, "\t") !== false || strpos($value, "\0") !== false) {
-            throw new RuntimeException('Unsupported delimiter in ' . basename($file));
+            throw new UnexpectedValueException('Unsupported delimiter in ' . basename($file));
         }
     }
     $packed = str_replace(['\\', "'"], ['\\\\', "\\'"], implode("\t", $map));

@@ -293,6 +293,7 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
         );
     }
 
+    /** Measure repeated mapping decode costs with the existing regression harness. */
     public function testMappingDecodeProfile(): void
     {
         if (\getenv(self::PERFORMANCE_ENV) !== '1') {
@@ -304,11 +305,11 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
         $benchmarks = [];
         foreach (['ascii_ord.php', 'x000.php', 'x04e.php', 'x1f1.php'] as $name) {
             $file = $root . '/' . $name;
-            $map = include $file;
+            $map = include $file; // NOSONAR: each timed iteration must decode a fresh array, not include_once metadata.
             static::assertSame($contracts[$name]['sha256'], \hash('sha256', \serialize($map)));
             $benchmarks['mapping_decode_' . $name] = $this->benchmarkScenario(
                 static function () use ($file): string {
-                    $map = include $file;
+                    $map = include $file; // NOSONAR: each timed iteration must decode a fresh array, not include_once metadata.
 
                     return (string) \count($map);
                 },
@@ -318,6 +319,7 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
         $this->writeBenchmarks($benchmarks);
     }
 
+    /** Supply repeated-string scenarios for cached transliteration benchmarks. */
     public static function repeatedScenarioProvider(): array
     {
         return [

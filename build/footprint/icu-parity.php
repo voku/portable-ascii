@@ -1,8 +1,9 @@
 <?php
 
 // Research only: compare raw native ICU, strict public API, and table public API.
-require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
 use voku\helper\ASCII;
+
 if (!extension_loaded('intl')) {
     fwrite(STDERR, "Native ICU unavailable; cannot claim native parity.\n");
     exit(2);
@@ -15,7 +16,7 @@ $skipped = 0;
 foreach (glob($root . '/x*.php') as $file) {
     $bank = hexdec(substr(basename($file), 1, -4));
     $group = ['keys' => 0, 'table_vs_native' => 0, 'strict_vs_table' => 0, 'examples' => []];
-    foreach (include $file as $offset => $value) {
+    foreach (include $file as $offset => $value) { // NOSONAR: reload bank arrays already loaded by earlier ASCII calls.
         $code = ($bank << 8) + $offset;
         $char = IntlChar::chr($code);
         if ($char === null || !preg_match('//u', $char)) {
@@ -36,7 +37,7 @@ foreach (glob($root . '/x*.php') as $file) {
     $groups[basename($file)] = $group;
 }
 $languages = [];
-foreach (include $root . '/ascii_by_languages.php' as $language => $map) {
+foreach (include $root . '/ascii_by_languages.php' as $language => $map) { // NOSONAR: ASCII calls have already included this array-returning file.
     $counts = ['keys' => 0, 'to_ascii_vs_native' => 0, 'to_slugify_vs_native_slug' => 0];
     foreach ($map as $char => $replacement) {
         $char = (string) $char;
