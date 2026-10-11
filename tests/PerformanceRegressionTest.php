@@ -293,6 +293,33 @@ final class PerformanceRegressionTest extends \PHPUnit\Framework\TestCase
         );
     }
 
+    /** Measure repeated mapping decode costs with the existing regression harness. */
+    public function testMappingDecodeProfile(): void
+    {
+        if (\getenv(self::PERFORMANCE_ENV) !== '1') {
+            $this->markTestSkipped('Set PORTABLE_ASCII_RUN_PERFORMANCE_TESTS=1 to run mapping benchmarks.');
+        }
+
+        $root = \getenv('PORTABLE_ASCII_MAPPING_ROOT') ?: __DIR__ . '/../src/voku/helper/data';
+        $contracts = \json_decode((string) \file_get_contents(__DIR__ . '/fixtures/mapping-contract.json'), true);
+        $benchmarks = [];
+        foreach (['ascii_ord.php', 'x000.php', 'x04e.php', 'x1f1.php'] as $name) {
+            $file = $root . '/' . $name;
+            $map = include $file; // NOSONAR: each timed iteration must decode a fresh array, not include_once metadata.
+            static::assertSame($contracts[$name]['sha256'], \hash('sha256', \serialize($map)));
+            $benchmarks['mapping_decode_' . $name] = $this->benchmarkScenario(
+                static function () use ($file): string {
+                    $map = include $file; // NOSONAR: each timed iteration must decode a fresh array, not include_once metadata.
+
+                    return (string) \count($map);
+                },
+                1000
+            );
+        }
+        $this->writeBenchmarks($benchmarks);
+    }
+
+    /** Supply repeated-string scenarios for cached transliteration benchmarks. */
     public static function repeatedScenarioProvider(): array
     {
         return [
