@@ -27,6 +27,7 @@ install:
   - php composer-setup.php
   - del composer-setup.php
   - php composer.phar clear-cache
+  - ps: if (Test-Path build/footprint/development-composer.php) { $env:COMPOSER = php build/footprint/development-composer.php }
   - php composer.phar install --prefer-dist --no-interaction
   - php composer.phar dump-autoload -o
 

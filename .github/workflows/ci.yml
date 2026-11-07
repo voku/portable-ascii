@@ -5,6 +5,7 @@ on:
   pull_request:
     branches:
       - master
+      - mapping-footprint/in-place
 
 defaults:
   run:
@@ -43,6 +44,12 @@ jobs:
           coverage: xdebug
           extensions: zip
           tools: composer
+
+      - name: Select pinned development providers when testing their integration branch
+        run: |
+          if [ -f build/footprint/development-composer.php ]; then
+            echo "COMPOSER=$(php build/footprint/development-composer.php)" >> "$GITHUB_ENV"
+          fi
 
       - name: Determine composer cache directory
         id: composer-cache
@@ -129,6 +136,12 @@ jobs:
           extensions: zip
           tools: composer
 
+      - name: Select pinned development providers when testing their integration branch
+        run: |
+          if [ -f build/footprint/development-composer.php ]; then
+            echo "COMPOSER=$(php build/footprint/development-composer.php)" >> "$GITHUB_ENV"
+          fi
+
       - name: Determine composer cache directory
         id: composer-cache
         run: echo "directory=$(composer config cache-dir)" >> "$GITHUB_OUTPUT"
@@ -167,6 +180,12 @@ jobs:
           coverage: xdebug
           extensions: zip
           tools: composer
+
+      - name: Select pinned development providers when testing their integration branch
+        run: |
+          if [ -f build/footprint/development-composer.php ]; then
+            echo "COMPOSER=$(php build/footprint/development-composer.php)" >> "$GITHUB_ENV"
+          fi
 
       - name: Determine composer cache directory
         id: composer-cache
