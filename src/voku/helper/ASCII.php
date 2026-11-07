@@ -1567,9 +1567,13 @@ final class ASCII
      */
     private static function pre_clean_transliteration_input(string $str, ?string $_unknown): string
     {
-        // \xC2 and \xE2 are the leading bytes for the valid UTF-8 sequences that
-        // normalize_whitespace() and normalize_msword() can collapse to ASCII.
-        if (\preg_match('/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $str) === 1) {
+        // 2.1.1 normalized these three extra Unicode whitespace sequences for
+        // the default fallback. Keep custom fallbacks on the original fast path.
+        // Select a cached PCRE pattern instead of scanning the input twice.
+        $cleanupPattern = $_unknown === '?'
+            ? '/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]|\xE1\x9A\x80|\xE3\x80\x80|\xEF\xBE\xA0/'
+            : '/[\xC2\xE2\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/';
+        if (\preg_match($cleanupPattern, $str) === 1) {
             $str = self::normalize_whitespace($str);
             $str = self::normalize_msword($str);
 
