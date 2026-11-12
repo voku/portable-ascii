@@ -660,6 +660,56 @@ final class AsciiGlobalTest extends \PHPUnit\Framework\TestCase
         static::assertCount(0, $notFound, \print_r($notFound, true));
     }
 
+    /**
+     * An upper-case char must not return a lower-case replacement while its
+     * lower-case counterpart exists in the same language.
+     */
+    public function testLanguageFilesUpperCaseReplacements()
+    {
+        if (\extension_loaded('mbstring') === false) {
+            static::markTestSkipped('"mbstring" is not available');
+        }
+
+        $notUpperCase = [];
+        foreach (ASCII::charsArray() as $lang => $tmp) {
+            foreach ($tmp as $orig => $replace) {
+                $origLower = \mb_strtolower((string) $orig);
+
+                // only check upper-case chars that also exist as lower-case char
+                if (
+                    $replace === ''
+                    ||
+                    $origLower === $orig
+                    ||
+                    isset($tmp[$origLower]) === false
+                ) {
+                    continue;
+                }
+
+                $first = \mb_substr($replace, 0, 1);
+                if ($first === \mb_strtolower($first)) {
+                    $notUpperCase[$lang . ' | ' . $orig] = $replace;
+                }
+            }
+        }
+
+        static::assertCount(0, $notUpperCase, \print_r($notUpperCase, true));
+    }
+
+    /**
+     * The two Russian standards transliterate "й" differently:
+     * GOST 7.79-2000 system B uses "j", ICAO Doc 9303 (passport 2013) uses "i".
+     */
+    public function testRussianShortIReplacements()
+    {
+        $charsArray = ASCII::charsArray();
+
+        static::assertSame('J', $charsArray['ru__gost_2000_b']['Й']);
+        static::assertSame('j', $charsArray['ru__gost_2000_b']['й']);
+        static::assertSame('I', $charsArray['ru__passport_2013']['Й']);
+        static::assertSame('i', $charsArray['ru__passport_2013']['й']);
+    }
+
     public function testNormalizeMsword()
     {
         $tests = [
